@@ -24,7 +24,7 @@ def filter(adata, cells='mito'):
 
 def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
     adata =  sc.read_10x_mtx(
-    'filtered_gene_bc_matrices/hg19/',  
+    '../data/filtered_gene_bc_matrices/hg19/',  
     var_names='gene_symbols', cache=True)
     adata.obs['labels']= loadlabels(load( "pbmc.3k.labels"), load( "filtered_gene_bc_matrices/hg19/barcodes.tsv"))
 
@@ -35,7 +35,7 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
 
 def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
     adata =  sc.read_10x_mtx(
-    'filtered_matrices_mex/hg19/',  
+    '../data/filtered_matrices_mex/hg19/',  
     var_names='gene_symbols', cache=True)
 
     adata.obs['labels']= loadlabels(load( "pbmc.6k.labels"), load( "filtered_matrices_mex/hg19/barcodes.tsv"))
@@ -46,8 +46,13 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
     return adata
 
 
-def loadP7E():
-    pass
+def loadP7E(subsample=.25):
+    adata = sc.read_10x_mtx( '../data/p7e',  var_names='gene_symbols', cache=True)
+    if subsample:
+        sc.pp.subsample(adata, fraction=.25, n_obs=None, random_state=0, copy=False)
 
-def loadP7D(): 
-    pass
+def loadP7D(subsample=.25):
+    adata = sc.read_10x_mtx( '../data/p7d',  var_names='gene_symbols', cache=True)
+    if subsample:
+        sc.pp.subsample(adata, fraction=.25, n_obs=None, random_state=0, copy=False)
+    return adata

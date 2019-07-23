@@ -4,11 +4,8 @@ import scanpy as sc
 from sklearn import decomposition as skdecomp
 import umap
 class reseurat():
-    
     def __init__(self):
         self.values={}
-    
-    
     
     def wog(self,name,value):
         if name in self.values:
@@ -17,10 +14,10 @@ class reseurat():
             self.values[name] = value
             return value
         
-        
-    def soy(self,adata):
+    def soy(self,adata,makeunique=True):
         # bla
-        adata.var_names_make_unique()
+        if makeunique:
+            adata.var_names_make_unique()
         sc.pp.filter_cells(adata, min_genes=200)
         
         #! genes: cellcount >= 3   

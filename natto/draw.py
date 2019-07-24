@@ -1,4 +1,4 @@
-
+from itertools import permutations
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,24 +8,13 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
     assert reducer != None  , "give me a reducer"
     plt.title(title)
     
-    a=1
-    b=0
-    c=.5
-    col={
-        100:(a,a,b),
-        101:(a,b,a),
-        102:(b,a,a),
-        103:(a,b,b),
-        104:(b,a,b),
-        105:(b,b,a),
-        106:(c,c,b),
-        107:(c,b,c),
-        108:(b,c,c),
-        109:(a,c,c),
-        110:(c,a,c),
-        111:(c,c,a)
-    }
-    col.update( {a-102:b for a,b in col.items()}  )
+    
+    
+    
+    colors = list(permutations([0,.25,.5,.75,1],3))
+    col = { i-2:e for i,e in enumerate(colors)}
+    
+    col.update( {a+100:b for a,b in col.items()}  )
 
     Y=np.array(Y)
     

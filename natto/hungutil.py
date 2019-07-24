@@ -10,7 +10,6 @@ from eden import display as eden
 from matplotlib import pyplot as plt
 import numpy as np
 from pandas import DataFrame
-import seaborn as sns
 from collections import  defaultdict
 import random
 

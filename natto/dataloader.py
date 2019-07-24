@@ -50,6 +50,7 @@ def loadP7E(subsample=.25):
     adata = sc.read_10x_mtx( '../data/p7e',  var_names='gene_symbols', cache=True)
     if subsample:
         sc.pp.subsample(adata, fraction=.25, n_obs=None, random_state=0, copy=False)
+    return adata
 
 def loadP7D(subsample=.25):
     adata = sc.read_10x_mtx( '../data/p7d',  var_names='gene_symbols', cache=True)

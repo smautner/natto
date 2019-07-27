@@ -37,7 +37,7 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
                     s=size,
                     label= "%s %s" % (str(cla),acc.get(cla)))
     plt.axis('off')
-    plt.legend()
+    plt.legend(markerscale=3)
     plt.show()
     return reducer
 

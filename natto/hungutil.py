@@ -1,4 +1,5 @@
 import basics as b
+import math
 import pprint
 import networkx as nx
 from itertools import combinations, permutations
@@ -32,6 +33,23 @@ def greedymarriage(matrix):
             yield r,c
             rind.remove(r)
             cind.remove(c)
+
+def matrix_cost_estimate(matrix): 
+    return sum([matrix[r,c] for (r,c) in zip(*linear_sum_assignment(matrix))])
+
+
+
+def gini(array):
+    """Calculate the Gini coefficient of a numpy array."""
+    # by oligiaguest
+    array = array.flatten()
+    if np.amin(array) < 0:
+        array -= np.amin(array)
+    array += 0.0000001
+    array = np.sort(array)
+    index = np.arange(1,array.shape[0]+1)
+    n = array.shape[0]
+    return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
 
 ################
 # maniulate distance matrix
@@ -115,8 +133,7 @@ def find_clustermap_hung(Y1,Y2, hungmatch, debug=False):
     row_ind, col_ind = linear_sum_assignment(canvas)
     
     if debug: # draw heatmap # for a good version of this check out notebook 10.1
-        #print (canvas,y1map.getitem,y2map.getitem)
-        
+        #print (canvas,y1map.getitem,y2map.getitem) 
         # sort the canvas so that hits are on the diagonal
         sorting = sorted(zip(col_ind, row_ind, [y1map.getitem[r]for r in row_ind]))
         col_ind, row_ind, xlabels= list(zip(*sorting))
@@ -135,14 +152,44 @@ def find_clustermap_hung(Y1,Y2, hungmatch, debug=False):
 
 def getcombos(alist): 
     '''returns all combinations'''
-    return [e  for i in range(1,4) for e in list(combinations(alist,i))]
+    return [e  for i in range(1,10) for e in list(combinations(alist,i))]
 
 
-def get_min_subcost( itemsa, itemsb, costs ):
+def get_min_subcost( itemsa, itemsb, costs ): # this is shit because we should include opportunity cost e.g. 4,3 | 4,0 should check 4|4 + 3|0  # | is the mapping :) 
     subcosts = [ costs(a,b) for a in getcombos(itemsa) for b in getcombos(itemsb)]
     return min(subcosts)
+
+def get_min_subcost_too_strict(itemsa, itemsb, costs):  # this is too strict on multi hits
+    canvas = np.zeros( (len(itemsa), len(itemsb)),dtype=float )
+    for i,a in enumerate(itemsa):
+        for j,b in enumerate(itemsb):
+            canvas[i,j]= costs((a,),(b,))
+            
+    return matrix_cost_estimate(canvas)
     
+def _gini(a,b,costs):
+    return gini(np.array([ costs((aa,),(bb,)) for aa in a for bb in b   ]))
+def _dist_to_mean(a,b,costs ):
+    stuff = np.array([ costs((aa,),(bb,)) for aa in a for bb in b   ])
+    stuff -= np.mean(stuff)
+    stuff *=stuff
+    return np.mean(stuff)
+
+def antidiversity(a,b,costs):
+    stuff = [ costs((aa,),(bb,)) for aa in a for bb in b   ]
+    if len(stuff)<=1:
+        return 1 
+    stuff.sort()
+    max_ = float(min(stuff))
+    stuff = [s/max_ for s in stuff]
+    cut = int(math.sqrt(len(stuff)))
+    #cut = int(len(stuff)/2.0)
+    s1 = stuff[1:cut]
+    s2 = stuff[cut:]
+    print (s1,s2)
+    return ( cut-1 - sum(s1) + sum(s2) )/float(len(stuff)-1)
     
+
 def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1map,y2map, clustersizes1,clustersizes2,debug):
     # fill the cost matrix for the N:N set matches 
     # normalize: div the number of elements in 1 and 2 
@@ -150,17 +197,15 @@ def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1ma
     canvas = np.zeros( (len(clustercombos), len(clustercombos2)),dtype=float )
     for clusters_a in clustercombos:
         for clusters_b in clustercombos2:
-            canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
-                -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  \
-                /float( sumvalues(clusters_a,clustersizes1) + sumvalues(clusters_b,clustersizes2))
-
+            numoverlap =   sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
+            sizeab = float( (sumvalues(clusters_a,clustersizes1) + sumvalues(clusters_b,clustersizes2) ))            
+            canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = -2*numoverlap / sizeab
     if debug:
         debug_canvas = np.zeros( (len(clustercombos), len(clustercombos2)),dtype=float )
         for clusters_a in clustercombos:
             for clusters_b in clustercombos2:
                 debug_canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
                     -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
-
 
     # MATCH 
     row_ind, col_ind = linear_sum_assignment(canvas)
@@ -175,17 +220,19 @@ def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1ma
     
     if debug: # draw heatmap # for a good version of this check out notebook 10.1
         df = DataFrame(canvas)
-        plt.subplots(figsize=(40,40))
-        sns.heatmap(df,annot=True,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
-        plt.show()
+        #plt.subplots(figsize=(10,10))
+        #sns.heatmap(df,annot=False,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
+        #plt.show()
         #pprint.pprint(list (zip( clustersets1, clustersets2, costs, subcosts  ) ))
         df = DataFrame(canvas[:len(clustersizes1),:len(clustersizes2)])
+        #df=df.apply(lambda x: x/np.abs(np.min(x)))
         sns.heatmap(df,annot=True,yticklabels=clustersizes1.keys(),xticklabels=clustersizes2.keys(), square=True)
         plt.show()
         df = DataFrame(debug_canvas[:len(clustersizes1),:len(clustersizes2)])
+        #df=df.apply(lambda x: x/np.abs(x.min()))
         sns.heatmap(df,annot=True,yticklabels=clustersizes1.items(),xticklabels=clustersizes2.items(), square=True)
         plt.show()
-        pprint.pprint( [ (y1,y2,cost,subcost) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ])
+        pprint.pprint( [ (y1,y2,cost,antidiversity(y1,y2,cost_by_clusterindex)) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ])
     return costs,subcosts, clustersets1,clustersets2
 
 

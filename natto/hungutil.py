@@ -22,6 +22,17 @@ def hungarian(X1,X2):
     return row_ind, col_ind
 
 
+def greedymarriage(matrix): 
+    rind = list(range(matrix.shape[0]))
+    cind = list(range(matrix.shape[1]))
+    s= [ (matrix[r,c],r,c) for r  in rind for c in cind]
+    s.sort()
+    for (v,r,c) in s: 
+        if r in rind and c in cind:
+            yield r,c
+            rind.remove(r)
+            cind.remove(c)
+
 ################
 # maniulate distance matrix
 #############
@@ -153,9 +164,7 @@ def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1ma
 
     # MATCH 
     row_ind, col_ind = linear_sum_assignment(canvas)
-    # MATCH 
-    row_ind, col_ind = linear_sum_assignment(canvas)
-    
+    #row_ind,col_ind = list(zip(*greedymarriage(canvas))) # greedy matching
     # no
 
     clustersets1 = [y1map.getitem[r] for r in row_ind]
@@ -166,13 +175,13 @@ def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1ma
     
     if debug: # draw heatmap # for a good version of this check out notebook 10.1
         df = DataFrame(canvas)
-        sns.heatmap(df,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
+        plt.subplots(figsize=(40,40))
+        sns.heatmap(df,annot=True,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
         plt.show()
         #pprint.pprint(list (zip( clustersets1, clustersets2, costs, subcosts  ) ))
         df = DataFrame(canvas[:len(clustersizes1),:len(clustersizes2)])
         sns.heatmap(df,annot=True,yticklabels=clustersizes1.keys(),xticklabels=clustersizes2.keys(), square=True)
         plt.show()
-        plt.subplots(figsize=(5,5))
         df = DataFrame(debug_canvas[:len(clustersizes1),:len(clustersizes2)])
         sns.heatmap(df,annot=True,yticklabels=clustersizes1.items(),xticklabels=clustersizes2.items(), square=True)
         plt.show()

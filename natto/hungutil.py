@@ -126,6 +126,12 @@ def getcombos(alist):
     '''returns all combinations'''
     return [e  for i in range(1,4) for e in list(combinations(alist,i))]
 
+
+def get_min_subcost( itemsa, itemsb, costs ):
+    subcosts = [ costs(a,b) for a in getcombos(itemsa) for b in getcombos(itemsb)]
+    return min(subcosts)
+    
+    
 def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1map,y2map, clustersizes1,clustersizes2,debug):
     # fill the cost matrix for the N:N set matches 
     # normalize: div the number of elements in 1 and 2 
@@ -152,19 +158,11 @@ def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1ma
     
     # no
 
-    def zipmapsum(perm,colitems): 
-        return sum([canvas[y1map.getint[(a,)]][y2map.getint[(b,)]] for a, b in zip(perm,colitems)])
     clustersets1 = [y1map.getitem[r] for r in row_ind]
     clustersets2 = [y2map.getitem[c] for c in  col_ind]
     costs  = [canvas[r][c] for r,c in zip(row_ind,col_ind)]
-    subcosts = [ min( 
-                    [   zipmapsum(desc, y2map.getitem[c])
-                        for desc in  permutations( y1map.getitem[r] ,len( y2map.getitem[c]) )] 
-                    or 
-                    [   zipmapsum( y1map.getitem[r], desc)
-                        for desc in  permutations( y2map.getitem[c] ,len( y1map.getitem[r]) )] 
-                    ) 
-                    for r,c in zip(row_ind,col_ind) ]
+    cost_by_clusterindex = lambda x,y : canvas[y1map.getint[x],y2map.getint[y]] # cost accessed by cluster indices
+    subcosts = [ get_min_subcost(y1map.getitem[r],  y2map.getitem[c], cost_by_clusterindex) for r,c in zip(row_ind,col_ind) ]
     
     if debug: # draw heatmap # for a good version of this check out notebook 10.1
         df = DataFrame(canvas)

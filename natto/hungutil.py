@@ -126,6 +126,81 @@ def getcombos(alist):
     '''returns all combinations'''
     return [e  for i in range(1,4) for e in list(combinations(alist,i))]
 
+def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1map,y2map, clustersizes1,clustersizes2,debug):
+    # fill the cost matrix for the N:N set matches 
+    # normalize: div the number of elements in 1 and 2 
+    sumvalues = lambda keys,data: sum( [data[key] for key in keys  ])
+    canvas = np.zeros( (len(clustercombos), len(clustercombos2)),dtype=float )
+    for clusters_a in clustercombos:
+        for clusters_b in clustercombos2:
+            canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
+                -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  \
+                /float( sumvalues(clusters_a,clustersizes1) + sumvalues(clusters_b,clustersizes2))
+
+    if debug:
+        debug_canvas = np.zeros( (len(clustercombos), len(clustercombos2)),dtype=float )
+        for clusters_a in clustercombos:
+            for clusters_b in clustercombos2:
+                debug_canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
+                    -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
+
+
+    # MATCH 
+    row_ind, col_ind = linear_sum_assignment(canvas)
+    # MATCH 
+    row_ind, col_ind = linear_sum_assignment(canvas)
+    
+    # no
+
+    def zipmapsum(perm,colitems): 
+        return sum([canvas[y1map.getint[(a,)]][y2map.getint[(b,)]] for a, b in zip(perm,colitems)])
+    clustersets1 = [y1map.getitem[r] for r in row_ind]
+    clustersets2 = [y2map.getitem[c] for c in  col_ind]
+    costs  = [canvas[r][c] for r,c in zip(row_ind,col_ind)]
+    subcosts = [ min( 
+                    [   zipmapsum(desc, y2map.getitem[c])
+                        for desc in  permutations( y1map.getitem[r] ,len( y2map.getitem[c]) )] 
+                    or 
+                    [   zipmapsum( y1map.getitem[r], desc)
+                        for desc in  permutations( y2map.getitem[c] ,len( y1map.getitem[r]) )] 
+                    ) 
+                    for r,c in zip(row_ind,col_ind) ]
+    
+    if debug: # draw heatmap # for a good version of this check out notebook 10.1
+        df = DataFrame(canvas)
+        sns.heatmap(df,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
+        plt.show()
+        #pprint.pprint(list (zip( clustersets1, clustersets2, costs, subcosts  ) ))
+        df = DataFrame(canvas[:len(clustersizes1),:len(clustersizes2)])
+        sns.heatmap(df,annot=True,yticklabels=clustersizes1.keys(),xticklabels=clustersizes2.keys(), square=True)
+        plt.show()
+        plt.subplots(figsize=(5,5))
+        df = DataFrame(debug_canvas[:len(clustersizes1),:len(clustersizes2)])
+        sns.heatmap(df,annot=True,yticklabels=clustersizes1.items(),xticklabels=clustersizes2.items(), square=True)
+        plt.show()
+        pprint.pprint( [ (y1,y2,cost,subcost) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ])
+    return costs,subcosts, clustersets1,clustersets2
+
+
+def cheapen_pairs(pairs, matches, factor):
+    costchanges=defaultdict(int)
+    for a,b in matches: # a and b are tupples
+        for aa in a: 
+            for bb in b:
+                costchanges[(aa,bb)] += pairs[(aa,bb)]*factor
+    for k,v in costchanges.items():
+        pairs[k]+=v
+    return pairs
+
+
+def nodup(a):
+    l = [zz for z in a for zz  in z]
+    return len(l) == len(set(l))
+
+def collisionfree(matches):
+    a,b = list(zip(*matches))
+    return nodup(a) and nodup(b)
+
 def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False):
     '''clustermatching allowing N:N matching'''
 
@@ -151,48 +226,27 @@ def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False):
 
 
 
-    # fill the cost matrix for the N:N set matches 
-    # normalize: div the number of elements in 1 and 2 
-    canvas = np.zeros( (len(clustercombos), len(clustercombos2)),dtype=float )
-    sumvalues = lambda keys,data: sum( [data[key] for key in keys  ])
-    for clusters_a in clustercombos:
-        for clusters_b in clustercombos2:
-            canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
-                -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  \
-                /float( sumvalues(clusters_a,clustersizes1) + sumvalues(clusters_b,clustersizes2))
 
-
-    # MATCH 
-    row_ind, col_ind = linear_sum_assignment(canvas)
-    
-    
-
-
-    # no
-
-    def zipmapsum(perm,colitems): 
-        return sum([canvas[y1map.getint[(a,)]][y2map.getint[(b,)]] for a, b in zip(perm,colitems)])
-    clustersets1 = [y1map.getitem[r] for r in row_ind]
-    clustersets2 = [y2map.getitem[c] for c in  col_ind]
-    costs  = [canvas[r][c] for r,c in zip(row_ind,col_ind)]
-    subcosts = [ min( 
-                    [   zipmapsum(desc, y2map.getitem[c])
-                        for desc in  permutations( y1map.getitem[r] ,len( y2map.getitem[c]) )] 
-                    or 
-                    [   zipmapsum( y1map.getitem[r], desc)
-                        for desc in  permutations( y2map.getitem[c] ,len( y1map.getitem[r]) )] 
-                    ) 
-                    for r,c in zip(row_ind,col_ind) ]
-    if debug: # draw heatmap # for a good version of this check out notebook 10.1
-
-        df = DataFrame(canvas)
-        sns.heatmap(df,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
-        plt.show()
-        pprint.pprint(list (zip( clustersets1, clustersets2, costs, subcosts  ) ))
-
-        df = DataFrame(canvas[:len(clustersizes1),:len(clustersets2)])
-        sns.heatmap(df,annot=True,yticklabels=clustersizes1.keys(),xticklabels=clustersizes2.keys(), square=False)
-        plt.show()
+        
+    costs,subcosts,clustersets1,clustersets2 = find_multi_clustermap_hung_optimize(pairs,clustercombos,
+                                                       clustercombos2,
+                                                       y1map,
+                                                       y2map,
+                                                       clustersizes1,
+                                                       clustersizes2,debug)
+    while False: # looping was a bad idea, actually it worked a little... but i have a better 1 for now
+        matches = [ (a,b) for (a,b,c,d) in zip( clustersets1, clustersets2, costs, subcosts  ) if c<=d ]
+        if collisionfree(matches):
+            break
+        else:
+            pairs = cheapen_pairs(pairs,matches, .5)
+            cost,subcost,clustersets1,clustersets2 = find_multi_clustermap_hung_optimize(pairs,
+                                                       clustercombos,
+                                                       clustercombos2,
+                                                       y1map,
+                                                       y2map,
+                                                       clustersizes1,
+                                                       clustersizes2,debug)
 
     #return [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if subcost >= cost ]
     return [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ]

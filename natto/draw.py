@@ -1,4 +1,5 @@
 from itertools import permutations
+import random
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,6 +13,8 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
     
     
     colors = list(permutations([0,.25,.5,.75,1],3))
+    random.seed(4) #making shuffle consistent
+    random.shuffle(colors)
     col = { i-2:e for i,e in enumerate(colors)}
     
     col.update( {a+100:b for a,b in col.items()}  )

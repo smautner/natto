@@ -23,78 +23,7 @@ def hungarian(X1,X2):
     return row_ind, col_ind
 
 
-def greedymarriage(matrix): 
-    rind = list(range(matrix.shape[0]))
-    cind = list(range(matrix.shape[1]))
-    s= [ (matrix[r,c],r,c) for r  in rind for c in cind]
-    s.sort()
-    for (v,r,c) in s: 
-        if r in rind and c in cind:
-            yield r,c
-            rind.remove(r)
-            cind.remove(c)
 
-def matrix_cost_estimate(matrix): 
-    return sum([matrix[r,c] for (r,c) in zip(*linear_sum_assignment(matrix))])
-
-
-
-def gini(array):
-    """Calculate the Gini coefficient of a numpy array."""
-    # by oligiaguest
-    array = array.flatten()
-    if np.amin(array) < 0:
-        array -= np.amin(array)
-    array += 0.0000001
-    array = np.sort(array)
-    index = np.arange(1,array.shape[0]+1)
-    n = array.shape[0]
-    return ((np.sum((2 * index - n  - 1) * array)) / (n * np.sum(array)))
-
-################
-# maniulate distance matrix
-#############
-def discount_cluster(class_even,class_odd, distances, multiplier=.95):
-    one,two = distances.shape
-    for i in range(one):
-        for j in range(two):
-            if class_even[i] == class_odd[j]:
-                distances[i,j] = distances[i,j]*multiplier
-    return  distances
-
-def test_discount_cluster():
-    import numpy as np
-    even = np.array([0]*5+[1]*3)
-    odd = np.array([0]*4+[1]*3)
-    row_ind = [1,7,2,3]
-    col_ind = [2,6,5,4]
-    dist = np.ones((8,7))
-    print(discount_cluster(even,odd, dist, multiplier=.95))
-
-
-###################
-# purity meassure for matched clusters
-#################
-def qualitymeassure(Y1,Y2,hungmatch,matches):
-    '''
-    Y1 and Y2: are the predicted classes for instances
-    hungmatches: are the matches between Y1 and Y2 (between instances)
-    matches: are the matches on class level  (e.g.: class1 -> class2)
-
-    returns: [str:class,float:sum(correct in class)/#class )] 
-    '''
-    row_ind, col_ind = hungmatch
-    # first  count correctly matched instances
-    sumcorrect = defaultdict(int)
-    for a,b in zip(row_ind, col_ind): 
-        if Y1[a] in matches:
-            if matches[Y1[a]] == Y2[b]:
-                sumcorrect[Y1[a]]+=1 
-    
-    # lets make some stats from that 
-    classes = Counter(Y1) # class: occurance
-
-    return [ (a, float(sumcorrect[a])/count)   for a,count in classes.items()] + [('all', float(sum(sumcorrect.values())) / len(Y1) ) ]
 
 
 
@@ -104,78 +33,37 @@ def qualitymeassure(Y1,Y2,hungmatch,matches):
 #####################
 
 
+
 class spacemap():
+    # we need a matrix in with groups of clusters are the indices, -> map to integers
     def __init__(self, items):
+        self.itemlist = items
+        self.integerlist = list(range(items))
+        self.len = len(items)
         self.getitem = { i:k for i,k in enumerate(items)}
         self.getint = { k:i for i,k in enumerate(items)}
 
-def find_clustermap_hung(Y1,Y2, hungmatch, debug=False):
-    row_ind, col_ind = hungmatch
-    pairs = zip(Y1[row_ind],Y2[col_ind])
-    pairs = Counter(pairs) # pair:occurances
-    
-    # normalize for cluster size
-    clustersizes= Counter(Y1) # class:occurence 
-    clustersizes2 = Counter(Y2) # class:occurence 
-
-    y1map = spacemap(clustersizes.keys())
-    y2map = spacemap(clustersizes2.keys())
-
-    #normpairs = { k:1-(float(v)/clustersizes[k[0]]) for k,v in pairs.items()} # pair:relative_occur
-    normpairs = { k:-v for k,v in pairs.items()} # pair:relative_occur
-
-    canvas = np.zeros( (len(clustersizes), len(clustersizes2)),dtype=float )
-
-
-    for (a,b),v in normpairs.items():
-        canvas[y1map.getint[a],y2map.getint[b]] = v
-    
-    row_ind, col_ind = linear_sum_assignment(canvas)
-    
-    if debug: # draw heatmap # for a good version of this check out notebook 10.1
-        #print (canvas,y1map.getitem,y2map.getitem) 
-        # sort the canvas so that hits are on the diagonal
-        sorting = sorted(zip(col_ind, row_ind, [y1map.getitem[r]for r in row_ind]))
-        col_ind, row_ind, xlabels= list(zip(*sorting))
-        # some rows are unused by the matching,but we still want to show them:
-        rest= list(set(y1map.getitem.values())-set(row_ind) )
-        canvas = canvas[list(row_ind)+rest]
-        
-        y1 = [y2map.getitem[c] for c in  col_ind]
-        df = DataFrame(canvas)
-        sns.heatmap(df,xticklabels=xlabels,yticklabels=y1, annot=True)
-        plt.xlabel("Cluster ID data set arg1",size=15)
-        plt.ylabel("Cluster ID data set arg2",size=15)
-        plt.show()
-    return dict(zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind]))
 
 
 def getcombos(alist): 
-    '''returns all combinations'''
+    '''returns all combinations, aka powerset'''
+    # [1,2,3] => [1],[2],[3],[1,2],[2,3],[3,2],[1,2,3]
     return [e  for i in range(1,10) for e in list(combinations(alist,i))]
 
 
-def get_min_subcost( itemsa, itemsb, costs ): # this is shit because we should include opportunity cost e.g. 4,3 | 4,0 should check 4|4 + 3|0  # | is the mapping :) 
+def get_min_subcost( itemsa, itemsb, costs ):  
+    # given 2 sets of clusters, look at all combinations in the 2 powersets, return cost of min
     subcosts = [ costs(a,b) for a in getcombos(itemsa) for b in getcombos(itemsb)]
     return min(subcosts)
 
-def get_min_subcost_too_strict(itemsa, itemsb, costs):  # this is too strict on multi hits
-    canvas = np.zeros( (len(itemsa), len(itemsb)),dtype=float )
-    for i,a in enumerate(itemsa):
-        for j,b in enumerate(itemsb):
-            canvas[i,j]= costs((a,),(b,))
-            
-    return matrix_cost_estimate(canvas)
     
-def _gini(a,b,costs):
-    return gini(np.array([ costs((aa,),(bb,)) for aa in a for bb in b   ]))
-def _dist_to_mean(a,b,costs ):
-    stuff = np.array([ costs((aa,),(bb,)) for aa in a for bb in b   ])
-    stuff -= np.mean(stuff)
-    stuff *=stuff
-    return np.mean(stuff)
 
 def antidiversity(a,b,costs):
+    # if i matchh 2 set of clusters, 
+    # ill have a matrix of len_a x len_b with all the intersectsions
+    # i dont want sqrt(len_matrix) to be of high value and the rest 0
+    # this function penalizes exactly that
+    
     stuff = [ costs((aa,),(bb,)) for aa in a for bb in b   ]
     if len(stuff)<=1:
         return 1 
@@ -186,32 +74,25 @@ def antidiversity(a,b,costs):
     #cut = int(len(stuff)/2.0)
     s1 = stuff[1:cut]
     s2 = stuff[cut:]
-    print (s1,s2)
     return ( cut-1 - sum(s1) + sum(s2) )/float(len(stuff)-1)
-    
 
-def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1map,y2map, clustersizes1,clustersizes2,debug):
+  
+def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,clustersizes2,debug):
     # fill the cost matrix for the N:N set matches 
-    # normalize: div the number of elements in 1 and 2 
+    # normalize: div the number of elements in 1 and 2
+    # do matching
     sumvalues = lambda keys,data: sum( [data[key] for key in keys  ])
-    canvas = np.zeros( (len(clustercombos), len(clustercombos2)),dtype=float )
-    for clusters_a in clustercombos:
-        for clusters_b in clustercombos2:
+    canvas = np.zeros( y1map.len, y2map.len ,dtype=float )
+    for clusters_a in y1map.itemlist:
+        for clusters_b in y2map.itemlist:
             numoverlap =   sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
             sizeab = float( (sumvalues(clusters_a,clustersizes1) + sumvalues(clusters_b,clustersizes2) ))            
             canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = -2*numoverlap / sizeab
-    if debug:
-        debug_canvas = np.zeros( (len(clustercombos), len(clustercombos2)),dtype=float )
-        for clusters_a in clustercombos:
-            for clusters_b in clustercombos2:
-                debug_canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
-                    -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
-
-    # MATCH 
     row_ind, col_ind = linear_sum_assignment(canvas)
-    #row_ind,col_ind = list(zip(*greedymarriage(canvas))) # greedy matching
-    # no
 
+    
+    # clustersets -> translate from the indices of the matrix back to cluster_ids 
+    # calculate costs and sub-costs for filtering 
     clustersets1 = [y1map.getitem[r] for r in row_ind]
     clustersets2 = [y2map.getitem[c] for c in  col_ind]
     costs  = [canvas[r][c] for r,c in zip(row_ind,col_ind)]
@@ -219,6 +100,14 @@ def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1ma
     subcosts = [ get_min_subcost(y1map.getitem[r],  y2map.getitem[c], cost_by_clusterindex) for r,c in zip(row_ind,col_ind) ]
     
     if debug: # draw heatmap # for a good version of this check out notebook 10.1
+        
+        if debug:
+            debug_canvas = np.zeros( y1map.len, y2map.len ),dtype=float )
+            for clusters_a in y1map.items:
+                for clusters_b in y2map.items:
+                    debug_canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
+                        -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ]) 
+        
         df = DataFrame(canvas)
         #plt.subplots(figsize=(10,10))
         #sns.heatmap(df,annot=False,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
@@ -232,28 +121,25 @@ def find_multi_clustermap_hung_optimize(pairs, clustercombos,clustercombos2,y1ma
         #df=df.apply(lambda x: x/np.abs(x.min()))
         sns.heatmap(df,annot=True,yticklabels=clustersizes1.items(),xticklabels=clustersizes2.items(), square=True)
         plt.show()
-        pprint.pprint( [ (y1,y2,cost,antidiversity(y1,y2,cost_by_clusterindex)) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ])
-    return costs,subcosts, clustersets1,clustersets2
+        pprint.pprint( [ (y1,y2,cost,subcost
+                          #antidiv2_hung(y1,y2,cost_by_clusterindex),
+                          #antidiv3_hung(y1,y2,pairs)
+                         ) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) ])
+        print ("#"*80)
+        pprint.pprint( [ (y1,y2,cost,
+                          antidiversity(y1,y2,cost_by_clusterindex)
+                          #antidiv2_hung(y1,y2,cost_by_clusterindex),
+                          #antidiv3_hung(y1,y2,pairs)
+                         ) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ])
+        
+    #return costs,subcosts, clustersets1,clustersets
+    
+    
+    # filter by 1.low subcost, 2. stuff that looks like a diagonal matrix
+    result = [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost and antidiversity(y1,y2,cost_by_clusterindex) > .3]
+    
+    return upwardmerge(result)
 
-
-def cheapen_pairs(pairs, matches, factor):
-    costchanges=defaultdict(int)
-    for a,b in matches: # a and b are tupples
-        for aa in a: 
-            for bb in b:
-                costchanges[(aa,bb)] += pairs[(aa,bb)]*factor
-    for k,v in costchanges.items():
-        pairs[k]+=v
-    return pairs
-
-
-def nodup(a):
-    l = [zz for z in a for zz  in z]
-    return len(l) == len(set(l))
-
-def collisionfree(matches):
-    a,b = list(zip(*matches))
-    return nodup(a) and nodup(b)
 
 def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False):
     '''clustermatching allowing N:N matching'''
@@ -278,25 +164,26 @@ def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False):
     y1map = spacemap(clustercombos)
     y2map = spacemap(clustercombos2)
 
+    
+    return find_multi_clustermap_hung_optimize(pairs,  y1map,
+                                                       y2map,
+                                                       clustersizes1,
+                                                       clustersizes2,debug)
 
 
-
-        
-    costs,subcosts,clustersets1,clustersets2 = find_multi_clustermap_hung_optimize(pairs,clustercombos,
-                                                       clustercombos2,
+    '''
+    costs,subcosts,clustersets1,clustersets2 = find_multi_clustermap_hung_optimize(pairs,
                                                        y1map,
                                                        y2map,
                                                        clustersizes1,
                                                        clustersizes2,debug)
     while False: # looping was a bad idea, actually it worked a little... but i have a better 1 for now
         matches = [ (a,b) for (a,b,c,d) in zip( clustersets1, clustersets2, costs, subcosts  ) if c<=d ]
-        if collisionfree(matches):
+        if collisionfree(matches): # func was moved to -> bad.py
             break
         else:
-            pairs = cheapen_pairs(pairs,matches, .5)
+            pairs = cheapen_pairs(pairs,matches, .5)# -> was movced to bad.py
             cost,subcost,clustersets1,clustersets2 = find_multi_clustermap_hung_optimize(pairs,
-                                                       clustercombos,
-                                                       clustercombos2,
                                                        y1map,
                                                        y2map,
                                                        clustersizes1,
@@ -304,25 +191,39 @@ def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False):
 
     #return [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if subcost >= cost ]
     return [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ]
-
+    '''
+    
 def decorate(items):
     l = range(len(items))
     return [' '.join(map(str,items[i]))for i in l ]
 
 
 
-def test_find_clustermap():
-    import numpy as np
-    X= np.array(range(10))
-    X=np.vstack((X,X)).T
-    Y1= np.array([0]*3+[1]*3+[2]*4)
-    Y2= np.array([1]*3+[2]*2+[0]*5)
-    print ( find_clustermap_hung(X,X,Y1,Y2))
+#######################
+# fancy stuff for calling
+#######################
 
 
-#######################
-#
-#######################
+def qualitymeassure(Y1,Y2,hungmatch,matches):
+    '''
+    Y1 and Y2: are the predicted classes for instances
+    hungmatches: are the matches between Y1 and Y2 (between instances)
+    matches: are the matches on class level  (e.g.: class1 -> class2)
+
+    returns: [str:class,float:sum(correct in class)/#class )] 
+    '''
+    row_ind, col_ind = hungmatch
+    # first  count correctly matched instances
+    sumcorrect = defaultdict(int)
+    for a,b in zip(row_ind, col_ind): 
+        if Y1[a] in matches:
+            if matches[Y1[a]] == Y2[b]:
+                sumcorrect[Y1[a]]+=1 
+    
+    # lets make some stats from that 
+    classes = Counter(Y1) # class: occurance
+    return [ (a, float(sumcorrect[a])/count)   for a,count in classes.items()] + [('all', float(sum(sumcorrect.values())) / len(Y1) ) ]
+
 
 def mapclusters(X,X2,Yh,Y2h) -> 'new Yh and {class-> quality}':
 
@@ -371,46 +272,7 @@ def multimapclusters(X,X2,Yh,Y2h, debug=False) -> 'new Yh,Y2h, {class-> quality}
 
     clustermap = {y1map.getint[a]:y2map.getint[b] for a,b in clustermap }
     class_acc = qualitymeassure( Yh ,Y2h , hungmatch,clustermap)
-        
 
     return Yh,Y2h, {clustermap.get(a):"%.2f" % b for a,b in class_acc[:-1]},class_acc[-1][1] 
-
-
-
-#####################
-# does this still work?
-###################
-def distance_stats(row_ind,col_ind, class_even, class_odd, distances , printfails = False):
-    pairs = list(zip(row_ind, col_ind))
-    #pairs = zip(col_ind,row_ind)
-    print ("WRONG:")
-    print (sum([ 1 for a,b in pairs
-        if class_even[a]!=class_odd[b]]))
-    if printfails:
-        print([ (a,b) for a,b in pairs if class_even[a]!=class_odd[b]])
-
-    fails_i,fails_j = list(zip(*[ (a,b) for a,b in pairs
-        if class_even[a]!=class_odd[b]]))
-    asi_i,asi_j = list(zip(*[ (a,b) for a,b in pairs
-        if class_even[a]==class_odd[b]]))
-    fehl = distances[fails_i,fails_j]
-    asi = distances[asi_i,asi_j]
-    print ("mean,std of all distances",distances.mean(),distances.std())
-    print ("mean,std of failures",fehl.mean(), fehl.std())
-    print ("mean,std of correct asignments",asi.mean(), asi.std())
-    sns.distplot(asi, hist=False, rug=False, label="assigned correct")
-    sns.distplot(fehl, hist=False, rug=True, label="assigned false")
-    sns.distplot(distances.ravel(), hist=False, rug=False, label="all distances")
-    plt.legend(loc='upper right')
-
-def test_distance_stats():
-    """the drawing fails but that is ok"""
-    import numpy as np
-    even = np.array([0]*5+[1]*3)
-    odd = np.array([0]*4+[1]*3)
-    row_ind = [1,7,2,3]
-    col_ind = [2,6,5,4]
-    dist = np.zeros((10,10))
-    distance_stats(row_ind, col_ind,even, odd, dist, printfails=True)
 
 

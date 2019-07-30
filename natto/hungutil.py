@@ -31,7 +31,7 @@ class spacemap():
     # we need a matrix in with groups of clusters are the indices, -> map to integers
     def __init__(self, items):
         self.itemlist = items
-        self.integerlist = list(range(items))
+        self.integerlist = list(range(len(items)))
         self.len = len(items)
         self.getitem = { i:k for i,k in enumerate(items)}
         self.getint = { k:i for i,k in enumerate(items)}
@@ -74,7 +74,7 @@ def upwardmerge(re):
     def match(e,l): 
         # e ist tupple, l ist list of sets
         # if anything from e is in a set of l, we return the index of l or -1
-        for i,s in l:
+        for i,s in enumerate(l):
             if any([ clu in s for clu in e]):
                 return i
         return -1
@@ -101,7 +101,7 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
     # normalize: div the number of elements in 1 and 2
     # do matching
     sumvalues = lambda keys,data: sum( [data[key] for key in keys  ])
-    canvas = np.zeros( y1map.len, y2map.len ,dtype=float )
+    canvas = np.zeros( (y1map.len, y2map.len ),dtype=float )
     for clusters_a in y1map.itemlist:
         for clusters_b in y2map.itemlist:
             numoverlap =   sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
@@ -121,9 +121,9 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
     if debug: # draw heatmap # for a good version of this check out notebook 10.1
         
         if debug:
-            debug_canvas = np.zeros( y1map.len, y2map.len ),dtype=float )
-            for clusters_a in y1map.items:
-                for clusters_b in y2map.items:
+            debug_canvas = np.zeros( (y1map.len, y2map.len ),dtype=float )
+            for clusters_a in y1map.itemlist:
+                for clusters_b in y2map.itemlist:
                     debug_canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
                         -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ]) 
         

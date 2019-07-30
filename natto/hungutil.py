@@ -94,7 +94,9 @@ def upwardmerge(re):
             add(e2,l2[z])
         l1.append(set(e1))
         l2.append(set(e2))
-    return list(zip(l1,l2))
+        
+    
+    return list(zip(map(tuple,l1),map(tuple,l2)))
 
 def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,clustersizes2,debug):
     # fill the cost matrix for the N:N set matches 

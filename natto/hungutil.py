@@ -24,16 +24,9 @@ def hungarian(X1,X2):
 
 
 
-
-
-
-
 ########################
 # finding map between clusters 
 #####################
-
-
-
 class spacemap():
     # we need a matrix in with groups of clusters are the indices, -> map to integers
     def __init__(self, items):
@@ -76,7 +69,33 @@ def antidiversity(a,b,costs):
     s2 = stuff[cut:]
     return ( cut-1 - sum(s1) + sum(s2) )/float(len(stuff)-1)
 
-  
+
+def upwardmerge(re):
+    def match(e,l): 
+        # e ist tupple, l ist list of sets
+        # if anything from e is in a set of l, we return the index of l or -1
+        for i,s in l:
+            if any([ clu in s for clu in e]):
+                return i
+        return -1
+    
+    def add(tu,sett):
+        for e in tu:
+            sett.add(e)
+        
+    l1,l2 = [],[]
+    for e1,e2 in re: 
+        z=match(e1,l1)
+        if z > -1: 
+            add(e1,l1[z])
+    
+        z=match(e2,l2)
+        if z > -1: 
+            add(e2,l2[z])
+        l1.append(set(e1))
+        l2.append(set(e2))
+    return list(zip(l1,l2))
+
 def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,clustersizes2,debug):
     # fill the cost matrix for the N:N set matches 
     # normalize: div the number of elements in 1 and 2

@@ -184,3 +184,37 @@ def test_distance_stats():
     dist = np.zeros((10,10))
     distance_stats(row_ind, col_ind,even, odd, dist, printfails=True)
 
+    
+    
+# old merging algo... not sufficient because multiple rounds should be required
+def upwardmerge(re):
+    def match(e,l): 
+        # e ist tupple, l ist list of sets
+        # if anything from e is in a set of l, we return the index of l or -1
+        for i,s in enumerate(l):
+            if any([ clu in s for clu in e]):
+                return i
+        return -1
+    
+    def add(tu,sett):
+        for e in tu:
+            sett.add(e)
+        
+    l1,l2 = [],[]
+    
+    for e1,e2 in re: 
+        merged=False
+        z=match(e1,l1)
+        if z > -1: 
+            add(e1,l1[z])
+            merged=True
+        z=match(e2,l2)
+        if z > -1: 
+            add(e2,l2[z])
+            merged=True
+        
+        if not merged:
+            l1.append(set(e1))
+            l2.append(set(e2))
+    
+    return list(zip(map(tuple,l1),map(tuple,l2)))

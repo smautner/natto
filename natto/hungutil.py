@@ -4,7 +4,6 @@ import pprint
 import networkx as nx
 from itertools import combinations, permutations
 from collections import Counter
-from scipy.optimize import linear_sum_assignment
 from sklearn.metrics.pairwise import euclidean_distances as ed
 import seaborn as sns
 from eden import display as eden
@@ -14,12 +13,17 @@ from pandas import DataFrame
 from collections import  defaultdict
 import random
 
+from scipy.optimize import linear_sum_assignment
+from lapsolver import solve_dense
 
     
-def hungarian(X1,X2):
+def hungarian(X1,X2, solver='scipy'):
     # get the matches:
     distances = ed(X1,X2)         
-    row_ind, col_ind = linear_sum_assignment(distances)
+    if solver== 'scipy':
+        row_ind, col_ind = linear_sum_assignment(distances)
+    else:
+        row_ind,col_ind = solve_dense(distances)
     return row_ind, col_ind
 
 
@@ -70,35 +74,45 @@ def antidiversity(a,b,costs):
     return ( cut-1 - sum(s1) + sum(s2) )/float(len(stuff)-1)
 
 
-def upwardmerge(re):
-    def match(e,l): 
-        # e ist tupple, l ist list of sets
-        # if anything from e is in a set of l, we return the index of l or -1
-        for i,s in enumerate(l):
-            if any([ clu in s for clu in e]):
-                return i
-        return -1
-    
-    def add(tu,sett):
-        for e in tu:
-            sett.add(e)
-        
-    l1,l2 = [],[]
-    for e1,e2 in re: 
-        z=match(e1,l1)
-        if z > -1: 
-            add(e1,l1[z])
-    
-        z=match(e2,l2)
-        if z > -1: 
-            add(e2,l2[z])
-        l1.append(set(e1))
-        l2.append(set(e2))
-        
-    
-    return list(zip(map(tuple,l1),map(tuple,l2)))
 
-def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,clustersizes2,debug):
+
+def upwardmerge(re):
+    # convert to sets
+    re = [ (set(a),set(b)) for a,b in re]
+   
+
+    def check(se,di):
+        # check if element of set is already in the dict
+        for e in se:
+            if e in di:
+                return di[e]
+        return -1
+    # loop to merge
+    finished = False
+    while not finished:
+        d1 = {}
+        d2 = {}
+        for i  in range(re):
+            s1,s2 = re[i]
+            
+            j = max(check(s1,d1),check(s2,d2))
+            if j > -1:
+                for e in s1: re[j][0].add(e)
+                for e in s2: re[j][1].add(e)
+                break
+                
+            # put in dict of observed items 
+            d1.update({e:i for e in s1})
+            d2.update({e:i for e in s2})
+        else:
+            finished =True
+            
+    return [ (tuple(a),tuple(b)) for a,b in re ]
+            
+
+
+
+def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,clustersizes2,debug, method='scipy'):
     # fill the cost matrix for the N:N set matches 
     # normalize: div the number of elements in 1 and 2
     # do matching
@@ -109,7 +123,7 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
             numoverlap =   sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
             sizeab = float( (sumvalues(clusters_a,clustersizes1) + sumvalues(clusters_b,clustersizes2) ))            
             canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = -2*numoverlap / sizeab
-    row_ind, col_ind = linear_sum_assignment(canvas)
+    row_ind, col_ind = linear_sum_assignment(canvas) if method=='scipy' else  solve_dense(canvas)
 
     
     # clustersets -> translate from the indices of the matrix back to cluster_ids 
@@ -129,23 +143,17 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
                     debug_canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = \
                         -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ]) 
         
-        df = DataFrame(canvas)
-        #plt.subplots(figsize=(10,10))
-        #sns.heatmap(df,annot=False,yticklabels=decorate(y1map.getitem),xticklabels=decorate(y2map.getitem), square=True)
-        #plt.show()
-        #pprint.pprint(list (zip( clustersets1, clustersets2, costs, subcosts  ) ))
+        # HEATMAP normalized 
         df = DataFrame(canvas[:len(clustersizes1),:len(clustersizes2)])
-        #df=df.apply(lambda x: x/np.abs(np.min(x)))
         sns.heatmap(df,annot=True,yticklabels=clustersizes1.keys(),xticklabels=clustersizes2.keys(), square=True)
         plt.show()
+        
+        # HEATMAP total 
         df = DataFrame(debug_canvas[:len(clustersizes1),:len(clustersizes2)])
-        #df=df.apply(lambda x: x/np.abs(x.min()))
         sns.heatmap(df,annot=True,yticklabels=clustersizes1.items(),xticklabels=clustersizes2.items(), square=True)
         plt.show()
-        pprint.pprint( [ (y1,y2,cost,subcost
-                          #antidiv2_hung(y1,y2,cost_by_clusterindex),
-                          #antidiv3_hung(y1,y2,pairs)
-                         ) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) ])
+        
+        # costs before diversity meassure
         print ("#"*80)
         pprint.pprint( [ (y1,y2,cost,
                           antidiversity(y1,y2,cost_by_clusterindex)
@@ -162,7 +170,7 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
     return upwardmerge(result)
 
 
-def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False):
+def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False, method='scipy'):
     '''clustermatching allowing N:N matching'''
 
     
@@ -189,7 +197,7 @@ def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False):
     return find_multi_clustermap_hung_optimize(pairs,  y1map,
                                                        y2map,
                                                        clustersizes1,
-                                                       clustersizes2,debug)
+                                                       clustersizes2,debug,method='lapsolver')
 
 
     '''

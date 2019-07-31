@@ -77,34 +77,41 @@ def antidiversity(a,b,costs):
 
 
 def upwardmerge(re):
-    # convert to sets
+    # convert to sets so we can easyly add clusterids
     re = [ (set(a),set(b)) for a,b in re]
    
 
-    def check(se,di):
+    def set_in_dict(se,di):
         # check if element of set is already in the dict
         for e in se:
             if e in di:
                 return di[e]
         return -1
+    
     # loop to merge
     finished = False
     while not finished:
+        
+        # save which items we have seen 
         d1 = {}
         d2 = {}
-        for i  in range(re):
+        # loop current solution
+        for i  in range(len(re)):
             s1,s2 = re[i]
             
-            j = max(check(s1,d1),check(s2,d2))
+            # if we see something that was there before, merge and break
+            j = max(set_in_dict(s1,d1),set_in_dict(s2,d2))
             if j > -1:
                 for e in s1: re[j][0].add(e)
                 for e in s2: re[j][1].add(e)
+                del re[i]
                 break
                 
-            # put in dict of observed items 
+            #else: put in dict of observed items 
             d1.update({e:i for e in s1})
             d2.update({e:i for e in s2})
         else:
+            # if we dont break, no collisions were detected
             finished =True
             
     return [ (tuple(a),tuple(b)) for a,b in re ]
@@ -277,10 +284,10 @@ def  duplicates(lot):
                 seen[e]=True
     return True
 
-def multimapclusters(X,X2,Yh,Y2h, debug=False) -> 'new Yh,Y2h, {class-> quality}, global quality':
+def multimapclusters(X,X2,Yh,Y2h, debug=False,method = 'lapsolver') -> 'new Yh,Y2h, {class-> quality}, global quality':
     # return  new assignments; stats per class (to be put in legend); overall accuracy
     hungmatch = hungarian(X,X2)
-    clustermap = find_multi_clustermap_hung(Yh,Y2h, hungmatch,debug=debug) 
+    clustermap = find_multi_clustermap_hung(Yh,Y2h, hungmatch,debug=debug, method=method) 
     
     # lets make sure that all the class labels are corrected
     # first we need the classtupples of the clustermap to point to the same class

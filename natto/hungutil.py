@@ -45,7 +45,7 @@ class spacemap():
 def getcombos(alist): 
     '''returns all combinations, aka powerset'''
     # [1,2,3] => [1],[2],[3],[1,2],[2,3],[3,2],[1,2,3]
-    return [e  for i in range(1,10) for e in list(combinations(alist,i))]
+    return [e  for i in range(1,6) for e in list(combinations(alist,i))]
 
 
 def get_min_subcost( itemsa, itemsb, costs ):  
@@ -286,7 +286,7 @@ def  duplicates(lot):
 
 def multimapclusters(X,X2,Yh,Y2h, debug=False,method = 'lapsolver') -> 'new Yh,Y2h, {class-> quality}, global quality':
     # return  new assignments; stats per class (to be put in legend); overall accuracy
-    hungmatch = hungarian(X,X2)
+    hungmatch = hungarian(X,X2, solver=method)
     clustermap = find_multi_clustermap_hung(Yh,Y2h, hungmatch,debug=debug, method=method) 
     
     # lets make sure that all the class labels are corrected

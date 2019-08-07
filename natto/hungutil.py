@@ -127,9 +127,11 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
     canvas = np.zeros( (y1map.len, y2map.len ),dtype=float )
     for clusters_a in y1map.itemlist:
         for clusters_b in y2map.itemlist:
-            numoverlap =   sum([ pairs[c,d] for c in clusters_a for d in clusters_b ])  
+            numoverlap =   float(sum([ pairs[c,d] for c in clusters_a for d in clusters_b ]))
             sizeab = float( (sumvalues(clusters_a,clustersizes1) + sumvalues(clusters_b,clustersizes2) ))            
-            canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = -2*numoverlap / sizeab
+            v = -2*numoverlap / sizeab
+            canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = v
+            #canvas[y1map.getint[clusters_a],y2map.getint[clusters_b]] = v if v < -.15 else 0.0
     row_ind, col_ind = linear_sum_assignment(canvas) if method=='scipy' else  solve_dense(canvas)
 
     
@@ -161,20 +163,23 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
         plt.show()
         
         # costs before diversity meassure
+        '''
         print ("#"*80)
         pprint.pprint( [ (y1,y2,cost,
                           antidiversity(y1,y2,cost_by_clusterindex)
                           #antidiv2_hung(y1,y2,cost_by_clusterindex),
                           #antidiv3_hung(y1,y2,pairs)
                          ) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ])
-        
+        '''
     #return costs,subcosts, clustersets1,clustersets
     
     
     # filter by 1.low subcost, 2. stuff that looks like a diagonal matrix
     result = [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost and antidiversity(y1,y2,cost_by_clusterindex) > .3]
     
-    return upwardmerge(result)
+    result = upwardmerge(result)
+    if debug: pprint.pprint(result)
+    return result
 
 
 def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False, method='scipy'):
@@ -204,7 +209,7 @@ def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False, method='scipy'):
     return find_multi_clustermap_hung_optimize(pairs,  y1map,
                                                        y2map,
                                                        clustersizes1,
-                                                       clustersizes2,debug,method='lapsolver')
+                                                       clustersizes2,debug,method=method)
 
 
     '''
@@ -274,7 +279,7 @@ def mapclusters(X,X2,Yh,Y2h) -> 'new Yh and {class-> quality}':
 
     return Yh, {clustermap.get(int(a)):"%.2f" % b for a,b in class_acc[:-1]},class_acc[-1][1] 
 
-def  duplicates(lot):
+def duplicates(lot):
     seen = {}
     for tup in lot: 
         for e in tup:
@@ -299,6 +304,88 @@ def multimapclusters(X,X2,Yh,Y2h, debug=False,method = 'lapsolver') -> 'new Yh,Y
     y1names, y2names = list(zip(*clustermap))
     assert duplicates(y1names) , 'cluster assignments went wrong, call multimapclusters with debug'
     assert duplicates(y2names) , 'cluster assignments went wrong, call multimapclusters with debug ' 
+    y1names = {i:y1map.getint[a] for a in y1names for i in a }
+    y2names = {i:y2map.getint[a] for a in y2names for i in a }
+   
+    # now we only need to translate
+    Yh = b.lmap(lambda x:y1names.get(x,-2) , Yh) 
+    Y2h = b.lmap(lambda x:y2names.get(x,-2) , Y2h) 
+
+    clustermap = {y1map.getint[a]:y2map.getint[b] for a,b in clustermap }
+    class_acc = qualitymeassure( Yh ,Y2h , hungmatch,clustermap)
+
+    return Yh,Y2h, {clustermap.get(a):"%.2f" % b for a,b in class_acc[:-1]},class_acc[-1][1] 
+
+
+
+def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
+    row_ind, col_ind = hungmatch
+    pairs = zip(Y1[row_ind],Y2[col_ind])
+    pairs = Counter(pairs) # pair:occurance
+    
+    # normalize for cluster size
+    clustersizes  = Counter(Y1) # class:occurence 
+    clustersizes2 = Counter(Y2) # class:occurence 
+
+    y1map = spacemap(clustersizes.keys())
+    y2map = spacemap(clustersizes2.keys())
+
+    
+    if normalize:
+        normpairs = { k:float(-v)/float(clustersizes[k[0]]+clustersizes[k[1]]) for k,v in pairs.items()} # pair:relative_occur
+    else:
+        normpairs = { k:-v for k,v in pairs.items()} # pair:occur
+        
+    
+    
+    # MAKE ASSIGNMENT 
+    canvas = np.zeros( (len(clustersizes), len(clustersizes2)),dtype=float )
+    for (a,b),v in normpairs.items():
+        canvas[y1map.getint[a],y2map.getint[b]] = v
+    row_ind, col_ind = linear_sum_assignment(canvas)
+    
+    
+    
+    def maxline(a,b):
+        a=y1map.getint[a]
+        b=y2map.getint[b]
+        amax = np.min(canvas[:,b])-canvas[a,b]
+        bmax = np.min(canvas[a,:])-canvas[a,b]
+        return (amax,bmax)
+        
+    result =  [ ((a,),(b,),maxline(a,b)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+    
+    if debug: 
+        # there is a version that sorts the hits to the diagonal in util/bad... 
+        df = DataFrame(canvas[:len(clustersizes),:len(clustersizes2)])
+        s= lambda y,x: [ y.getitem[k] for k in x]
+        sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
+        plt.show()
+        pprint.pprint(result)
+        
+    return [ ((a,),(b,)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+        
+        
+
+
+
+def multimapclusters_single (X,X2,Yh,Y2h, debug=False,method = 'lapsolver', normalize=True) -> 'new Yh,Y2h, {class-> quality}, global quality':
+    
+    # Find match
+    hungmatch = hungarian(X,X2, solver=method)
+    clustermap = find_clustermap_one_to_one(Yh,Y2h, hungmatch, debug=debug, normalize=normalize) 
+    
+    # lets make sure that all the class labels are corrected
+    # first we need the classtupples of the clustermap to point to the same class
+    y1map = spacemap([a for a,b in clustermap])
+    y2map = spacemap([b for a,b in clustermap])
+    # seperating y1 and y2 
+    # then mapping the classes i to the right new class
+    y1names, y2names = list(zip(*clustermap))
+    assert duplicates(y1names) , 'cluster assignments went wrong, call multimapclusters with debug'
+    assert duplicates(y2names) , 'cluster assignments went wrong, call multimapclusters with debug ' 
+    
+    
     y1names = {i:y1map.getint[a] for a in y1names for i in a }
     y2names = {i:y2map.getint[a] for a in y2names for i in a }
    

@@ -30,7 +30,7 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
 
     adata = filter(adata,cells)
     if subsample:
-        sc.pp.subsample(adata, fraction=.25, n_obs=None, random_state=0, copy=False)
+        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
     return adata
 
 def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
@@ -42,18 +42,34 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
 
     adata = filter(adata,cells)
     if subsample:
-        sc.pp.subsample(adata, fraction=.25, n_obs=None, random_state=0, copy=False)
+        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
     return adata
 
 
-def loadP7E(subsample=None):
-    adata = sc.read_10x_mtx( '../data/p7e',  var_names='gene_symbols', cache=True)
+def load3k6k(subsample=False):
+    return load3k(subsample=subsample), load6k(subsample=subsample)
+
+
+
+
+
+
+
+
+
+def loadpbmc(path, subsample=None):
+    adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
     if subsample:
-        sc.pp.subsample(adata, fraction=.25, n_obs=None, random_state=0, copy=False)
+        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
     return adata
 
-def loadP7D(subsample=None):
-    adata = sc.read_10x_mtx( '../data/p7d',  var_names='gene_symbols', cache=True)
-    if subsample:
-        sc.pp.subsample(adata, fraction=.25, n_obs=None, random_state=0, copy=False)
-    return adata
+
+def loadp7de(subsample=False):
+    return loadpbmc('../data/p7d',subsample), loadpbmc('../data/p7e',subsample)
+
+
+
+def load4k8k(subsample=False):
+    return loadpbmc('../data/4k',subsample), loadpbmc('../data/8k',subsample)
+
+

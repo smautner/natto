@@ -46,16 +46,6 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
     return adata
 
 
-def load3k6k(subsample=False):
-    return load3k(subsample=subsample), load6k(subsample=subsample)
-
-
-
-
-
-
-
-
 
 def loadpbmc(path, subsample=None):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
@@ -63,13 +53,15 @@ def loadpbmc(path, subsample=None):
         sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
     return adata
 
+def load3k6k(subsample=False):
+    return load3k(subsample=subsample), load6k(subsample=subsample)
 
 def loadp7de(subsample=False):
     return loadpbmc('../data/p7d',subsample), loadpbmc('../data/p7e',subsample)
-
-
 
 def load4k8k(subsample=False):
     return loadpbmc('../data/4k',subsample), loadpbmc('../data/8k',subsample)
 
 
+def loadimmune(subsample=False):
+    return loadpbmc('../data/immune_stim/8',subsample), loadpbmc('../data/immune_stim/9',subsample)

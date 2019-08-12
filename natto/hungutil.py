@@ -332,7 +332,7 @@ def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch)
     
     # MAKE ASSIGNMENT 
-    row_ind, col_ind = linear_sum_assignment(canvas)
+    row_ind, col_ind = solve_dense(canvas)
         
     # assign leftovers to best hit
     row_ind, col_ind = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
@@ -401,12 +401,12 @@ def recluster(data,Y,problemcluster):
 # we do 1:1 and do some splitting until all is good 
 ###############
 
-def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True):
+def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15):
     row_ind, col_ind = hungmatch
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch)
     
     # MAKE ASSIGNMENT 
-    row_ind, col_ind = linear_sum_assignment(canvas)
+    row_ind, col_ind = solve_dense(canvas)
         
     # assign leftovers to best hit
     row_ind, col_ind = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
@@ -419,19 +419,24 @@ def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=Fa
         pprint.pprint(result)
         
 
-    split = [ (c,e,1) for a,b,(c,d,e,f) in result if  c < -.1]+[ (d,f,2) for a,b,(c,d,e,f) in result if  d < -.1]
+    split = [ (c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
 
     if not split: # no splits required
         translator =  {b:a for (a,),(b,),c in result} 
-        return Y1, [translator[e] for e in Y2], {a:b for a,b,c in result} 
+        return Y1, [translator[e] for e in Y2] #{a:b for a,b,c in result} 
     
     split.sort()
     _,cluster,where = split[0]
     if where ==1: 
         Y1 = recluster(data1,Y1,cluster)
-    elif where ==1:
+    elif where ==2:
         Y2 = recluster(data2,Y2,cluster)
     
     
-    return find_clustermap_one_to_one_and_split(Y1,Y2,hungmatch,debug,normalize)
+    return find_clustermap_one_to_one_and_split(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize)
+    
+
+def oneonesplit(mata,matb,claa,clab, debug=True,normalize=True):
+    hungmatch = hungarian(mata,matb)
+    return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize)
     

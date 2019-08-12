@@ -5,17 +5,16 @@ import networkx as nx
 from itertools import combinations, permutations
 from collections import Counter
 from sklearn.metrics.pairwise import euclidean_distances as ed
-import seaborn as sns
-from eden import display as eden
+#from eden import display as eden
 from matplotlib import pyplot as plt
 import numpy as np
-from pandas import DataFrame
 from collections import  defaultdict
 import random
 
 from scipy.optimize import linear_sum_assignment
 from lapsolver import solve_dense
 
+from natto.util import draw
     
 def hungarian(X1,X2, solver='scipy'):
     # get the matches:
@@ -153,14 +152,9 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
                         -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ]) 
         
         # HEATMAP normalized 
-        df = DataFrame(canvas[:len(clustersizes1),:len(clustersizes2)])
-        sns.heatmap(df,annot=True,yticklabels=clustersizes1.keys(),xticklabels=clustersizes2.keys(), square=True)
-        plt.show()
-        
+        draw.heatmap(canvas,y1map,y2map)
         # HEATMAP total 
-        df = DataFrame(debug_canvas[:len(clustersizes1),:len(clustersizes2)])
-        sns.heatmap(df,annot=True,yticklabels=clustersizes1.items(),xticklabels=clustersizes2.items(), square=True)
-        plt.show()
+        draw.heatmap(debug_canvas,y1map,y2map)
         
         # costs before diversity meassure
         '''
@@ -184,8 +178,6 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
 
 def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False, method='scipy'):
     '''clustermatching allowing N:N matching'''
-
-    
 
     # absolute matches in each pair of clusters (one from 1, one from 2)
     row_ind, col_ind = hungmatch
@@ -212,27 +204,6 @@ def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False, method='scipy'):
                                                        clustersizes2,debug,method=method)
 
 
-    '''
-    costs,subcosts,clustersets1,clustersets2 = find_multi_clustermap_hung_optimize(pairs,
-                                                       y1map,
-                                                       y2map,
-                                                       clustersizes1,
-                                                       clustersizes2,debug)
-    while False: # looping was a bad idea, actually it worked a little... but i have a better 1 for now
-        matches = [ (a,b) for (a,b,c,d) in zip( clustersets1, clustersets2, costs, subcosts  ) if c<=d ]
-        if collisionfree(matches): # func was moved to -> bad.py
-            break
-        else:
-            pairs = cheapen_pairs(pairs,matches, .5)# -> was movced to bad.py
-            cost,subcost,clustersets1,clustersets2 = find_multi_clustermap_hung_optimize(pairs,
-                                                       y1map,
-                                                       y2map,
-                                                       clustersizes1,
-                                                       clustersizes2,debug)
-
-    #return [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if subcost >= cost ]
-    return [ (y1,y2) for y1,y2,cost,subcost in zip( clustersets1, clustersets2, costs, subcosts  ) if cost <= subcost ]
-    '''
     
 def decorate(items):
     l = range(len(items))
@@ -265,19 +236,6 @@ def qualitymeassure(Y1,Y2,hungmatch,matches):
     classes = Counter(Y1) # class: occurance
     return [ (a, float(sumcorrect[a])/count)   for a,count in classes.items()] + [('all', float(sum(sumcorrect.values())) / len(Y1) ) ]
 
-
-def mapclusters(X,X2,Yh,Y2h) -> 'new Yh and {class-> quality}':
-
-    # return  new assignments; stats per class (to be put in legend); overall accuracy
-    hungmatch = hungarian(X,X2)
-    clustermap = find_clustermap_hung(Yh,Y2h, hungmatch)
-    
-    class_acc = qualitymeassure(Yh,Y2h,hungmatch,clustermap)
-        
-    # renaming according to map
-    Yh = [clustermap.get(a,10) for a in Yh]
-
-    return Yh, {clustermap.get(int(a)):"%.2f" % b for a,b in class_acc[:-1]},class_acc[-1][1] 
 
 def duplicates(lot):
     seen = {}
@@ -318,7 +276,24 @@ def multimapclusters(X,X2,Yh,Y2h, debug=False,method = 'lapsolver') -> 'new Yh,Y
 
 
 
-def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
+def leftoverassign(canvas, y1map,y2map, row_ind, col_ind):
+    # assign leftover classes to the best fit 
+    diff_a = list( set(y1map.integerlist) - set(row_ind))
+    diff_b = list( set(y2map.integerlist) - set (col_ind))
+    
+    while len(diff_a) > 0:
+        element = diff_a.pop()
+        row_ind = np.concatenate((row_ind,[element]))
+        col_ind= np.concatenate((col_ind,[np.argmin(canvas[element,:])]))
+   
+    while len(diff_b) > 0:
+        element = diff_b.pop()        
+        col_ind = np.concatenate((col_ind,[element]))
+        row_ind= np.concatenate((row_ind,[np.argmin(canvas[:,element])]))
+    return row_ind, col_ind
+   
+
+def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True):
     row_ind, col_ind = hungmatch
     pairs = zip(Y1[row_ind],Y2[col_ind])
     pairs = Counter(pairs) # pair:occurance
@@ -330,42 +305,48 @@ def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
     y1map = spacemap(clustersizes.keys())
     y2map = spacemap(clustersizes2.keys())
 
-    
     if normalize:
         normpairs = { k:float(-v)/float(clustersizes[k[0]]+clustersizes[k[1]]) for k,v in pairs.items()} # pair:relative_occur
     else:
         normpairs = { k:-v for k,v in pairs.items()} # pair:occur
-        
     
-    
-    # MAKE ASSIGNMENT 
-    canvas = np.zeros( (len(clustersizes), len(clustersizes2)),dtype=float )
+    canvas = np.zeros( (y1map.len, y2map.len),dtype=float )
     for (a,b),v in normpairs.items():
         canvas[y1map.getint[a],y2map.getint[b]] = v
-    row_ind, col_ind = linear_sum_assignment(canvas)
     
-    
-    
-    def maxline(a,b):
-        a=y1map.getint[a]
-        b=y2map.getint[b]
-        amax = np.min(canvas[:,b])-canvas[a,b]
-        bmax = np.min(canvas[a,:])-canvas[a,b]
-        return (amax,bmax)
+    return y1map, y2map, canvas
+
+# annotate LOSSes for assigning weirdo clusters ,,,, for ROw and COlumn
+def rocoloss(a,b,y1map,y2map,canvas):
+    a=y1map.getint[a]
+    b=y2map.getint[b]
+    amax = np.min(canvas[:,b])-canvas[a,b]
+    offender_a = y1map.getitem[np.argmin(canvas[:,b])]
+    bmax = np.min(canvas[a,:])-canvas[a,b]
+    offender_b = y2map.getitem[np.argmin(canvas[a,:])]
+    return (amax,bmax,offender_a,offender_b)
         
-    result =  [ ((a,),(b,),maxline(a,b)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
+    
+    row_ind, col_ind = hungmatch
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch)
+    
+    # MAKE ASSIGNMENT 
+    row_ind, col_ind = linear_sum_assignment(canvas)
+        
+    # assign leftovers to best hit
+    row_ind, col_ind = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
+
+    result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
     
     if debug: 
-        # there is a version that sorts the hits to the diagonal in util/bad... 
-        df = DataFrame(canvas[:len(clustersizes),:len(clustersizes2)])
-        s= lambda y,x: [ y.getitem[k] for k in x]
-        sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
-        plt.show()
+        draw.heatmap(canvas,y1map,y2map)
+        print(" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss)")
         pprint.pprint(result)
         
-    return [ ((a,),(b,)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
-        
-        
+    return upwardmerge([ (a,b) for a,b,c in result]) #[ ((a,),(b,)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+
+
 
 
 
@@ -399,3 +380,58 @@ def multimapclusters_single (X,X2,Yh,Y2h, debug=False,method = 'lapsolver', norm
     return Yh,Y2h, {clustermap.get(a):"%.2f" % b for a,b in class_acc[:-1]},class_acc[-1][1] 
 
 
+
+
+
+
+
+
+
+
+from natto.cluster.simple import predictgmm
+def recluster(data,Y,problemcluster):
+    data2 = data[Y==problemcluster]
+    yh = predictgmm(2,data2)
+    Y[Y==problemcluster] = yh+np.max(Y)+1
+    return Y
+    
+
+
+##############
+# we do 1:1 and do some splitting until all is good 
+###############
+
+def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True):
+    row_ind, col_ind = hungmatch
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch)
+    
+    # MAKE ASSIGNMENT 
+    row_ind, col_ind = linear_sum_assignment(canvas)
+        
+    # assign leftovers to best hit
+    row_ind, col_ind = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
+
+    result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+    
+    if debug: 
+        draw.heatmap(canvas,y1map,y2map)
+        print(" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss)")
+        pprint.pprint(result)
+        
+
+    split = [ (c,e,1) for a,b,(c,d,e,f) in result if  c < -.1]+[ (d,f,2) for a,b,(c,d,e,f) in result if  d < -.1]
+
+    if not split: # no splits required
+        translator =  {b:a for (a,),(b,),c in result} 
+        return Y1, [translator[e] for e in Y2], {a:b for a,b,c in result} 
+    
+    split.sort()
+    _,cluster,where = split[0]
+    if where ==1: 
+        Y1 = recluster(data1,Y1,cluster)
+    elif where ==1:
+        Y2 = recluster(data2,Y2,cluster)
+    
+    
+    return find_clustermap_one_to_one_and_split(Y1,Y2,hungmatch,debug,normalize)
+    

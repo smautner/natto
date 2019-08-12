@@ -3,6 +3,9 @@ import random
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+from pandas import DataFrame
+
+import seaborn as sns
 
 from matplotlib_venn import *
 def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, black = None):
@@ -47,3 +50,10 @@ def venn(one,two: 'boolean array', labels :"string tupple"):
     comb = sum(selover)
     v = venn2(subsets = {'10': sum(one)-comb, '01': sum(two)-comb, '11': comb}, set_labels = labels)
     plt.show()
+
+def heatmap(canvas,y1map,y2map):
+        # there is a version that sorts the hits to the diagonal in util/bad... 
+        df = DataFrame(canvas[:y1map.len,:y2map.len])
+        s= lambda y,x: [ y.getitem[k] for k in x]
+        sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
+        plt.show()

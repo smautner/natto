@@ -19,6 +19,19 @@ def _dist_to_mean(a,b,costs ): # unused
 
 
 
+def mapclusters(X,X2,Yh,Y2h) -> 'new Yh and {class-> quality}':
+
+    # return  new assignments; stats per class (to be put in legend); overall accuracy
+    hungmatch = hungarian(X,X2)
+    clustermap = find_clustermap_hung(Yh,Y2h, hungmatch)
+    
+    class_acc = qualitymeassure(Yh,Y2h,hungmatch,clustermap)
+        
+    # renaming according to map
+    Yh = [clustermap.get(a,10) for a in Yh]
+
+    return Yh, {clustermap.get(int(a)):"%.2f" % b for a,b in class_acc[:-1]},class_acc[-1][1] 
+
 
 
 def get_min_subcost_too_strict(itemsa, itemsb, costs):  # this is too strict on multi hits

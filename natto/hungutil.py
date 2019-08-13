@@ -19,7 +19,7 @@ from natto.util import draw
 def hungarian(X1,X2, solver='scipy'):
     # get the matches:
     distances = ed(X1,X2)         
-    if solver== 'scipy':
+    if solver != 'scipy':
         row_ind, col_ind = linear_sum_assignment(distances)
     else:
         row_ind,col_ind = solve_dense(distances)
@@ -280,17 +280,22 @@ def leftoverassign(canvas, y1map,y2map, row_ind, col_ind):
     # assign leftover classes to the best fit 
     diff_a = list( set(y1map.integerlist) - set(row_ind))
     diff_b = list( set(y2map.integerlist) - set (col_ind))
-    
+    log = []
     while len(diff_a) > 0:
         element = diff_a.pop()
         row_ind = np.concatenate((row_ind,[element]))
-        col_ind= np.concatenate((col_ind,[np.argmin(canvas[element,:])]))
+        best_hit = np.argmin(canvas[element,:])
+        col_ind= np.concatenate((col_ind,[best_hit]))
+        log.append(('ax0',best_hit))
    
     while len(diff_b) > 0:
         element = diff_b.pop()        
         col_ind = np.concatenate((col_ind,[element]))
-        row_ind= np.concatenate((row_ind,[np.argmin(canvas[:,element])]))
-    return row_ind, col_ind
+        best_hit=np.argmin(canvas[:,element])
+        row_ind= np.concatenate((row_ind,[best_hit]))
+        log.append(('ax1',best_hit))
+        
+    return row_ind, col_ind, log
    
 
 def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True):
@@ -320,6 +325,7 @@ def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True):
 def rocoloss(a,b,y1map,y2map,canvas):
     a=y1map.getint[a]
     b=y2map.getint[b]
+    v = canvas[a,b]
     amax = np.min(canvas[:,b])-canvas[a,b]
     offender_a = y1map.getitem[np.argmin(canvas[:,b])]
     bmax = np.min(canvas[a,:])-canvas[a,b]
@@ -329,13 +335,13 @@ def rocoloss(a,b,y1map,y2map,canvas):
 def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
     
     row_ind, col_ind = hungmatch
-    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch)
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
     
     # MAKE ASSIGNMENT 
     row_ind, col_ind = solve_dense(canvas)
         
     # assign leftovers to best hit
-    row_ind, col_ind = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
+    row_ind, col_ind, _ = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
 
     result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
     
@@ -401,15 +407,49 @@ def recluster(data,Y,problemcluster):
 # we do 1:1 and do some splitting until all is good 
 ###############
 
+def rename(tuplemap,Y1,Y2):
+        '''
+        translator =  {b:a for (a,),(b,),c in tuplemap} 
+        translator2 =  {a:b for (a,),(b,),c in tuplemap} 
+        return [translator2[e] for e in Y1], [translator[e] for e in Y2] #{a:b for a,b,c in result
+        '''
+        da={}
+        db={}
+        for i,(aa,bb,_) in enumerate(tuplemap):
+            
+            seen=set()
+            for a in aa:
+                if a in da:
+                    seen.add(da[a])
+            for b in bb: 
+                if b in db:
+                    seen.add(db[b])
+            
+            if len(seen)==1: target= seen.pop()
+            elif len(seen)==0: target = i
+            else: print("ERROR in rename hungutil")
+                
+            for a in aa: 
+                if a not in da:
+                    da[a]=target
+            for b in bb: 
+                if b not in db: 
+                    db[b]=target
+        
+        return np.array([da.get(e,e) for e in Y1]), np.array( [db.get(e,e) for e in Y2] )
+            
+        
+    
+    
 def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15):
     row_ind, col_ind = hungmatch
-    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch)
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
     
     # MAKE ASSIGNMENT 
     row_ind, col_ind = solve_dense(canvas)
         
     # assign leftovers to best hit
-    row_ind, col_ind = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
+    row_ind, col_ind, log= leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
 
     result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
     
@@ -418,25 +458,40 @@ def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=Fa
         print(" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss)")
         pprint.pprint(result)
         
-
-    split = [ (c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
-
+    
+    # this seems to work but we want to try different split stuff
+    #split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
+    
+    split = [] 
+    for a,b,(c,d,e,f) in result:
+        if d < -maxerror and c < -maxerror: # total disaster! , lets make some room to get rid of the bigger problem
+            if d<c: 
+                split.append((c+d,d,f,2))
+            else:
+                (c+d,c,e,1) 
+        elif d < -maxerror:   # smaller collision, probably 2 clusters want to be matched together
+            split.append((d+c,d,e,1))
+        elif c < -maxerror:
+            split.append( (d+c,c,f,2))
+            
     if not split: # no splits required
-        translator =  {b:a for (a,),(b,),c in result} 
-        return Y1, [translator[e] for e in Y2] #{a:b for a,b,c in result} 
+        return rename(result,Y1,Y2)
     
     split.sort()
-    _,cluster,where = split[0]
+    totalcost,cost_in_split_direction,cluster,where = split[0]
     if where ==1: 
         Y1 = recluster(data1,Y1,cluster)
     elif where ==2:
         Y2 = recluster(data2,Y2,cluster)
     
     
+    if debug: draw.cmp(Y1,Y2,data1,data2)
+    Y1,Y2 = rename(result,Y1,Y2) # this should take care of eccessice splits... 
     return find_clustermap_one_to_one_and_split(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize)
     
 
-def oneonesplit(mata,matb,claa,clab, debug=True,normalize=True):
+def oneonesplit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13):
     hungmatch = hungarian(mata,matb)
-    return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize)
+    return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
+
     

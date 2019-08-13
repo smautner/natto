@@ -4,11 +4,12 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame
-
+from umap import UMAP
 import seaborn as sns
 
 from matplotlib_venn import *
-def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, black = None):
+
+def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, black = None, show=True):
     assert reducer != None  , "give me a reducer"
     plt.title(title)
     
@@ -38,12 +39,23 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
         plt.scatter(embed[Y==cla, 0], embed[Y==cla, 1],
                     color=col[cla],
                     s=size,
-                    label= "%s %s" % (str(cla),acc.get(cla)))
+                    label= "%s %s" % (str(cla),acc.get(cla,'')))
     plt.axis('off')
     plt.legend(markerscale=4)
-    plt.show()
+    if show: plt.show()
     return reducer
 
+
+def cmp(Y1,Y2,X1,X2,title=('1','2'),red=None):    
+    if not red:
+        red = UMAP()
+        red.fit(np.vstack((X1,X2)))
+    plt.figure(figsize=(10,4))    
+    ax=plt.subplot(121)
+    umap(X1,Y1,red,show=False,title=title[0])
+    ax=plt.subplot(122)
+    umap(X2,Y2,red,show=False,title=title[1])
+    plt.show()
 
 def venn(one,two: 'boolean array', labels :"string tupple"):
     selover = [a and b for a,b in zip (one,two)]

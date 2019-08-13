@@ -1,15 +1,15 @@
-import basics as b
+import basics as ba
 import math
 import pprint
-import networkx as nx
+#import networkx as nx
 from itertools import combinations, permutations
 from collections import Counter
 from sklearn.metrics.pairwise import euclidean_distances as ed
 #from eden import display as eden
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import numpy as np
 from collections import  defaultdict
-import random
+#import random
 
 from scipy.optimize import linear_sum_assignment
 from lapsolver import solve_dense
@@ -266,8 +266,8 @@ def multimapclusters(X,X2,Yh,Y2h, debug=False,method = 'lapsolver') -> 'new Yh,Y
     y2names = {i:y2map.getint[a] for a in y2names for i in a }
    
     # now we only need to translate
-    Yh = b.lmap(lambda x:y1names.get(x,-2) , Yh) 
-    Y2h = b.lmap(lambda x:y2names.get(x,-2) , Y2h) 
+    Yh = ba.lmap(lambda x:y1names.get(x,-2) , Yh) 
+    Y2h = ba.lmap(lambda x:y2names.get(x,-2) , Y2h) 
 
     clustermap = {y1map.getint[a]:y2map.getint[b] for a,b in clustermap }
     class_acc = qualitymeassure( Yh ,Y2h , hungmatch,clustermap)
@@ -298,7 +298,7 @@ def leftoverassign(canvas, y1map,y2map, row_ind, col_ind):
     return row_ind, col_ind, log
    
 
-def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True):
+def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True,maxerr=0):
     row_ind, col_ind = hungmatch
     pairs = zip(Y1[row_ind],Y2[col_ind])
     pairs = Counter(pairs) # pair:occurance
@@ -317,7 +317,8 @@ def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True):
     
     canvas = np.zeros( (y1map.len, y2map.len),dtype=float )
     for (a,b),v in normpairs.items():
-        canvas[y1map.getint[a],y2map.getint[b]] = v
+        if v < -maxerr:
+            canvas[y1map.getint[a],y2map.getint[b]] = v
     
     return y1map, y2map, canvas
 
@@ -342,7 +343,10 @@ def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
         
     # assign leftovers to best hit
     row_ind, col_ind, _ = leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
-
+    
+    
+    
+    
     result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
     
     if debug: 
@@ -377,8 +381,8 @@ def multimapclusters_single (X,X2,Yh,Y2h, debug=False,method = 'lapsolver', norm
     y2names = {i:y2map.getint[a] for a in y2names for i in a }
    
     # now we only need to translate
-    Yh = b.lmap(lambda x:y1names.get(x,-2) , Yh) 
-    Y2h = b.lmap(lambda x:y2names.get(x,-2) , Y2h) 
+    Yh = ba.lmap(lambda x:y1names.get(x,-2) , Yh) 
+    Y2h = ba.lmap(lambda x:y2names.get(x,-2) , Y2h) 
 
     clustermap = {y1map.getint[a]:y2map.getint[b] for a,b in clustermap }
     class_acc = qualitymeassure( Yh ,Y2h , hungmatch,clustermap)
@@ -442,43 +446,41 @@ def rename(tuplemap,Y1,Y2):
     
     
 def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15):
+    
+    
+    # MAP, ASSIGN THE LEFTOVERS
     row_ind, col_ind = hungmatch
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
-    
-    # MAKE ASSIGNMENT 
     row_ind, col_ind = solve_dense(canvas)
-        
-    # assign leftovers to best hit
     row_ind, col_ind, log= leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
-
+    
+    
+    # EXPERIMANTAL INBETWEEN MERGE 
+    tupmap =  [ ((a,),(b,),666) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+    Y1,Y2 = rename(tupmap,Y1,Y2)
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
+    row_ind, col_ind = solve_dense(canvas)
+    
+    
+    
+    # Mappings in cluster-name-space with scores
     result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+    split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
+    
     
     if debug: 
         draw.heatmap(canvas,y1map,y2map)
         print(" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss)")
         pprint.pprint(result)
         
-    
-    # this seems to work but we want to try different split stuff
-    #split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
-    
-    split = [] 
-    for a,b,(c,d,e,f) in result:
-        if d < -maxerror and c < -maxerror: # total disaster! , lets make some room to get rid of the bigger problem
-            if d<c: 
-                split.append((c+d,d,f,2))
-            else:
-                (c+d,c,e,1) 
-        elif d < -maxerror:   # smaller collision, probably 2 clusters want to be matched together
-            split.append((d+c,d,e,1))
-        elif c < -maxerror:
-            split.append( (d+c,c,f,2))
-            
-    if not split: # no splits required
+    # ARE WE FINISHED?
+    if not split: 
         return rename(result,Y1,Y2)
     
+    # SPLIT PROBLEMATIC CLUSTERS
     split.sort()
     totalcost,cost_in_split_direction,cluster,where = split[0]
+    if debug: print (f'splitting cluster {cluster} of set {where}')
     if where ==1: 
         Y1 = recluster(data1,Y1,cluster)
     elif where ==2:
@@ -490,8 +492,57 @@ def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=Fa
     return find_clustermap_one_to_one_and_split(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize)
     
 
+    
+def split_and_merge(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15):
+    # like 1on1 with split but now we have a better plan:
+    # split first, then merge
+    
+    
+    # MAP, including leftovers
+    row_ind, col_ind = hungmatch
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
+    row_ind, col_ind = solve_dense(canvas)
+    row_ind, col_ind, log= leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
+    
+    
+    # Mappings in cluster-name-space with scores
+    result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+    split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
+    
+    if debug: 
+        draw.heatmap(canvas,y1map,y2map)
+        print(f" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss) {maxerror}")
+        pprint.pprint(result)
+        
+        
+    # ARE WE FINISHED?
+    if not split: 
+        return rename(result,Y1,Y2)
+    
+    
+    # SPLIT PROBLEMATIC CLUSTER
+    split.sort()
+    totalcost,cost_in_split_direction,cluster,where = split[0]
+    if debug: print (f'splitting cluster {cluster} of set {where}')
+    if where ==1: 
+        Y1 = recluster(data1,Y1,cluster)
+    elif where ==2:
+        Y2 = recluster(data2,Y2,cluster)
+    
+    
+    # NOW WE MERGE 
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
+    row_ind, col_ind = solve_dense(canvas)
+    row_ind, col_ind, log= leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
+    tupmap =  [ ((a,),(b,),666) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
+    Y1,Y2 = rename(tupmap,Y1,Y2)
+    if debug: draw.cmp(Y1,Y2,data1,data2)
+    return split_and_merge(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror)
+    
+
 def oneonesplit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13):
     hungmatch = hungarian(mata,matb)
-    return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
+    #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
+    return split_and_merge(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
 
     

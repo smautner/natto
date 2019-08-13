@@ -50,7 +50,7 @@ def cmp(Y1,Y2,X1,X2,title=('1','2'),red=None):
     if not red:
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
-    plt.figure(figsize=(10,4))    
+    plt.figure(figsize=(15,6))    
     ax=plt.subplot(121)
     umap(X1,Y1,red,show=False,title=title[0])
     ax=plt.subplot(122)

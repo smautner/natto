@@ -63,9 +63,23 @@ def venn(one,two: 'boolean array', labels :"string tupple"):
     v = venn2(subsets = {'10': sum(one)-comb, '01': sum(two)-comb, '11': comb}, set_labels = labels)
     plt.show()
 
-def heatmap(canvas,y1map,y2map):
+def heatmap(canvas,y1map,y2map,row_ind,col_ind):
         # there is a version that sorts the hits to the diagonal in util/bad... 
-        df = DataFrame(canvas[:y1map.len,:y2map.len])
-        s= lambda y,x: [ y.getitem[k] for k in x]
-        sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
+        
+        
+        sorting = sorted(zip(col_ind, row_ind))
+        col_ind, row_ind= list(zip(*sorting))
+        
+        
+        # some rows are unused by the matching,but we still want to show them:
+        order= list(row_ind) + list(set(y1map.integerlist)-set(row_ind) )
+        canvas = canvas[order]
+        ylabels = [y2map.getitem[c] for c in  col_ind]
+        xlabels = [y1map.getitem[r]for r in order]
+        df = DataFrame(canvas)
+        sns.heatmap(df,xticklabels=ylabels,yticklabels=xlabels, annot=True)
+        
+        #df = DataFrame(canvas[:y1map.len,:y2map.len])
+        #s= lambda y,x: [ y.getitem[k] for k in x]
+        #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
         plt.show()

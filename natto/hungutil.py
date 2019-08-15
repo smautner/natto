@@ -152,9 +152,9 @@ def find_multi_clustermap_hung_optimize(pairs,y1map,y2map, clustersizes1,cluster
                         -1 * sum([ pairs[c,d] for c in clusters_a for d in clusters_b ]) 
         
         # HEATMAP normalized 
-        draw.heatmap(canvas,y1map,y2map)
+        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
         # HEATMAP total 
-        draw.heatmap(debug_canvas,y1map,y2map)
+        draw.heatmap(debug_canvas,y1map,y2map,row_ind,col_ind)
         
         # costs before diversity meassure
         '''
@@ -204,10 +204,11 @@ def find_multi_clustermap_hung(Y1,Y2, hungmatch, debug=False, method='scipy'):
                                                        clustersizes2,debug,method=method)
 
 
-    
+''' 
 def decorate(items):
     l = range(len(items))
     return [' '.join(map(str,items[i]))for i in l ]
+''' 
 
 
 
@@ -327,7 +328,8 @@ def rocoloss(a,b,y1map,y2map,canvas):
     a=y1map.getint[a]
     b=y2map.getint[b]
     v = canvas[a,b]
-    amax = np.min(canvas[:,b])-canvas[a,b]
+    #amax = np.min(canvas[[x!=a for x in y1map.integerlist],b])#-canvas[a,b]
+    amax = np.min(canvas[:,b])-canvas[a,b] # previous solution which is nice
     offender_a = y1map.getitem[np.argmin(canvas[:,b])]
     bmax = np.min(canvas[a,:])-canvas[a,b]
     offender_b = y2map.getitem[np.argmin(canvas[a,:])]
@@ -350,7 +352,7 @@ def find_clustermap_one_to_one(Y1,Y2, hungmatch, debug=False, normalize=True):
     result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
     
     if debug: 
-        draw.heatmap(canvas,y1map,y2map)
+        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
         print(" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss)")
         pprint.pprint(result)
         
@@ -471,7 +473,7 @@ def find_clustermap_one_to_one_and_split(Y1,Y2, hungmatch, data1,data2, debug=Fa
     
     
     if debug: 
-        draw.heatmap(canvas,y1map,y2map)
+        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
         print(" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss)")
         pprint.pprint(result)
         
@@ -513,7 +515,7 @@ def split_and_merge(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,m
     split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
     
     if debug: 
-        draw.heatmap(canvas,y1map,y2map)
+        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
         print(f" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss) {maxerror}")
         pprint.pprint(result)
         
@@ -537,7 +539,8 @@ def split_and_merge(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,m
     row_ind, col_ind = solve_dense(canvas)
     row_ind, col_ind, log= leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
     tupmap =  [ ((a,),(b,),666) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
-    Y1,Y2 = rename(tupmap,Y1,Y2)
+    Y1,Y2 = rename(tupmap,Y1,Y2)    
+  
     if debug: draw.cmp(Y1,Y2,data1,data2)
     return split_and_merge(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror)
 
@@ -545,19 +548,7 @@ def oneonesplit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13):
     hungmatch = hungarian(mata,matb)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
     
-    
-    # make class counts even
-    y1map,y2map,canvas = make_canvas_and_spacemaps(claa,clab,hungmatch,normalize=normalize)
-    row_ind, col_ind = solve_dense(canvas)
-    row_ind, col_ind, log= leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
-    tupmap =  [ ((a,),(b,)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
-    for aa,bb in upwardmerge(tupmap):
-        if len(aa)>1:
-            #def recluster(data,Y,problemcluster,n_clust):
-            clab = recluster(matb,clab,bb,len(aa))
-        if len(bb)>1:
-            claa = recluster(mata,claa,aa,len(bb))
-    
+    claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
     
     return split_and_merge(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
 
@@ -583,7 +574,7 @@ def split_and_split(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,m
     split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
     
     if debug: 
-        draw.heatmap(canvas,y1map,y2map)
+        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
         print(f" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss) {maxerror}")
         pprint.pprint(result)
         
@@ -653,7 +644,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
     
     if debug: 
-        draw.heatmap(canvas,y1map,y2map)
+        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
         print(f" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss) {maxerror}")
         pprint.pprint(result)
         
@@ -687,17 +678,30 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     tupmap =  [ ((a,),(b,),666) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
     
     # SPLIT
-    tm2 = upwardmerge(tupmap)
+    tm2 = upwardmerge([(a,b) for (a,b,c) in tupmap])
     for a,b in tm2: 
         if len(a)==2:
-            c,d,f = y1map.getint[a[0]],y1map.getint[a[1]], y2map.getint(b[0])
-            
+            c,d = y1map.getint[a[0]],y1map.getint[a[1]]
+            c2=np.array(canvas)
+            c2[c]+=c2[d]
+            c2[d]=0
+            ama,bma,_1,_2= rocoloss(a[0],b[0],y1map,y2map,c2)
+            loss_merge= min(ama,bma)
+            if loss_merge < -maxerror:
+                Y2 = recluster(data2,Y2,b)
+                
         if len(b)==2:
-    
+            c,d = y2map.getint[b[0]],y2map.getint[b[1]]
+            c2=np.array(canvas)
+            c2[:,c]+=c2[:,d]
+            c2[:,d]=0
+            ama,bma,_1,_2= rocoloss(a[0],b[0],y1map,y2map,c2)
+            loss_merge= min(ama,bma)
+            if loss_merge < -maxerror:
+                Y1 = recluster(data1,Y1,a)
     else: # merge
         Y1,Y2 = rename(tupmap,Y1,Y2)
 
-    
     
     #Y1,Y2 = make_even(Y1, Y2,hungmatch,data1,data2,normalize)
     if debug: draw.cmp(Y1,Y2,data1,data2)
@@ -710,9 +714,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
 def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13):
     hungmatch = hungarian(mata,matb)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
-
     claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
-    
     return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
 
     

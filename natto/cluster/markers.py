@@ -40,8 +40,6 @@ class markers():
                 x= self.a.X.toarray()
                 y= self.b.X.toarray()
                 self.mymap = umap.UMAP(n_components=6).fit(np.vstack((x,y)))
-                #x= umap.UMAP(n_components=6).fit_transform(x)
-                #y= umap.UMAP(n_components=6).fit_transform(y)
                 x=self.mymap.transform(x)
                 y=self.mymap.transform(y)
                 clu1 = sim.predictgmm(num,x)

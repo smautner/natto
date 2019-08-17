@@ -670,7 +670,7 @@ def find_problems(m,r,c,err):
     m[m>-err] = 0
     return np.nonzero(m)
 
-def process_problems(p,canvas,r,c,cp):
+def process_problems(p,canvas,r,c):
     problems = list(zip(*p)) 
     ro= dict( zip(r,c))
     co= dict(zip(c,r))
@@ -684,16 +684,15 @@ def process_problems(p,canvas,r,c,cp):
         valh = canvas[a,ro[a]] if a  in ro else 0
         
         if val > np.min(canvas[a,:]) and val > np.min(canvas[:,b]):
-        #if val > valv and val > valh:
-            cp[a,b]=0
+            print ("we should have taken care of this already")
             continue 
         
         if max(valh,val) > max(valv,val): # more in common vertically 
             res = ((a,co[b]),(b,))
+
         else: # more in common horizontaly 
             res= ((a,),(b,ro[a]))
        
-        #draw.simpleheatmap(canvas) 
         importance= valv/valh if valv>valh else valh/valv
         #importance = valv+valh+val
         yield importance,  res
@@ -709,37 +708,56 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     row_ind, col_ind = hungmatch
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
     row_ind, col_ind = solve_dense(canvas)
-
-
-    # show heatmap
     if debug: 
         draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
     
+    
+    # remove small fry and dominated instances
+    canvas[canvas > -maxerror] = 0
+    aa,bb = np.nonzero(canvas)
+    for a,b in zip(aa,bb):
+        if canvas[a,b] > min(canvas[a,:]) and canvas[a,b] > min(canvas[:,b]):
+            canvas[a,b] = 0
+    if debug: 
+        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
 
+    aa,bb = np.nonzero(canvas)
+    da = defaultdict(list)
+    db = defaultdict(list)
+    for a,b in zip(aa,bb):
+        da[a].append(b)
+        db[b].append(a)
+    da = { a:b for a,b in da.items() if len(b)>1 }
+    db = { a:b for a,b in db.items() if len(b)>1 }
+    done = True
+    for a,bb in da.items():
+        if any([ b in db for b in bb]):
+            continue
+        recluster(data1,Y1,[y1map.getitem[a]],n_clust=len(bb),reclu=reclu)
+        done = False
 
-    # determine conflicts and see if we are done
+    for b,aa in db.items():
+        if any([ a in da for a in aa]):
+            continue
+        recluster(data2,Y2,[y2map.getitem[b]],n_clust=len(aa),reclu=reclu)
+        done = False
+    
+    if done:
+        return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
+    '''
+    # get problems: 
     p = find_problems(canvas, row_ind, col_ind,maxerror)
-    #if len(p[0])==0:
-    #    return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
-
-
-    # canvas copy 1. purity calculation should not alter the matrix 2. we want to remove the nonrelevant entries (even though > maxerr) during processing
-    canvcopy = np.array(canvas)
-    tuptup = list(process_problems(p,canvas,row_ind,col_ind,canvcopy))
-
+    tuptup = list(process_problems(p,canvas,row_ind,col_ind))
 
     # calculate purities... 
-    purity1 = { i:calc_purity(canvcopy[i],maxerror) for i in y1map.integerlist }
-    purity2 = { i:calc_purity(canvcopy[:,i],maxerror) for i in y2map.integerlist }
+    purity1 = { i:calc_purity(canvas[i],maxerror) for i in y1map.integerlist }
+    purity2 = { i:calc_purity(canvas[:,i],maxerror) for i in y2map.integerlist }
 
-
-    
     tuptup.sort()
     # just solve one conflict..  one cluster is in conflivt with 2 on the other side. the least pure side gets edited. 
     z=lambda t,i: [t.getitem[ii] for ii in i]
     d = lambda a:[a[0],z(y1map,a[1][0]),z(y2map,a[1][1])] 
     pprint.pprint([d(a) for a in tuptup])
-    draw.heatmap(canvcopy,y1map,y2map,row_ind,col_ind)
 
     if len(tuptup)==0 or tuptup[0][0]!=0:
         return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
@@ -765,8 +783,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
                 Y1=recluster(data1,Y1,[y1map.getitem[aa[0]]],reclu=reclu)
                 if debug: print("recluster a")
             
-    
-    #Y1,Y2 = make_even(Y1, Y2,hungmatch,data1,data2,normalize)
+    '''
     if debug: draw.cmp(Y1,Y2,data1,data2)
 
     return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu)

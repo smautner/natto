@@ -15,13 +15,21 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
     
     
     
-    
+    # make a list of colors 
     colors = list(permutations([0,.25,.5,.75,1],3))
-    random.seed(4) #making shuffle consistent
+    random.seed(5) #making shuffle consistent
     random.shuffle(colors)
+
+    f = lambda cm: [cm.colors[i] for i in range(len(cm.colors))]
+    #colors = f(plt.cm.get_cmap('tab20b')) +f(plt.cm.get_cmap('tab20c')) 
+    colors = f(plt.cm.get_cmap('tab20'))
+    colors += f(plt.cm.get_cmap("tab20b"))
+    colors += f(plt.cm.get_cmap("tab20c"))
+    # put the list in col for usage
     col = { i-2:e for i,e in enumerate(colors)}
-    
     col.update( {a+100:b for a,b in col.items()}  )
+
+
 
     Y=np.array(Y)
     
@@ -63,6 +71,16 @@ def venn(one,two: 'boolean array', labels :"string tupple"):
     v = venn2(subsets = {'10': sum(one)-comb, '01': sum(two)-comb, '11': comb}, set_labels = labels)
     plt.show()
 
+
+
+def simpleheatmap(canvas):
+        df = DataFrame(canvas)
+        sns.heatmap(df, annot=True)
+        
+        #df = DataFrame(canvas[:y1map.len,:y2map.len])
+        #s= lambda y,x: [ y.getitem[k] for k in x]
+        #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
+        plt.show()
 def heatmap(canvas,y1map,y2map,row_ind,col_ind):
         # there is a version that sorts the hits to the diagonal in util/bad... 
         

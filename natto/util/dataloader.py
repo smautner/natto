@@ -30,7 +30,10 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
 
     adata = filter(adata,cells)
     if subsample:
-        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        if subsample <1:
+            sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        else:
+            sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
     return adata
 
 def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
@@ -42,15 +45,20 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
 
     adata = filter(adata,cells)
     if subsample:
-        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        if subsample <1:
+            sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        else:
+            sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
     return adata
-
 
 
 def loadpbmc(path, subsample=None):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
     if subsample:
-        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        if subsample <1:
+            sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        else:
+            sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
     return adata
 
 def load3k6k(subsample=False):

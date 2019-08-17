@@ -307,12 +307,17 @@ def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True,maxerr=0):
     # normalize for cluster size
     clustersizes  = Counter(Y1) # class:occurence 
     clustersizes2 = Counter(Y2) # class:occurence 
-
+    
+    size1=sum(clustersizes.values())
+    size2=sum(clustersizes2.values())
+    if size1 > size2: size1,size2 = size2,size1
+    sizemulti = 1 # float(size1)/float(size2)
+    
     y1map = spacemap(clustersizes.keys())
     y2map = spacemap(clustersizes2.keys())
 
     if normalize:
-        normpairs = { k:float(-v)/float(clustersizes[k[0]]+clustersizes[k[1]]) for k,v in pairs.items()} # pair:relative_occur
+        normpairs = { k:(2*sizemulti*float(-v))/float(clustersizes[k[0]]+clustersizes[k[1]]) for k,v in pairs.items()} # pair:relative_occur
     else:
         normpairs = { k:-v for k,v in pairs.items()} # pair:occur
     
@@ -399,12 +404,18 @@ def multimapclusters_single (X,X2,Yh,Y2h, debug=False,method = 'lapsolver', norm
 
 
 
-
+import umap
 from natto.cluster.simple import predictgmm
-def recluster(data,Y,problemclusters,n_clust=2):
+def recluster(data,Y,problemclusters,reclu=None,n_clust=2):
     
+    if reclu:
+        print ('foudn reclu')
+        data= reclu.myumap.transform(data)
+    
+    #data=umap.UMAP(n_components=2).fit_transform(data)
     indices = [y in problemclusters for y in Y]
     data2 = data[indices]
+    data2=umap.UMAP(n_components=2).fit_transform(data2)
     yh = predictgmm(n_clust,data2)
     Y[indices] = yh+np.max(Y)+1
     return Y
@@ -444,7 +455,20 @@ def rename(tuplemap,Y1,Y2):
                 if b not in db: 
                     db[b]=target
         
-        return np.array([da.get(e,e) for e in Y1]), np.array( [db.get(e,e) for e in Y2] )
+        # old version, this is bad because we can not leave e alone ... 
+        #return np.array([da.get(e,e) for e in Y1]), np.array( [db.get(e,e) for e in Y2] )
+
+        lastclasslabel = max(da.values())
+        unmatch = {}
+        def unmatched(item,unmatch,lastclasslabel):
+            if item not in unmatch:
+                unmatch[item]=lastclasslabel+1
+                lastclasslabel+=1
+            return unmatch[item]
+                
+
+
+        return np.array([da.get(e,unmatched((e,1),unmatch,lastclasslabel)) for e in Y1]), np.array( [db.get(e,unmatched((e,2),unmatch,lastclasslabel)) for e in Y2] )
             
         
     
@@ -606,7 +630,6 @@ def make_even(claa, clab,hungmatch,mata,matb,normalize):
     tupmap =  [ ((a,),(b,)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
     for aa,bb in upwardmerge(tupmap):
         if len(aa)>1:
-            #def recluster(data,Y,problemcluster,n_clust):
             clab = recluster(matb,clab,bb,len(aa))
         if len(bb)>1:
             claa = recluster(mata,claa,aa,len(bb))
@@ -627,94 +650,135 @@ def oneonesplitsplit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13
 ###############
 # BIT BY BIT
 ##############
-# split and merge or slkit
-def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15):
-    # like 1on1 with split but now we have a better plan:
-    # split first, then merge
+# split and merge or slkit    
+
+def calc_purity(m,err):
+        #print(m)
+        m[m>-err]=0
+        #print(m)
+        m=m.tolist()
+        m.sort()
+        if np.min(m)==0:
+            return 0
+        #ma=min(m)
+        #m=[mm/ma for mm in m]
+        return sum(m[1:])/m[0] # m0 is the largest. 
+
+def find_problems(m,r,c,err):
+    m=np.array(m)
+    m[r,c]=0
+    m[m>-err] = 0
+    return np.nonzero(m)
+
+def process_problems(p,canvas,r,c,cp):
+    problems = list(zip(*p)) 
+    ro= dict( zip(r,c))
+    co= dict(zip(c,r))
     
+    for a,b in problems: 
+        
+        val = canvas[a,b]
+        # vertical 
+        valv = canvas[co[b],b] if b in co else 0
+        # horizontal 
+        valh = canvas[a,ro[a]] if a  in ro else 0
+        
+        if val > np.min(canvas[a,:]) and val > np.min(canvas[:,b]):
+        #if val > valv and val > valh:
+            cp[a,b]=0
+            continue 
+        
+        if max(valh,val) > max(valv,val): # more in common vertically 
+            res = ((a,co[b]),(b,))
+        else: # more in common horizontaly 
+            res= ((a,),(b,ro[a]))
+       
+        #draw.simpleheatmap(canvas) 
+        importance= valv/valh if valv>valh else valh/valv
+        #importance = valv+valh+val
+        yield importance,  res
     
-    # MAP, including leftovers
+def finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind):
+    tuplemap = [ ((y1map.getitem[r],),(y2map.getitem[c],),43) for r,c in zip(row_ind,col_ind)    ]
+    return rename(tuplemap,Y1,Y2)   
+
+
+def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15,reclu=None):
+    
+    # get a mapping
     row_ind, col_ind = hungmatch
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
     row_ind, col_ind = solve_dense(canvas)
-    
-    
-    # Mappings in cluster-name-space with scores
-    result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
-    split = [ (c+d,c,e,1) for a,b,(c,d,e,f) in result if  c < -maxerror]+[ (c+d,d,f,2) for a,b,(c,d,e,f) in result if  d < -maxerror]
-    
+
+
+    # show heatmap
     if debug: 
         draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
-        print(f" clsuter in first set, cluster in second set,  (loss in row, loss in col, reason for row loss, reason for col loss) {maxerror}")
-        pprint.pprint(result)
-        
-        
-    # ARE WE FINISHED?
-    if not split: 
-        return rename(result,Y1,Y2)
     
-    
-    # SPLIT PROBLEMATIC CLUSTER
-    split.sort()
-    totalcost,cost_in_split_direction,cluster,where = split[0]
-    if debug: print (f'splitting cluster {cluster} of set {where}')
-    if where ==1: 
-        Y1 = recluster(data1,Y1,[cluster])
-    elif where ==2:
-        Y2 = recluster(data2,Y2,[cluster])
-        
-    
-     
-    # now we merge or split
-    '''
-    look at best hit:
-        2 cases:
-        - both are splitting the target in half -> split target
-        - otherwise just merge
-    '''
-    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
-    row_ind, col_ind = solve_dense(canvas)
-    row_ind, col_ind, log= leftoverassign(canvas, y1map,y2map, row_ind, col_ind)
-    tupmap =  [ ((a,),(b,),666) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
-    
-    # SPLIT
-    tm2 = upwardmerge([(a,b) for (a,b,c) in tupmap])
-    for a,b in tm2: 
-        if len(a)==2:
-            c,d = y1map.getint[a[0]],y1map.getint[a[1]]
-            c2=np.array(canvas)
-            c2[c]+=c2[d]
-            c2[d]=0
-            ama,bma,_1,_2= rocoloss(a[0],b[0],y1map,y2map,c2)
-            loss_merge= min(ama,bma)
-            if loss_merge < -maxerror:
-                Y2 = recluster(data2,Y2,b)
-                
-        if len(b)==2:
-            c,d = y2map.getint[b[0]],y2map.getint[b[1]]
-            c2=np.array(canvas)
-            c2[:,c]+=c2[:,d]
-            c2[:,d]=0
-            ama,bma,_1,_2= rocoloss(a[0],b[0],y1map,y2map,c2)
-            loss_merge= min(ama,bma)
-            if loss_merge < -maxerror:
-                Y1 = recluster(data1,Y1,a)
-    else: # merge
-        Y1,Y2 = rename(tupmap,Y1,Y2)
 
+
+    # determine conflicts and see if we are done
+    p = find_problems(canvas, row_ind, col_ind,maxerror)
+    #if len(p[0])==0:
+    #    return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
+
+
+    # canvas copy 1. purity calculation should not alter the matrix 2. we want to remove the nonrelevant entries (even though > maxerr) during processing
+    canvcopy = np.array(canvas)
+    tuptup = list(process_problems(p,canvas,row_ind,col_ind,canvcopy))
+
+
+    # calculate purities... 
+    purity1 = { i:calc_purity(canvcopy[i],maxerror) for i in y1map.integerlist }
+    purity2 = { i:calc_purity(canvcopy[:,i],maxerror) for i in y2map.integerlist }
+
+
+    
+    tuptup.sort()
+    # just solve one conflict..  one cluster is in conflivt with 2 on the other side. the least pure side gets edited. 
+    z=lambda t,i: [t.getitem[ii] for ii in i]
+    d = lambda a:[a[0],z(y1map,a[1][0]),z(y2map,a[1][1])] 
+    pprint.pprint([d(a) for a in tuptup])
+    draw.heatmap(canvcopy,y1map,y2map,row_ind,col_ind)
+
+    if len(tuptup)==0 or tuptup[0][0]!=0:
+        return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
+   
+    for imp,( aa,bb) in tuptup[:1]: 
+        pa = min([purity1[a] for a in aa])
+        pb = min([purity2[b] for b in bb])
+        if debug:print(f'problem identified: {imp} purities: {pa} {pb} ')
+        if debug:print([ y1map.getitem[a] for a in aa])
+        if debug:print([ y2map.getitem[b] for b in bb])
+        if pa < pb:  # purity comparison 
+            if len(bb)>1:
+                Y2[Y2==y2map.getitem[bb[0]]]=y2map.getitem[bb[1]]
+                if debug: print("merging b")
+            else:
+                recluster(data2,Y2,[y2map.getitem[bb[0]]],reclu=reclu)
+                if debug: print("recluster b")
+        else: 
+            if len(aa)>1:
+                Y1[Y1==y1map.getitem[aa[0]]]=y1map.getitem[aa[1]]
+                if debug: print("merging a")
+            else:
+                Y1=recluster(data1,Y1,[y1map.getitem[aa[0]]],reclu=reclu)
+                if debug: print("recluster a")
+            
     
     #Y1,Y2 = make_even(Y1, Y2,hungmatch,data1,data2,normalize)
     if debug: draw.cmp(Y1,Y2,data1,data2)
-    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror)
+
+    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu)
 
 
 
    
 
-def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13):
+def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu=None):
     hungmatch = hungarian(mata,matb)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
-    claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
+    #claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
     return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
 
     

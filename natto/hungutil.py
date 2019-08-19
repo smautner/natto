@@ -317,7 +317,8 @@ def make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=True,maxerr=0):
     y2map = spacemap(clustersizes2.keys())
 
     if normalize:
-        normpairs = { k:(2*sizemulti*float(-v))/float(clustersizes[k[0]]+clustersizes[k[1]]) for k,v in pairs.items()} # pair:relative_occur
+        normpairs = { k:(2*sizemulti*float(-v))/float(clustersizes[k[0]]+clustersizes2[k[1]]) for k,v in pairs.items()} # pair:relative_occur
+   
     else:
         normpairs = { k:-v for k,v in pairs.items()} # pair:occur
     
@@ -708,9 +709,9 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     row_ind, col_ind = hungmatch
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
     row_ind, col_ind = solve_dense(canvas)
-    if debug: 
-        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
-    
+
+    if debug:
+        canvasbackup = np.array(canvas)
     
     # remove small fry and dominated instances
     canvas[canvas > -maxerror] = 0
@@ -719,7 +720,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
         if canvas[a,b] > min(canvas[a,:]) and canvas[a,b] > min(canvas[:,b]):
             canvas[a,b] = 0
     if debug: 
-        draw.heatmap(canvas,y1map,y2map,row_ind,col_ind)
+        draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind)
 
     aa,bb = np.nonzero(canvas)
     da = defaultdict(list)
@@ -734,15 +735,22 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
         if any([ b in db for b in bb]):
             continue
         recluster(data1,Y1,[y1map.getitem[a]],n_clust=len(bb),reclu=reclu)
+        print(f"reclustered {y1map.getitem[a]} of data1 into {len(bb)}")
         done = False
 
     for b,aa in db.items():
         if any([ a in da for a in aa]):
             continue
         recluster(data2,Y2,[y2map.getitem[b]],n_clust=len(aa),reclu=reclu)
+        print(f"reclustered {y2map.getitem[b]} of data2 into {len(aa)}")
         done = False
     
+   
+
     if done:
+        row_ind, col_ind = solve_dense(canvas)
+        # remove matches that have a zero as value
+        row_ind,col_ind = list(zip(*[(r,c) for r , c in zip(row_ind, col_ind) if canvas[r,c] < 0]))
         return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
     '''
     # get problems: 
@@ -784,7 +792,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
                 if debug: print("recluster a")
             
     '''
-    if debug: draw.cmp(Y1,Y2,data1,data2)
+    if debug: draw.cmp2(Y1,Y2,data1,data2)
 
     return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu)
 

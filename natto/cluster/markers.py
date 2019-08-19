@@ -25,7 +25,7 @@ class markers():
             return markers, numclusters
             
             
-    def process(self,markerfile,marker2=None, maxgenes=15, clust = 'gmm'):
+    def process(self,markerfile,marker2=None, maxgenes=15, clust = 'gmm',sample=None,classpaths=None):
         
             markers, num = self.readmarkerfile(markerfile,maxgenes)
             if marker2:
@@ -44,10 +44,19 @@ class markers():
                 y=self.mymap.transform(y)
                 clu1 = sim.predictgmm(num,x)
                 clu2 = sim.predictgmm(num2,y)
+                #return x,y,clu1, clu2
                 
             elif clust == 'load':
-                clu1 = self.csv_crap('../data/p7d.cls.csv')
-                clu2 = self.csv_crap('../data/p7e.cls.csv')
+                
+                clu1 = self.csv_crap(classpaths[0])
+                clu2 = self.csv_crap(classpaths[1])
+                self.a.obs['class'] = clu1
+                self.b.obs['class'] = clu2
+                if sample: 
+                    sc.pp.subsample(self.a, fraction=None, n_obs=sample, random_state=0, copy=False)
+                    sc.pp.subsample(self.b, fraction=None, n_obs=sample, random_state=0, copy=False)
+                clu1 = self.a.obs['class']
+                clu2 = self.b.obs['class']
                 
             else:
                 clu1 = sim.predictlou(num,self.a.X.toarray(),{'n_neighbors':10})

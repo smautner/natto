@@ -9,9 +9,15 @@ import seaborn as sns
 
 from matplotlib_venn import *
 
-def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, black = None, show=True):
+def umap(X,Y, reducer = None,
+        title="No title",
+        acc : "y:str_description"={}, 
+        black = None, 
+        show=True,
+        markerscale=4,
+        size=None):
     assert reducer != None  , "give me a reducer"
-    plt.title(title)
+    plt.title(title, size=20)
     
     
     
@@ -19,7 +25,6 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
     colors = list(permutations([0,.25,.5,.75,1],3))
     random.seed(5) #making shuffle consistent
     random.shuffle(colors)
-
     f = lambda cm: [cm.colors[i] for i in range(len(cm.colors))]
     #colors = f(plt.cm.get_cmap('tab20b')) +f(plt.cm.get_cmap('tab20c')) 
     colors = f(plt.cm.get_cmap('tab20'))
@@ -34,7 +39,7 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
     Y=np.array(Y)
     
     
-    size= max( int(4000/Y.shape[0]), 1)
+    size=  max( int(4000/Y.shape[0]), 1) if not size else size
     
     if type(black) != type(None): 
         embed = reducer.transform(black)
@@ -47,22 +52,53 @@ def umap(X,Y, reducer = None,title="No title",acc : "y:str_description"={}, blac
         plt.scatter(embed[Y==cla, 0], embed[Y==cla, 1],
                     color=col[cla],
                     s=size,
-                    label= "%s %s" % (str(cla),acc.get(cla,'')))
-    plt.axis('off')
-    plt.legend(markerscale=4)
+                    label= acc.get(cla,str(cla)))
+    #plt.axis('off')
+    plt.xlabel('UMAP 2')
+    plt.ylabel('UMAP 1')
+
+
+    plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
     if show: plt.show()
     return reducer
 
+def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None):    
 
-def cmp(Y1,Y2,X1,X2,title=('1','2'),red=None):    
+    sns.set(font_scale=1.2,style='white')
     if not red:
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
     plt.figure(figsize=(15,6))    
+
+    #plt.tight_layout()    
     ax=plt.subplot(121)
-    umap(X1,Y1,red,show=False,title=title[0])
+    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4)
     ax=plt.subplot(122)
-    umap(X2,Y2,red,show=False,title=title[1])
+    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4)
+    plt.show()
+
+
+def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None):    
+
+    sns.set(font_scale=1.2,style='white')
+    if not red:
+        red = UMAP()
+        red.fit(np.vstack((X1,X2)))
+    plt.figure(figsize=(22,6))    
+
+    #plt.tight_layout()    
+    ax=plt.subplot(131)
+    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4)
+    ax=plt.subplot(132)
+    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4)
+    ax=plt.subplot(133)
+    umap(np.vstack((X1,X2)),
+            [1]*len(Y1)+[2]*len(Y2),
+            red,
+            show=False,
+            title="Combined",
+            size=4,
+            markerscale=4, acc={1:title[0] , 2:title[1]})
     plt.show()
 
 def venn(one,two: 'boolean array', labels :"string tupple"):
@@ -81,23 +117,45 @@ def simpleheatmap(canvas):
         #s= lambda y,x: [ y.getitem[k] for k in x]
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
         plt.show()
-def heatmap(canvas,y1map,y2map,row_ind,col_ind):
+
+def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols):    
+
+    sns.set(font_scale=1.2,style='white')
+    plt.figure(figsize=(12,4))    
+
+    #plt.tight_layout()    
+    ax=plt.subplot(121)
+    plt.title('Normalized Matches',size=20)
+    heatmap(canvas,y1map,y2map,rows,cols, show=False)
+    ax=plt.subplot(122)
+    plt.title('Processed Matrix',size=20)
+    heatmap(cleaned,y1map,y2map,rows,cols, show=False)
+    plt.show()
+
+def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):
         # there is a version that sorts the hits to the diagonal in util/bad... 
-        
+        paper = True
         
         sorting = sorted(zip(col_ind, row_ind))
         col_ind, row_ind= list(zip(*sorting))
         
-        
         # some rows are unused by the matching,but we still want to show them:
         order= list(row_ind) + list(set(y1map.integerlist)-set(row_ind) )
         canvas = canvas[order]
-        ylabels = [y2map.getitem[c] for c in  col_ind]
-        xlabels = [y1map.getitem[r]for r in order]
-        df = DataFrame(canvas)
-        sns.heatmap(df,xticklabels=ylabels,yticklabels=xlabels, annot=True)
-        
+
+        xlabels = y2map.itemlist 
+        ylabels = [y1map.getitem[r]for r in order]
+
+        df = DataFrame(-canvas)
+
+        if paper:
+            sns.heatmap(df,xticklabels=xlabels,yticklabels=ylabels, annot=False ,linewidths=.5,cmap="YlGnBu" )
+            plt.xlabel('Clusters data set 2')
+            plt.ylabel('Clusters data set 1')
+        else:
+            sns.heatmap(df,xticklabels=ylabels,yticklabels=xlabels, annot=True)
         #df = DataFrame(canvas[:y1map.len,:y2map.len])
         #s= lambda y,x: [ y.getitem[k] for k in x]
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
-        plt.show()
+        if show:
+            plt.show()

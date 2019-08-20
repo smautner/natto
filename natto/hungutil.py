@@ -401,13 +401,26 @@ def multimapclusters_single (X,X2,Yh,Y2h, debug=False,method = 'lapsolver', norm
 
 
 
-
-
+class renamelog:
+    def __init__(self,cla):
+        self.rn = {c:c for c in cla}
+    def log(self,oldname, newname):
+        # {2:1, 3:1}
+        # input 2, 4    => {4:1}
+        for o in oldname: 
+            for n in newname:
+                self.rn[n] = self.rn[o]
+            self.rn.pop(o)
+    def total_rename(self,a):
+        # a is a dictionary 
+        oldlookup = dict(self.rn)
+        self.rn = { n:oldlookup[o]  for o,n in a.items() }
+        self.getlastname={n:o for o,n in a.items()}
 
 
 import umap
 from natto.cluster.simple import predictgmm
-def recluster(data,Y,problemclusters,reclu=None,n_clust=2):
+def recluster(data,Y,problemclusters,reclu=None,n_clust=2, rnlog=None):
     
     if reclu:
         print ('foudn reclu')
@@ -418,7 +431,10 @@ def recluster(data,Y,problemclusters,reclu=None,n_clust=2):
     data2 = data[indices]
     data2=umap.UMAP(n_components=2).fit_transform(data2)
     yh = predictgmm(n_clust,data2)
-    Y[indices] = yh+np.max(Y)+1
+    maxy = np.max(Y)
+    Y[indices] = yh+maxy+1
+    
+    rnlog.log(problemclusters , np.unique(yh)+maxy+1 )
     return Y
     
 
@@ -427,12 +443,7 @@ def recluster(data,Y,problemclusters,reclu=None,n_clust=2):
 # we do 1:1 and do some splitting until all is good 
 ###############
 
-def rename(tuplemap,Y1,Y2):
-        '''
-        translator =  {b:a for (a,),(b,),c in tuplemap} 
-        translator2 =  {a:b for (a,),(b,),c in tuplemap} 
-        return [translator2[e] for e in Y1], [translator[e] for e in Y2] #{a:b for a,b,c in result
-        '''
+def rename(tuplemap,Y1,Y2, rn1, rn2 ):
         da={}
         db={}
         for i,(aa,bb,_) in enumerate(tuplemap):
@@ -456,20 +467,32 @@ def rename(tuplemap,Y1,Y2):
                 if b not in db: 
                     db[b]=target
         
-        # old version, this is bad because we can not leave e alone ... 
-        #return np.array([da.get(e,e) for e in Y1]), np.array( [db.get(e,e) for e in Y2] )
 
-        lastclasslabel = max(da.values())
+        lastclasslabel = max(max(da.values()), max(db.values()))
         unmatch = {}
         def unmatched(item,unmatch,lastclasslabel):
             if item not in unmatch:
                 unmatch[item]=lastclasslabel+1
                 lastclasslabel+=1
-            return unmatch[item]
+            return unmatch[item], lastclasslabel
                 
+        
+        for e in Y1: 
+            if e not in da: 
+                da[e],lastclasslabel = unmatched((e,1),unmatch, lastclasslabel) 
 
+        for e in Y2: 
+            if e not in db: 
+                db[e],lastclasslabel = unmatched((e,2),unmatch, lastclasslabel) 
 
-        return np.array([da.get(e,unmatched((e,1),unmatch,lastclasslabel)) for e in Y1]), np.array( [db.get(e,unmatched((e,2),unmatch,lastclasslabel)) for e in Y2] )
+        # loggin the renaming
+        rn1.total_rename(da)
+        rn2.total_rename(db)
+            
+
+        r1 = np.array([da.get(e) for e in Y1])
+        r2 = np.array( [db.get(e) for e in Y2] )
+        return r1,r2
             
         
     
@@ -587,12 +610,10 @@ def split_and_split(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,m
     # like 1on1 with split but now we have a better plan:
     # split first, then merge
     
-    
     # MAP, including leftovers
     row_ind, col_ind = hungmatch
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
     row_ind, col_ind = solve_dense(canvas)
-    
     
     # Mappings in cluster-name-space with scores
     result =  [ ((a,),(b,),rocoloss(a,b,y1map,y2map,canvas)) for a,b in zip([y1map.getitem[r] for r in row_ind],[y2map.getitem[c] for c in  col_ind])]
@@ -698,27 +719,31 @@ def process_problems(p,canvas,r,c):
         #importance = valv+valh+val
         yield importance,  res
     
-def finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind):
+def finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind,rn1,rn2):
     tuplemap = [ ((y1map.getitem[r],),(y2map.getitem[c],),43) for r,c in zip(row_ind,col_ind)    ]
-    return rename(tuplemap,Y1,Y2)   
+    return rename(tuplemap,Y1,Y2,rn1,rn2)   
 
 
-def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15,reclu=None):
-    
-    # get a mapping
-    row_ind, col_ind = hungmatch
-    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
-    row_ind, col_ind = solve_dense(canvas)
 
-    if debug:
-        canvasbackup = np.array(canvas)
-    
-    # remove small fry and dominated instances
-    canvas[canvas > -maxerror] = 0
+def clean_matrix(canvas):
+    canvasbackup = np.array(canvas)
     aa,bb = np.nonzero(canvas)
     for a,b in zip(aa,bb):
         if canvas[a,b] > min(canvas[a,:]) and canvas[a,b] > min(canvas[:,b]):
             canvas[a,b] = 0
+            continue
+        if canvas[a,b] / np.sum(canvasbackup[a,:]) < .3 and  canvas[a,b]/np.sum(canvasbackup[:,b]) <.3:
+            canvas[a,b] = 0
+    return canvas, canvasbackup
+
+def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15,reclu=None, rn=None):
+
+    rn1,rn2  = rn  
+    # get a mapping
+    row_ind, col_ind = hungmatch
+    y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
+    row_ind, col_ind = solve_dense(canvas)
+    canvas, canvasbackup = clean_matrix(canvas)
     if debug: 
         draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind)
 
@@ -731,70 +756,75 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     da = { a:b for a,b in da.items() if len(b)>1 }
     db = { a:b for a,b in db.items() if len(b)>1 }
     done = True
+
     for a,bb in da.items():
         if any([ b in db for b in bb]):
             continue
-        recluster(data1,Y1,[y1map.getitem[a]],n_clust=len(bb),reclu=reclu)
-        print(f"reclustered {y1map.getitem[a]} of data1 into {len(bb)}")
+        recluster(data1,Y1,[y1map.getitem[a]],n_clust=len(bb),reclu=reclu,rnlog=rn1)
+        #print(f"reclustered {y1map.getitem[a]} of data1 into {len(bb)}")
         done = False
 
     for b,aa in db.items():
         if any([ a in da for a in aa]):
             continue
-        recluster(data2,Y2,[y2map.getitem[b]],n_clust=len(aa),reclu=reclu)
-        print(f"reclustered {y2map.getitem[b]} of data2 into {len(aa)}")
+        recluster(data2,Y2,[y2map.getitem[b]],n_clust=len(aa),reclu=reclu,rnlog=rn2)
+        #print(f"reclustered {y2map.getitem[b]} of data2 into {len(aa)}")
         done = False
-    
-   
 
     if done:
         row_ind, col_ind = solve_dense(canvas)
         # remove matches that have a zero as value
         row_ind,col_ind = list(zip(*[(r,c) for r , c in zip(row_ind, col_ind) if canvas[r,c] < 0]))
-        return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
-    '''
-    # get problems: 
-    p = find_problems(canvas, row_ind, col_ind,maxerror)
-    tuptup = list(process_problems(p,canvas,row_ind,col_ind))
+        Y1,Y2 = finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind,rn1,rn2) 
 
-    # calculate purities... 
-    purity1 = { i:calc_purity(canvas[i],maxerror) for i in y1map.integerlist }
-    purity2 = { i:calc_purity(canvas[:,i],maxerror) for i in y2map.integerlist }
+        
+        # this is to draw the final heatmap... 
+        #row_ind, col_ind = hungmatch
+        y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
+        #row_ind, col_ind = solve_dense(canvas)
+        canvas, canvasbackup = clean_matrix(canvas)
+        draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind)
 
-    tuptup.sort()
-    # just solve one conflict..  one cluster is in conflivt with 2 on the other side. the least pure side gets edited. 
-    z=lambda t,i: [t.getitem[ii] for ii in i]
-    d = lambda a:[a[0],z(y1map,a[1][0]),z(y2map,a[1][1])] 
-    pprint.pprint([d(a) for a in tuptup])
+        # NOT WE NEED TO PRINT A BEAUTIFUL TABLE 
+        
+        classes = list(set(np.unique(Y1)).union(set(np.unique(Y2))))
+        classes.sort() 
 
-    if len(tuptup)==0 or tuptup[0][0]!=0:
-        return finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind) 
-   
-    for imp,( aa,bb) in tuptup[:1]: 
-        pa = min([purity1[a] for a in aa])
-        pb = min([purity2[b] for b in bb])
-        if debug:print(f'problem identified: {imp} purities: {pa} {pb} ')
-        if debug:print([ y1map.getitem[a] for a in aa])
-        if debug:print([ y2map.getitem[b] for b in bb])
-        if pa < pb:  # purity comparison 
-            if len(bb)>1:
-                Y2[Y2==y2map.getitem[bb[0]]]=y2map.getitem[bb[1]]
-                if debug: print("merging b")
+        #first 3 columns
+        out = [classes]
+        out.append( [rn1.rn.get(e,-1) for e in classes]  )
+        out.append( [rn2.rn.get(e,-1) for e in classes]  )
+        # the next ones are more tricky
+        y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=False)
+        y1cnt = Counter(Y1)
+        y2cnt = Counter(Y2)
+        out.append( [y1cnt.get(e,0) for e in classes]  )
+        out.append( [y2cnt.get(e,0) for e in classes]  )
+        a= []
+        b=[]
+        for e in classes: 
+            if e in y1map.getint and e in y2map.getint:
+                a.append( "%.2f" %  (np.abs(canvas[y1map.getint[e],y2map.getint[e] ] ) / min(y1cnt.get(e,0),y2cnt.get(e,0)) )  )
+                b.append( np.abs(canvas[y1map.getint[e],y2map.getint[e] ] ) )
             else:
-                recluster(data2,Y2,[y2map.getitem[bb[0]]],reclu=reclu)
-                if debug: print("recluster b")
-        else: 
-            if len(aa)>1:
-                Y1[Y1==y1map.getitem[aa[0]]]=y1map.getitem[aa[1]]
-                if debug: print("merging a")
-            else:
-                Y1=recluster(data1,Y1,[y1map.getitem[aa[0]]],reclu=reclu)
-                if debug: print("recluster a")
-            
-    '''
+                a.append(0)
+                b.append(0)
+        out.append( a )
+        out.append( b )
+        
+        out = list(zip(*out)) 
+        import tabulate
+        print(tabulate.tabulate(out, ['clusterID','ID set 1','ID set 2','size set 1', 'size set 2','matches', "# matches"]))
+        
+
+        #print ("renaming",rn1.rn)
+        #print ("renaming",rn2.rn)
+        return Y1,Y2
+  
+    #########################
     if debug: draw.cmp2(Y1,Y2,data1,data2)
 
-    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu)
+    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu, rn=(rn1,rn2))
 
 
 
@@ -804,6 +834,8 @@ def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu
     hungmatch = hungarian(mata,matb)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
     #claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
-    return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
+    rn1 = renamelog(np.unique(claa))
+    rn2 = renamelog(np.unique(clab))
+    return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror, rn=(rn1,rn2))
 
     

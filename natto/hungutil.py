@@ -736,7 +736,7 @@ def clean_matrix(canvas):
             canvas[a,b] = 0
     return canvas, canvasbackup
 
-def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15,reclu=None, rn=None):
+def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15,reclu=None, rn=None,saveheatmap=None):
 
     rn1,rn2  = rn  
     # get a mapping
@@ -783,7 +783,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
         y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
         #row_ind, col_ind = solve_dense(canvas)
         canvas, canvasbackup = clean_matrix(canvas)
-        draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind)
+        draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind, save=saveheatmap)
 
         # NOT WE NEED TO PRINT A BEAUTIFUL TABLE 
         
@@ -815,6 +815,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
         out = list(zip(*out)) 
         import tabulate
         print(tabulate.tabulate(out, ['clusterID','ID set 1','ID set 2','size set 1', 'size set 2','matches', "# matches"]))
+        print(tabulate.tabulate(out, ['clusterID','ID set 1','ID set 2','size set 1', 'size set 2','matches', "# matches"],tablefmt='latex'))
         
 
         #print ("renaming",rn1.rn)
@@ -824,18 +825,17 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     #########################
     if debug: draw.cmp2(Y1,Y2,data1,data2)
 
-    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu, rn=(rn1,rn2))
+    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu, rn=(rn1,rn2), saveheatmap=saveheatmap)
 
 
 
    
 
-def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu=None):
+def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu=None,saveheatmap=None):
     hungmatch = hungarian(mata,matb)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
     #claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
     rn1 = renamelog(np.unique(claa))
     rn2 = renamelog(np.unique(clab))
-    return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror, rn=(rn1,rn2))
+    return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror, rn=(rn1,rn2), saveheatmap=saveheatmap)
 
-    

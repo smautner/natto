@@ -62,29 +62,32 @@ def umap(X,Y, reducer = None,
     if show: plt.show()
     return reducer
 
-def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None):    
+def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):    
 
     sns.set(font_scale=1.2,style='white')
     if not red:
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
-    plt.figure(figsize=(15,6))    
+    plt.figure(figsize=(16,8))    
 
     #plt.tight_layout()    
     ax=plt.subplot(121)
     umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4)
     ax=plt.subplot(122)
     umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4)
+    if save:
+        plt.tight_layout()
+        plt.savefig(save, dpi=300)
     plt.show()
 
 
-def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None):    
+def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):    
 
     sns.set(font_scale=1.2,style='white')
     if not red:
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
-    plt.figure(figsize=(22,6))    
+    plt.figure(figsize=(24,8))    
 
     #plt.tight_layout()    
     ax=plt.subplot(131)
@@ -99,6 +102,9 @@ def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None):
             title="Combined",
             size=4,
             markerscale=4, acc={1:title[0] , 2:title[1]})
+    if save:
+        plt.tight_layout()
+        plt.savefig(save,dpi=300)
     plt.show()
 
 def venn(one,two: 'boolean array', labels :"string tupple"):
@@ -118,10 +124,10 @@ def simpleheatmap(canvas):
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
         plt.show()
 
-def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols):    
+def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols, save=None):    
 
     sns.set(font_scale=1.2,style='white')
-    plt.figure(figsize=(12,4))    
+    plt.figure(figsize=(12,5))    
 
     #plt.tight_layout()    
     ax=plt.subplot(121)
@@ -130,6 +136,9 @@ def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols):
     ax=plt.subplot(122)
     plt.title('Processed Matrix',size=20)
     heatmap(cleaned,y1map,y2map,rows,cols, show=False)
+    if save:
+        plt.tight_layout()
+        plt.savefig(save, dpi=300)
     plt.show()
 
 def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):

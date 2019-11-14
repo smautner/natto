@@ -8,7 +8,7 @@ load = lambda f: [l for l in open(f,'r').read().split('\n') if len(l)>1]
 def loadlabels(labels, ids):
     cellid_to_clusterid = {row.split(',')[0]:hash(row.split(',')[1]) for row in labels[1:]} #
     clusterid_to_nuclusterid = {item:clusterid for clusterid, item in enumerate(sorted(list(set(cellid_to_clusterid.values()))))}
-    print (clusterid_to_nuclusterid)
+    #print (clusterid_to_nuclusterid)
     return np.array([ clusterid_to_nuclusterid.get(cellid_to_clusterid.get(idd[:-2],-1),-1)  for idd in ids])
 
 def filter(adata, cells='mito'):

@@ -1,4 +1,5 @@
 import basics as ba
+import tabulate
 import math
 import pprint
 #import networkx as nx
@@ -16,14 +17,21 @@ from lapsolver import solve_dense
 
 from natto.util import draw
     
-def hungarian(X1,X2, solver='scipy'):
+import matplotlib.pyplot as plt
+def hungarian(X1,X2, solver='scipy', debug = False):
     # get the matches:
     distances = ed(X1,X2)         
     if solver != 'scipy':
         row_ind, col_ind = linear_sum_assignment(distances)
     else:
         row_ind,col_ind = solve_dense(distances)
-    return row_ind, col_ind
+
+    if debug: 
+        x = distances[row_ind, col_ind]
+        num_bins = 100
+        plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
+        plt.show()
+    return row_ind, col_ind, distances
 
 
 
@@ -402,8 +410,10 @@ def multimapclusters_single (X,X2,Yh,Y2h, debug=False,method = 'lapsolver', norm
 
 
 class renamelog:
-    def __init__(self,cla):
+    def __init__(self,cla, name):
         self.rn = {c:c for c in cla}
+        self.dataset=name # an id or name ;) 
+
     def log(self,oldname, newname):
         # {2:1, 3:1}
         # input 2, 4    => {4:1}
@@ -411,6 +421,7 @@ class renamelog:
             for n in newname:
                 self.rn[n] = self.rn[o]
             self.rn.pop(o)
+
     def total_rename(self,a):
         # a is a dictionary 
         oldlookup = dict(self.rn)
@@ -420,21 +431,24 @@ class renamelog:
 
 import umap
 from natto.cluster.simple import predictgmm
-def recluster(data,Y,problemclusters,reclu=None,n_clust=2, rnlog=None):
-    
-    if reclu:
-        print ('foudn reclu')
-        data= reclu.myumap.transform(data)
-    
+
+
+
+def recluster(data,Y,problemclusters,reclu=None,n_clust=2, rnlog=None, debug=False, showset={}):
     #data=umap.UMAP(n_components=2).fit_transform(data)
     indices = [y in problemclusters for y in Y]
     data2 = data[indices]
-    data2=umap.UMAP(n_components=2).fit_transform(data2)
+    if reclu:
+        data2= reclu.mymap.transform(data2)
+    else: 
+        data2=umap.UMAP(n_components=2).fit_transform(data2)
     yh = predictgmm(n_clust,data2)
     maxy = np.max(Y)
     Y[indices] = yh+maxy+1
     
     rnlog.log(problemclusters , np.unique(yh)+maxy+1 )
+    if debug or 'renaming' in showset:
+        print ('ranaming: set%s' % rnlog.dataset , problemclusters, np.unique(yh)+maxy+1)
     return Y
     
 
@@ -736,7 +750,17 @@ def clean_matrix(canvas):
             canvas[a,b] = 0
     return canvas, canvasbackup
 
-def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,maxerror=.15,reclu=None, rn=None,saveheatmap=None):
+def split_and_mors(Y1,Y2, hungmatch, data1,data2, 
+                   debug=False, 
+                   normalize=True,
+                   maxerror=.15,
+                   reclu=None, 
+                   rn=None,
+                   saveheatmap=None,
+                   showset=None, distmatrix=None): 
+    '''
+    rn is for the renaming log 
+    '''
 
     rn1,rn2  = rn  
     # get a mapping
@@ -744,9 +768,11 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
     row_ind, col_ind = solve_dense(canvas)
     canvas, canvasbackup = clean_matrix(canvas)
-    if debug: 
+    if debug or 'inbetweenheatmap' in showset: 
         draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind)
 
+    
+    #  da and db are dictionaries pointing out mappings to multiple clusters in the other set
     aa,bb = np.nonzero(canvas)
     da = defaultdict(list)
     db = defaultdict(list)
@@ -758,21 +784,22 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
     done = True
 
     for a,bb in da.items():
-        if any([ b in db for b in bb]):
+        if any([ b in db for b in bb]): # do nothing if the target is conflicted in a and b 
             continue
-        recluster(data1,Y1,[y1map.getitem[a]],n_clust=len(bb),reclu=reclu,rnlog=rn1)
+        recluster(data1,Y1,[y1map.getitem[a]],n_clust=len(bb),reclu=reclu,rnlog=rn1,debug=debug,showset=showset)
         #print(f"reclustered {y1map.getitem[a]} of data1 into {len(bb)}")
         done = False
 
     for b,aa in db.items():
-        if any([ a in da for a in aa]):
+        if any([ a in da for a in aa]):# do nothing if the target is conflicted in a and b 
             continue
-        recluster(data2,Y2,[y2map.getitem[b]],n_clust=len(aa),reclu=reclu,rnlog=rn2)
+        recluster(data2,Y2,[y2map.getitem[b]],n_clust=len(aa),reclu=reclu,rnlog=rn2,debug=debug,showset=showset)
         #print(f"reclustered {y2map.getitem[b]} of data2 into {len(aa)}")
         done = False
 
     if done:
         row_ind, col_ind = solve_dense(canvas)
+        
         # remove matches that have a zero as value
         row_ind,col_ind = list(zip(*[(r,c) for r , c in zip(row_ind, col_ind) if canvas[r,c] < 0]))
         Y1,Y2 = finalrename(Y1,Y2,y1map,y2map,row_ind,col_ind,rn1,rn2) 
@@ -783,8 +810,11 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
         y1map,y2map,canvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=normalize)
         #row_ind, col_ind = solve_dense(canvas)
         canvas, canvasbackup = clean_matrix(canvas)
-        draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind, save=saveheatmap)
+        if debug or 'heatmap' in showset:
+            draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind, save=saveheatmap)
 
+        if debug or "drawdist" in showset:
+            draw.distrgrid(distmatrix,Y1,Y2,hungmatch)
         # NOT WE NEED TO PRINT A BEAUTIFUL TABLE 
         
         classes = list(set(np.unique(Y1)).union(set(np.unique(Y2))))
@@ -813,29 +843,34 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2, debug=False, normalize=True,ma
         out.append( b )
         
         out = list(zip(*out)) 
-        import tabulate
-        print(tabulate.tabulate(out, ['clusterID','ID set 1','ID set 2','size set 1', 'size set 2','matches', "# matches"]))
-        print(tabulate.tabulate(out, ['clusterID','ID set 1','ID set 2','size set 1', 'size set 2','matches', "# matches"],tablefmt='latex'))
+        
+        if debug or 'table' in showset:
+            print(tabulate.tabulate(out, ['clusterID','ID set 1','ID set 2','size set 1', 'size set 2','matches', "# matches"]))
+        if debug or 'table_latex' in showset:
+            print(tabulate.tabulate(out, ['clusterID','ID set 1','ID set 2','size set 1', 'size set 2','matches', "# matches"],tablefmt='latex'))
         
 
         #print ("renaming",rn1.rn)
         #print ("renaming",rn2.rn)
-        return Y1,Y2
+        return Y1,Y2, out
   
     #########################
     if debug: draw.cmp2(Y1,Y2,data1,data2)
 
-    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu, rn=(rn1,rn2), saveheatmap=saveheatmap)
+    return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu, rn=(rn1,rn2), saveheatmap=saveheatmap, showset=showset, distmatrix=distmatrix)
 
 
-
-   
-
-def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu=None,saveheatmap=None):
-    hungmatch = hungarian(mata,matb)
+def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu=None,saveheatmap=None, showset={}):
+    a,b,dist = hungarian(mata,matb, debug=debug)
+    hungmatch = (a,b)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
     #claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
-    rn1 = renamelog(np.unique(claa))
-    rn2 = renamelog(np.unique(clab))
-    return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror, rn=(rn1,rn2), saveheatmap=saveheatmap)
+    rn1 = renamelog(np.unique(claa),'1')
+    rn2 = renamelog(np.unique(clab),'2')
+    return split_and_mors(claa,clab,hungmatch,mata,matb,debug=debug,
+                                                        normalize=normalize,
+                                                        maxerror=maxerror,
+                                                        rn=(rn1,rn2),
+                                                        saveheatmap=saveheatmap,
+                                                        reclu=reclu,showset=showset, distmatrix=dist)
 

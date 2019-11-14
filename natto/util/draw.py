@@ -9,6 +9,21 @@ import seaborn as sns
 
 from matplotlib_venn import *
 
+
+# make a list of colors 
+colors = list(permutations([0,.25,.5,.75,1],3))
+random.seed(5) #making shuffle consistent
+random.shuffle(colors)
+f = lambda cm: [cm.colors[i] for i in range(len(cm.colors))]
+#colors = f(plt.cm.get_cmap('tab20b')) +f(plt.cm.get_cmap('tab20c')) 
+colors = f(plt.cm.get_cmap('tab20'))
+colors += f(plt.cm.get_cmap("tab20b"))
+colors += f(plt.cm.get_cmap("tab20c"))
+# put the list in col for usage
+col = { i-2:e for i,e in enumerate(colors)}
+col.update( {a+100:b for a,b in col.items()}  )
+
+
 def umap(X,Y, reducer = None,
         title="No title",
         acc : "y:str_description"={}, 
@@ -21,20 +36,6 @@ def umap(X,Y, reducer = None,
     
     
     
-    # make a list of colors 
-    colors = list(permutations([0,.25,.5,.75,1],3))
-    random.seed(5) #making shuffle consistent
-    random.shuffle(colors)
-    f = lambda cm: [cm.colors[i] for i in range(len(cm.colors))]
-    #colors = f(plt.cm.get_cmap('tab20b')) +f(plt.cm.get_cmap('tab20c')) 
-    colors = f(plt.cm.get_cmap('tab20'))
-    colors += f(plt.cm.get_cmap("tab20b"))
-    colors += f(plt.cm.get_cmap("tab20c"))
-    # put the list in col for usage
-    col = { i-2:e for i,e in enumerate(colors)}
-    col.update( {a+100:b for a,b in col.items()}  )
-
-
 
     Y=np.array(Y)
     
@@ -168,3 +169,19 @@ def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
         if show:
             plt.show()
+            
+def distrgrid(distances,Y1,Y2,hungmatch):
+    # we should make a table first... 
+    row_ind, col_ind = hungmatch
+    rows=[ (Y1[r],Y2[c],distances[r,c]) for r,c in zip(row_ind,col_ind)]
+    #g = sns.FacetGrid(DataFrame(rows,columns=['set1','set2','dist'] ), row="set1",col="set2")
+    g = sns.FacetGrid(DataFrame(rows,columns=['set1','set2','dist'] ), row="set1",hue="set2", aspect=5,palette=col)
+    g.map(sns.distplot, "dist", hist=False, rug=True);
+    g.add_legend();
+    plt.ylim(0, 1)
+    plt.show()
+    g = sns.FacetGrid(DataFrame(rows,columns=['set1','set2','dist'] ), row="set2",hue="set1", aspect=5,palette=col)
+    g.map(sns.distplot, "dist", hist=False, rug=True);
+    g.add_legend();
+    plt.ylim(0, 1)
+    plt.show()

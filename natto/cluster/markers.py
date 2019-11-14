@@ -44,7 +44,7 @@ class markers():
                 y=self.mymap.transform(y)
                 clu1 = sim.predictgmm(num,x)
                 clu2 = sim.predictgmm(num2,y)
-                #return x,y,clu1, clu2
+                # return x,y,clu1, clu2
                 
             elif clust == 'load':
                 

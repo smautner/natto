@@ -872,5 +872,7 @@ def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu
                                                         maxerror=maxerror,
                                                         rn=(rn1,rn2),
                                                         saveheatmap=saveheatmap,
-                                                        reclu=reclu,showset=showset, distmatrix=dist)
+                                                        reclu=reclu,
+                                                        showset=showset,
+                                                        distmatrix=dist)
 

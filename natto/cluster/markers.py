@@ -25,7 +25,7 @@ class markers():
             return markers, numclusters
             
             
-    def process(self,markerfile,marker2=None, maxgenes=15, clust = 'gmm',sample=None,classpaths=None):
+    def process(self,markerfile,marker2=None, maxgenes=15, clust = 'gmm',sample=None,classpaths=None, dimensions=6):
         
             markers, num = self.readmarkerfile(markerfile,maxgenes)
             if marker2:
@@ -39,7 +39,7 @@ class markers():
             if clust == "gmm":
                 x= self.a.X.toarray()
                 y= self.b.X.toarray()
-                self.mymap = umap.UMAP(n_components=6).fit(np.vstack((x,y)))
+                self.mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((x,y)))
                 x=self.mymap.transform(x)
                 y=self.mymap.transform(y)
                 clu1 = sim.predictgmm(num,x)

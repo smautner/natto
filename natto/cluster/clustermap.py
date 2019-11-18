@@ -5,10 +5,9 @@ load = lambda f: open(f,'r').readlines()
 import natto.cluster.simple as sim
 import umap
 #  we load the data from clustermap 
-
+from collections import defaultdict
 
 class clustermapdata():
-    
     
     
     
@@ -19,12 +18,17 @@ class clustermapdata():
         return [int(line[line.find(',')+2:-2]) for line in f]
 
 
-    def readmarkerfile(self,markerfile,maxgenes):
-        markers_l = load(markerfile)
-        markersets=[ line.split(',') for line in markers_l[1:maxgenes] ]
+    def readmarkerfile(self,dataset,maxgenes):
+        file = f"../dataset_rdses/{dataset}.markers.csv"
+        markers_l = load(file)
+        d = defaultdict(list)
+        markersets=[ line.split(',') for line in markers_l[1:] ]
+        for line in markersets:
+            d[int(line[-2][1:-1])].append(line[0][1:-1])
+        print(d.keys())
         numclusters = len(markersets[0])
-        markers = {m.strip() for markerline in markersets for m in markerline} 
-        return markers, numclusters
+        markers = { m  for markers in d.values()  for m in markers[:maxgenes] }
+        return markers, len(d)
 
 
     

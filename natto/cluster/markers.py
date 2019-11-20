@@ -24,7 +24,10 @@ class markers():
             markers = {m.strip() for markerline in markersets for m in markerline} 
             return markers, numclusters
             
-            
+    def transform(self):
+        '''returns dim reduced data'''
+        return self.mymap.transform(self.a.X.toarray()), self.mymap.transform(self.b.X.toarray())
+    
     def process(self,markerfile,marker2=None, maxgenes=15, clust = 'gmm',sample=None,classpaths=None, dimensions=6):
         
             markers, num = self.readmarkerfile(markerfile,maxgenes)

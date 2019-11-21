@@ -2,10 +2,8 @@
 from collections import defaultdict
 from natto import hungutil as hu
 import numpy as np
-
 from natto.util.copkmeans import cop_kmeans as ckmeans
 def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps=6):
-    
     
     ro,co,dists = hu.hungarian(a,b)
     print (len(ro), len(co), dists.shape)
@@ -55,10 +53,6 @@ def getconstraints(ro,co,dists,ca,cb, reverse=False, draw= lambda x,y:None, debu
             draw( ca ,classarray)
         if reverse:
             draw( classarray ,ca)
-
-
-
-
     return mustlink
     
 

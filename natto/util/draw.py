@@ -159,11 +159,11 @@ def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):
         df = DataFrame(-canvas)
 
         if paper:
-            sns.heatmap(df,xticklabels=xlabels,yticklabels=ylabels, annot=False ,linewidths=.5,cmap="YlGnBu" )
+            sns.heatmap(df,xticklabels=xlabels,yticklabels=ylabels, annot=False ,linewidths=.5,cmap="YlGnBu" , square=True)
             plt.xlabel('Clusters data set 2')
             plt.ylabel('Clusters data set 1')
         else:
-            sns.heatmap(df,xticklabels=ylabels,yticklabels=xlabels, annot=True)
+            sns.heatmap(df,xticklabels=ylabels,yticklabels=xlabels, annot=True, square=True)
         #df = DataFrame(canvas[:y1map.len,:y2map.len])
         #s= lambda y,x: [ y.getitem[k] for k in x]
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
@@ -185,3 +185,4 @@ def distrgrid(distances,Y1,Y2,hungmatch):
     g.add_legend();
     plt.ylim(0, 1)
     plt.show()
+

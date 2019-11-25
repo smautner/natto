@@ -813,6 +813,11 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2,
         if debug or 'heatmap' in showset:
             draw.doubleheatmap(canvasbackup,canvas, y1map, y2map, row_ind, col_ind, save=saveheatmap)
 
+        if 'sankey' in showset:
+            zzy1map,zzy2map,zzcanvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=False)
+            draw.sankey(zzcanvas, zzy1map, zzy2map )
+            draw.sankey(canvasbackup, y1map, y2map )
+
         if  "drawdist" in showset:
             draw.distrgrid(distmatrix,Y1,Y2,hungmatch)
         # NOT WE NEED TO PRINT A BEAUTIFUL TABLE 

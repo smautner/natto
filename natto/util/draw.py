@@ -186,3 +186,30 @@ def distrgrid(distances,Y1,Y2,hungmatch):
     plt.ylim(0, 1)
     plt.show()
 
+
+import pandas as pd
+from pysankey import sankey as pysankey
+
+def sankey(canvasbackup ,y1map, y2map):
+
+
+    # this should sort the items/...
+    flow= []
+    def add(items,l=True):
+        a = list(items)
+        a.sort()
+        for e in a:
+            flow.append((e if l else 0 ,e if not l else 0 ,0))
+    add(y1map.itemlist)
+    add(y2map.itemlist,False)
+
+
+    # this is the actual drawing
+    flow+= [(y1map.getitem[a],y2map.getitem[b],-canvasbackup[a][b]) for a in range(canvasbackup.shape[0]) for b in range(canvasbackup.shape[1])]
+    df = DataFrame(flow, columns=['set 1','set 2','matches'])
+    #from basics import dumpfile
+    #dumpfile(df,"adong")
+    pysankey(
+        left=df['set 1'], right=df['set 2'], rightWeight=df['matches'],leftWeight=df['matches'], aspect=20,
+        fontsize=20, figureName="Matching", colorDict= col
+    )

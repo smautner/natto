@@ -13,8 +13,7 @@ def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps
         #draw(ca,cb)
         constraints = getconstraints(co,ro,dists,cb,ca, reverse=True, draw=draw, debug=debug) 
         ca, _ = ckmeans(a,k=len(np.unique(ca)), ml=constraints,cl=[])
-        print("next round:")
-        draw(ca,cb)
+        #draw(ca,cb)
 
     return ca,cb, None
 
@@ -38,8 +37,8 @@ def getconstraints(ro,co,dists,ca,cb, reverse=False, draw= lambda x,y:None, debu
         conlist+=arglist
         mustlink += [(bb,bbb) for bb in tlist1 for bbb in tlist1]
 
-    print("this should highlight the change:")
     if debug:
+        print("this should highlight the change:")
         z=np.array(co) # ids in b 
         partner = dict( zip(co,ro)) # id_b -> id_a 
         ignored = {z:1 for z in conlist}

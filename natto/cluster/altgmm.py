@@ -2,15 +2,19 @@ from collections import defaultdict
 from natto import hungutil as hu
 import numpy as np
 from sklearn import  mixture
-
+from natto.hungutil import spacemap 
 
 class priorizedgmm(mixture.GaussianMixture):
     '''gmm where i set the initial class labels'''
     def _initialize_parameters(self, X, random_state):
+        n_samples = X.shape[0] 
         resp = np.zeros((n_samples, self.n_components))
+        
+        for idd, label in zip(range(n_samples),self.labels):
+            if label > -1: resp[idd,label] =1 
+
         self._initialize(X,resp)
-        label=self.labels
-        resp[np.arange(n_samples), label] = 1
+
     def fit(self, X, y=None):
         self.labels = y
         self.fit_predict(X, y)
@@ -18,7 +22,7 @@ class priorizedgmm(mixture.GaussianMixture):
 
 
 
-def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps=10, gmmiter=3):
+def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps=10, gmmiter=3, numclust='max'):
     ro,co,dists = hu.hungarian(a,b)
     for i in range(maxsteps):
         '''
@@ -28,30 +32,45 @@ def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps
             2. gmmiter steps of gmm 
             3. do the same for the other set
         '''
-        p=priorizedgmm(n_components=np.unique(cb),max_iter= gmmiter)
-        p.labels = transferlabels(ro,co,dists,ca,cb, draw=draw, debug=debug) 
+        ncb = len(np.unique(cb)) 
+        nca = len(np.unique(ca))
+        nc = max(nca,ncb) if numclust == 'max' else 0
+
+        p=priorizedgmm(n_components=nc or ncb ,max_iter= gmmiter)
+        p.labels = transferlabels(ro,co,dists,ca,cb, draw=draw, debug=debug, numclust=numclust) 
         cb = p.fit_predict(b)
 
-        p=priorizedgmm(n_components=np.unique(ca),max_iter= gmmiter)
-        p.labels = transferlabels(co,ro,dists,cb,ca, reverse=True, draw=draw, debug=debug) 
-        draw(ca,cb)
+        p=priorizedgmm(n_components=nc or nca,max_iter= gmmiter)
+        p.labels = transferlabels(co,ro,dists,cb,ca, reverse=True, draw=draw, debug=debug, numclust=numclust)
+        ca = p.fit_predict(a)
+        if debug: draw(ca,cb)
 
     return ca,cb, None
 
 
-def transferlabels(ro,co,dists,ca,cb, reverse=False, draw= lambda x,y:None, debug = False): 
+def transferlabels(ro,co,dists,ca,cb, reverse=False, draw= lambda x,y:None, debug = False, numclust='asd'): 
     
     # return labels in b such that matching labels cells have the same label
     
+
+    # make a dict: classinA:[connections in b with distance]
     di = defaultdict(list)
     for a,b in zip(ro,co):
         di[ca[a]].append( ( dists[a,b] if not reverse else dists[b,a] ,b)  )
-
+        #di[ca[a]].append( b  )
+    answer = np.ones(len(cb), dtype=np.int)*-1
     
-    answer = np.ones(len(cb))*-1
 
+    # if a has more classes thanB, we delete the clustr (amd assign the cell somewhere else)  in A
+    scores = [ (np.mean( [ d for d,_ in items  ]) , label )   for label, items in di.items() ]
+    scores.sort()
+    okclasses = [ label for _, label in  scores[:len(np.unique(cb))]  ]
+    # print ("okclasses", okclasses)
+
+    asd = spacemap(okclasses)
     for label, items in di.items():
-        answer[items] = label
+        if label in okclasses or numclust=='max':
+            answer[[ i for _,i in items ]] = label if numclust=='max' else asd.getint[label]
 
     '''
     for clas, tlist in di.items():

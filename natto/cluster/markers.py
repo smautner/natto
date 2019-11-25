@@ -17,6 +17,7 @@ class markers():
         self.b = adata2
         
         
+        
     def readmarkerfile(self,markerfile,maxgenes):
             markers_l = load(markerfile)
             markersets=[ line.split(',') for line in markers_l[1:maxgenes] ]
@@ -78,7 +79,8 @@ class markers():
         sc.pp.normalize_total(adata,1e4)
 
         # select marker genes
-        chose = [x in markers for x in adata.var['gene_ids'].keys() ]
+        #chose = [x in markers for x in adata.var['gene_ids'].keys() ]
+        chose = [x for x in adata.var['gene_ids'].keys() if x in markers]
         adata = adata[:,chose]
 
         # normalize column 

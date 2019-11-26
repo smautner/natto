@@ -674,9 +674,7 @@ def make_even(claa, clab,hungmatch,mata,matb,normalize):
 def oneonesplitsplit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13):
     hungmatch = hungarian(mata,matb)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
-
     claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
-    
     return split_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
 
 
@@ -817,6 +815,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2,
             zzy1map,zzy2map,zzcanvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=False)
             draw.sankey(zzcanvas, zzy1map, zzy2map )
             draw.sankey(canvasbackup, y1map, y2map )
+            draw.sankey(canvas, y1map, y2map )
 
         if  "drawdist" in showset:
             draw.distrgrid(distmatrix,Y1,Y2,hungmatch)

@@ -193,23 +193,28 @@ from pysankey import sankey as pysankey
 def sankey(canvasbackup ,y1map, y2map):
 
 
-    # this should sort the items/...
-    flow= []
-    def add(items,l=True):
-        a = list(items)
-        a.sort()
-        for e in a:
-            flow.append((e if l else 0 ,e if not l else 0 ,0))
-    add(y1map.itemlist)
-    add(y2map.itemlist,False)
+ 
 
 
     # this is the actual drawing
-    flow+= [(y1map.getitem[a],y2map.getitem[b],-canvasbackup[a][b]) for a in range(canvasbackup.shape[0]) for b in range(canvasbackup.shape[1])]
+    flow= [(y1map.getitem[a],y2map.getitem[b],-canvasbackup[a][b])
+                for a in range(canvasbackup.shape[0])
+                    for b in range(canvasbackup.shape[1]) if -canvasbackup[a][b] > 0]
+
+    flow.sort(key= lambda x: x[2],reverse=True)
+
     df = DataFrame(flow, columns=['set 1','set 2','matches'])
     #from basics import dumpfile
     #dumpfile(df,"adong")
     pysankey(
-        left=df['set 1'], right=df['set 2'], rightWeight=df['matches'],leftWeight=df['matches'], aspect=20,
-        fontsize=20, figureName="Matching", colorDict= col
+        left=df['set 1'],
+        right=df['set 2'],
+        rightWeight=df['matches'],
+        #leftLabels = y1map.itemlist,
+        #rightLabels = y2map.itemlist,
+        leftWeight=df['matches'], 
+        aspect=20,
+        fontsize=20,
+        figureName="Matching",
+        colorDict= col
     )

@@ -3,8 +3,43 @@ from sklearn.model_selection import cross_val_predict
 from  sklearn.neighbors import KNeighborsClassifier as KNC
 import numpy as np
 from sklearn.metrics import pairwise_distances
-    
+from sklearn.neighbors import NearestNeighbors as NN 
 # QUALITY MEASSUREMENTS
+import math
+
+
+# e^-dd / avg 1nn dist 
+
+def gausssim(a,b, ca, cb): 
+    ncb=np.unique(cb)
+    res = {}
+    for aa in np.unique(ca):
+        if aa in ncb:
+            if sum(ca==aa) < 5 or sum(cb==aa)<5:
+                res[aa]="NA"
+                continue
+            avg1= nndist(a,ca,cb,c = aa)
+            avg2= nndist(b,cb,ca, c=aa)
+            d= supernndist(a,b,ca,cb,c=aa)
+            avg= (avg1+avg2)/2
+            #print (aa,d,avg1,avg2)
+            res[aa]= math.exp(-(d*d) / (avg*avg))
+    return res
+
+def nndist(m,cla,clb,c=None): 
+            instances = m[cla==c]
+            neighs = NN(n_neighbors=2).fit(instances)
+            distances, _  = neighs.kneighbors(instances)
+            return np.mean(distances[:,1])
+
+def supernndist(a,b,ca,cb,c=None):
+            instances = a[ca==c]
+            neighs = NN(n_neighbors=1).fit(instances)
+            distances, _  = neighs.kneighbors(b[cb==c])
+            return np.mean(distances)
+        
+    
+
 
 
 

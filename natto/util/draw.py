@@ -192,10 +192,6 @@ from pysankey import sankey as pysankey
 
 def sankey(canvasbackup ,y1map, y2map):
 
-
- 
-
-
     # this is the actual drawing
     flow= [(y1map.getitem[a],y2map.getitem[b],-canvasbackup[a][b])
                 for a in range(canvasbackup.shape[0])

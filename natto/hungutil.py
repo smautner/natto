@@ -813,8 +813,11 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2,
 
         if 'sankey' in showset:
             zzy1map,zzy2map,zzcanvas = make_canvas_and_spacemaps(Y1,Y2,hungmatch,normalize=False)
+            print("sankey: raw")
             draw.sankey(zzcanvas, zzy1map, zzy2map )
+            print("sankey: normalized")
             draw.sankey(canvasbackup, y1map, y2map )
+            print("sankey: cleaned up")
             draw.sankey(canvas, y1map, y2map )
 
         if  "drawdist" in showset:

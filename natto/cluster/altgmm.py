@@ -36,14 +36,24 @@ def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps
         nca = len(np.unique(ca))
         nc = max(nca,ncb) if numclust == 'max' else 0
 
-        p=priorizedgmm(n_components=nc or ncb ,max_iter= gmmiter)
+        p=priorizedgmm(n_components=nc or ncb ,max_iter= gmmiter, random_state=45)
         p.labels = transferlabels(ro,co,dists,ca,cb, draw=draw, debug=debug, numclust=numclust) 
+        cbold= np.array(cb)
         cb = p.fit_predict(b)
 
-        p=priorizedgmm(n_components=nc or nca,max_iter= gmmiter)
+        p=priorizedgmm(n_components=nc or nca,max_iter= gmmiter, random_state=45)
         p.labels = transferlabels(co,ro,dists,cb,ca, reverse=True, draw=draw, debug=debug, numclust=numclust)
+        caold= np.array(ca)
         ca = p.fit_predict(a)
         if debug: draw(ca,cb)
+        
+
+        # NEW DEBUGGING TO FIX MAXSTEP 
+
+        print (i,all(ca == caold), all(cb == cbold ))
+        print (ca[ca != caold])
+        if all(ca == caold) and all(cb == cbold ):
+            break
 
     return ca,cb, None
 

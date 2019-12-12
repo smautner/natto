@@ -51,7 +51,7 @@ def umap(X,Y, reducer = None,
         plt.scatter(embed[Y==cla, 0], embed[Y==cla, 1],
                     color=col[cla],
                     s=size,
-                    label= str(cla)+acc.get(cla,''))
+                    label= str(cla)+" "+acc.get(cla,''))
     #plt.axis('off')
     plt.xlabel('UMAP 2')
     plt.ylabel('UMAP 1')

@@ -6,9 +6,7 @@ import numpy as np
 from pandas import DataFrame
 from umap import UMAP
 import seaborn as sns
-
 from matplotlib_venn import *
-
 
 # make a list of colors 
 colors = list(permutations([0,.25,.5,.75,1],3))
@@ -53,7 +51,7 @@ def umap(X,Y, reducer = None,
         plt.scatter(embed[Y==cla, 0], embed[Y==cla, 1],
                     color=col[cla],
                     s=size,
-                    label= acc.get(cla,str(cla)))
+                    label= str(cla)+acc.get(cla,''))
     #plt.axis('off')
     plt.xlabel('UMAP 2')
     plt.ylabel('UMAP 1')
@@ -63,7 +61,7 @@ def umap(X,Y, reducer = None,
     if show: plt.show()
     return reducer
 
-def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):    
+def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):    
 
     sns.set(font_scale=1.2,style='white')
     if not red:
@@ -73,16 +71,29 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):
 
     #plt.tight_layout()    
     ax=plt.subplot(121)
-    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4)
+    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4, acc=labelappend)
     ax=plt.subplot(122)
-    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4)
+    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend)
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
     plt.show()
 
+def plot_blobclust(Y1,X1,X2,red=None, save=None):    
+    sns.set(font_scale=1.2,style='white')
+    if not red:
+        red = UMAP()
+        red.fit(np.vstack((X1,X2)))
+    plt.figure(figsize=(8,8))    
+    #plt.tight_layout()    
+    umap(np.vstack((X1,X2)),Y1,red,show=False,title="combined clustering",size=4,markerscale=4)
+    if save:
+        plt.tight_layout()
+        plt.savefig(save, dpi=300)
+    plt.show()
 
 def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):    
+    '''add a comparison, where all labels are kept'''
 
     sns.set(font_scale=1.2,style='white')
     if not red:

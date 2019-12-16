@@ -28,28 +28,29 @@ def umap(X,Y, reducer = None,
         black = None, 
         show=True,
         markerscale=4,
+        marker = 'o',
         size=None):
     assert reducer != None  , "give me a reducer"
+        
     plt.title(title, size=20)
-    
-    
-    
-
     Y=np.array(Y)
-    
-    
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     
     if type(black) != type(None): 
         embed = reducer.transform(black)
-        plt.scatter(embed[:, 0], embed[:, 1],c=[(0,0,0) for e in range(black.shape[0])], 
+        plt.scatter(embed[:, 0],
+                    embed[:, 1],
+                    marker=marker,
+                    c=[(0,0,0) for e in range(black.shape[0])], 
                     s=size,
                     label='del')
     
     embed = reducer.transform(X)
     for cla in np.unique(Y):
-        plt.scatter(embed[Y==cla, 0], embed[Y==cla, 1],
-                    color=col[cla],
+        plt.scatter(embed[Y==cla, 0],
+                    embed[Y==cla, 1],
+                    color= col[cla],
+                    marker=marker,
                     s=size,
                     label= str(cla)+" "+acc.get(cla,''))
     #plt.axis('off')
@@ -84,9 +85,10 @@ def plot_blobclust(Y1,X1,X2,red=None, save=None):
     if not red:
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
-    plt.figure(figsize=(8,8))    
+    plt.figure(figsize=(12,12))    
     #plt.tight_layout()    
-    umap(np.vstack((X1,X2)),Y1,red,show=False,title="combined clustering",size=4,markerscale=4)
+    umap(X1,Y1[:X1.shape[0]],red,show=False,title="combined clustering",size=30,markerscale=4,marker='_')
+    umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,marker='|')
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)

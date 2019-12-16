@@ -64,12 +64,11 @@ def loadpbmc(path, subsample=None):
 def load3k6k(subsample=False):
     return load3k(subsample=subsample), load6k(subsample=subsample)
 
-def loadp7de(subsample=False):
-    return loadpbmc('../data/p7d',subsample), loadpbmc('../data/p7e',subsample)
+def loadp7de(subsample=False,pathprefix='..'):
+    return loadpbmc('%s/data/p7d'%pathprefix ,subsample), loadpbmc('%s/data/p7e'%pathprefix,subsample)
 
-def load4k8k(subsample=False):
-    return loadpbmc('../data/4k',subsample), loadpbmc('../data/8k',subsample)
+def load4k8k(subsample=False,pathprefix='..'):
+    return loadpbmc('%s/data/4k'% pathprefix,subsample), loadpbmc('%s/data/8k'%pathprefix,subsample)
 
-
-def loadimmune(subsample=False):
-    return loadpbmc('../data/immune_stim/8',subsample), loadpbmc('../data/immune_stim/9',subsample)
+def loadimmune(subsample=False, pathprefix='..'):
+    return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample), loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample)

@@ -24,6 +24,7 @@ def gausssim(a,b, ca, cb):
             avg= (avg1+avg2)/2
             #print (aa,d,avg1,avg2)
             res[aa]= math.exp(-(d*d) / (avg*avg))
+    res = {k:v for k,v in res.items() if v!="NA"}
     return res
 
 def nndist(m,cla,clb,c=None): 

@@ -438,10 +438,14 @@ def recluster(data,Y,problemclusters,reclu=None,n_clust=2, rnlog=None, debug=Fal
     #data=umap.UMAP(n_components=2).fit_transform(data)
     indices = [y in problemclusters for y in Y]
     data2 = data[indices]
-    if reclu:
-        data2= reclu.mymap.transform(data2)
+
+    
+    if type(reclu)==str:
+        if reclu == '2D':
+            data2=umap.UMAP(n_components=2).fit_transform(data2)
     else: 
-        data2=umap.UMAP(n_components=2).fit_transform(data2)
+        data2= reclu.mymap.transform(data2)
+
     yh = predictgmm(n_clust,data2)
     maxy = np.max(Y)
     Y[indices] = yh+maxy+1
@@ -867,7 +871,7 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2,
     return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu, rn=(rn1,rn2), saveheatmap=saveheatmap, showset=showset, distmatrix=distmatrix)
 
 
-def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu=None,saveheatmap=None, showset={}):
+def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu='dont :#',saveheatmap=None, showset={}):
     a,b,dist = hungarian(mata,matb, debug=debug)
     hungmatch = (a,b)
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)

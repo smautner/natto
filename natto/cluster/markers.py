@@ -29,7 +29,7 @@ class markers():
         '''returns dim reduced data'''
         return self.mymap.transform(self.a.X.toarray()), self.mymap.transform(self.b.X.toarray())
     
-    def process(self,markerfile,marker2=None, maxgenes=15, clust = 'gmm',sample=None,classpaths=None, dimensions=6):
+    def process(self,markerfile,marker2=None, maxgenes=15, clust = 'gmm',sample=None,classpaths=None,corrcoef=True, dimensions=6):
         
             markers, num = self.readmarkerfile(markerfile,maxgenes)
             if marker2:
@@ -40,16 +40,29 @@ class markers():
             
             self.a = self.preprocess(self.a,markers)
             self.b = self.preprocess(self.b,markers)
+            lena = self.a.shape[0]
+
+
+            x= self.a.X.toarray()
+            y= self.b.X.toarray()
+
+
+            if corrcoef:
+                corr = np.corrcoef(np.vstack((x,y))) 
+                corr = np.nan_to_num(corr)
+                x,y = corr[:lena], corr[lena:]
+
             if clust == "gmm":
-                x= self.a.X.toarray()
-                y= self.b.X.toarray()
+
                 self.mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((x,y)))
                 x=self.mymap.transform(x)
                 y=self.mymap.transform(y)
                 clu1 = sim.predictgmm(num,x)
                 clu2 = sim.predictgmm(num2,y)
-                # return x,y,clu1, clu2
-                
+                return x,y,clu1, clu2
+            
+
+            '''
             elif clust == 'load':
                 
                 clu1 = self.csv_crap(classpaths[0])
@@ -65,7 +78,7 @@ class markers():
             else:
                 clu1 = sim.predictlou(num,self.a.X.toarray(),{'n_neighbors':10})
                 clu2 = sim.predictlou(num2,self.b.X.toarray(),{'n_neighbors':10})
-                
+            ''' 
             return self.a.X.toarray(), self.b.X.toarray(), clu1, clu2
         
     def csv_crap(self,f):

@@ -40,6 +40,38 @@ def supernndist(a,b,ca,cb,c=None):
             return np.mean(distances)
         
     
+def compare_heatmap(y11,y12,y21,y22,mata,matb):
+    
+    from lapsolver import solve_dense
+    from sklearn.metrics.pairwise import euclidean_distances as ed
+    from natto.hungutil import make_canvas_and_spacemaps
+    from natto.util.draw import quickdoubleheatmap
+    distances = ed(mata,matb)
+    hungmatch = solve_dense(distances)
+
+
+    def prephtmap(y1,y2):
+        # returns: canvas,y1map2,y2map2,row,col
+        a,b,c = make_canvas_and_spacemaps(y1,y2,hungmatch,normalize=False)
+        d,e  = solve_dense(c)
+        return c,a,b,d,e
+
+    comp1 = prephtmap(y11,y12)
+    comp2 = prephtmap(y21,y22)
+    
+    quickdoubleheatmap(comp1,comp2)
+
+    def calcmissmatches(stuff):
+        canv = stuff[0] 
+        r,c = stuff[-2:]
+        for rr,cc in zip(r,c):
+            canv[rr,cc]=0
+        return canv.sum()
+
+    print("set1 missplaced:", calcmissmatches(comp1))
+    print("set2 missplaced:", calcmissmatches(comp2))
+
+
 
 
 
@@ -55,8 +87,6 @@ def clust(nparray, labels):
 
 
 def doubleclust(X,X2, Y,Y2):
-    
-    
     def asd(X,X2,Y,Y2):
         neighs = KNC(n_neighbors=1)
         neighs.fit(X,Y)

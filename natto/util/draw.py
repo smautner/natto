@@ -155,6 +155,25 @@ def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols, save=None):
         plt.savefig(save, dpi=300)
     plt.show()
 
+def quickdoubleheatmap(comp1,comp2, save=None):    
+
+    sns.set(font_scale=1.2,style='white')
+    plt.figure(figsize=(12,5))    
+
+    #plt.tight_layout()    
+    ax=plt.subplot(121)
+    plt.title('Clustering1',size=20)
+    heatmap(*comp1,show=False)
+    ax=plt.subplot(122)
+    plt.title('Clustering2',size=20)
+    heatmap(*comp2,show=False)
+    if save:
+        plt.tight_layout()
+        plt.savefig(save, dpi=300)
+    plt.show()
+
+
+
 def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):
         # there is a version that sorts the hits to the diagonal in util/bad... 
         paper = True

@@ -21,7 +21,7 @@ titles = [('p7d','p7e'),('4k','8k'),('immuneA','immuneB')]
 loaders = [data.loadimmune]
 titles = [('immuneA','immuneB')]
 debug = False
-numcells = 1000
+numcells = 4000
 algo = 'seurat' # select seurat or gmm 
 
 ## PREPROCESSING BY SEURAT 

@@ -2,6 +2,7 @@ from itertools import permutations
 import random
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from pandas import DataFrame
 from umap import UMAP
@@ -28,7 +29,7 @@ def umap(X,Y, reducer = None,
         black = None, 
         show=True,
         markerscale=4,
-        marker = 'o',
+        getmarker = lambda color: {"marker":'o'},
         size=None):
     assert reducer != None  , "give me a reducer"
         
@@ -40,19 +41,17 @@ def umap(X,Y, reducer = None,
         embed = reducer.transform(black)
         plt.scatter(embed[:, 0],
                     embed[:, 1],
-                    marker=marker,
                     c=[(0,0,0) for e in range(black.shape[0])], 
                     s=size,
-                    label='del')
+                    label='del',marker='X')
     
     embed = reducer.transform(X)
     for cla in np.unique(Y):
         plt.scatter(embed[Y==cla, 0],
                     embed[Y==cla, 1],
                     color= col[cla],
-                    marker=marker,
                     s=size,
-                    label= str(cla)+" "+acc.get(cla,''))
+                    label= str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
     #plt.axis('off')
     plt.xlabel('UMAP 2')
     plt.ylabel('UMAP 1')
@@ -86,9 +85,17 @@ def plot_blobclust(Y1,X1,X2,red=None, save=None):
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
     plt.figure(figsize=(12,12))    
-    #plt.tight_layout()    
-    umap(X1,Y1[:X1.shape[0]],red,show=False,title="combined clustering",size=30,markerscale=4,marker='_')
-    umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,marker='|')
+    #plt.tight_layout()     old markers.. 
+    #umap(X1,Y1[:X1.shape[0]],red,show=False,title="combined clustering",size=30,markerscale=4,marker='_')
+    #umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,marker='|') 
+    fill = lambda col: {"marker":'o'}
+    empty = lambda col: {'facecolors':'none', 'edgecolors':col  }
+    #fill = lambda col: {"marker": "o"}
+    #empty = lambda col:{"marker": mpl.markers.MarkerStyle('o','none')}  #{"marker":'o','fillstyle':'none'}
+
+
+    umap(X1,Y1[:X1.shape[0]],red,show=False,title="combined clustering",size=30,markerscale=4,getmarker= fill)
+    umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,getmarker=empty) 
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
@@ -159,7 +166,6 @@ def quickdoubleheatmap(comp1,comp2, save=None):
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(12,5))    
-
     #plt.tight_layout()    
     ax=plt.subplot(121)
     plt.title('Clustering1',size=20)

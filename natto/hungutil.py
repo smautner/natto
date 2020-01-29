@@ -1,4 +1,5 @@
 import basics as ba
+import time
 import tabulate
 import math
 import pprint
@@ -871,9 +872,14 @@ def split_and_mors(Y1,Y2, hungmatch, data1,data2,
     return split_and_mors(Y1,Y2,hungmatch,data1,data2,debug=debug,normalize=normalize,maxerror=maxerror,reclu=reclu, rn=(rn1,rn2), saveheatmap=saveheatmap, showset=showset, distmatrix=distmatrix)
 
 
-def bit_by_bit(mata,matb,claa,clab, debug=True,normalize=True,maxerror=.13,reclu='dont :#',saveheatmap=None, showset={}):
+def bit_by_bit(mata,matb,claa,clab, 
+        debug=True,normalize=True,maxerror=.13,
+        reclu='dont :#',saveheatmap=None, showset={}):
+
+    t=time.time()
     a,b,dist = hungarian(mata,matb, debug=debug)
     hungmatch = (a,b)
+    if "time" in showset: print(f'hungmatch took {time.time()-t}')
     #return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
     #claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)
     rn1 = renamelog(np.unique(claa),'1')

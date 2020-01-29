@@ -4,6 +4,7 @@ from  sklearn.neighbors import KNeighborsClassifier as KNC
 import numpy as np
 from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import NearestNeighbors as NN 
+from sklearn.metrics import adjusted_rand_score as rand
 # QUALITY MEASSUREMENTS
 import math
 
@@ -26,6 +27,7 @@ def gausssim(a,b, ca, cb):
             res[aa]= math.exp(-(d*d) / (avg*avg))
     res = {k:v for k,v in res.items() if v!="NA"}
     return res
+
 
 def nndist(m,cla,clb,c=None): 
             instances = m[cla==c]
@@ -68,8 +70,11 @@ def compare_heatmap(y11,y12,y21,y22,mata,matb):
             canv[rr,cc]=0
         return canv.sum()
 
-    print("set1 missplaced:", calcmissmatches(comp1))
-    print("set2 missplaced:", calcmissmatches(comp2))
+    print("clust1 missplaced:", calcmissmatches(comp1))
+    print("clust2 missplaced:", calcmissmatches(comp2))
+    print("set1 randindex:",rand(y11,y21) )
+    print("set2 randindex:",rand(y12,y22) )
+
 
 
 

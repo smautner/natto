@@ -17,7 +17,6 @@ class markers():
         self.b = adata2
         
         
-        
     def readmarkerfile(self,markerfile,maxgenes):
             markers_l = load(markerfile)
             markersets=[ line.split(',') for line in markers_l[1:maxgenes] ]
@@ -43,26 +42,25 @@ class markers():
             lena = self.a.shape[0]
 
 
-            x= self.a.X.toarray()
-            y= self.b.X.toarray()
+            ax= self.a.X.toarray()
+            bx= self.b.X.toarray()
 
 
             if corrcoef:
-                corr = np.corrcoef(np.vstack((x,y))) 
+                corr = np.corrcoef(np.vstack((ax,bx))) 
                 corr = np.nan_to_num(corr)
-                x,y = corr[:lena], corr[lena:]
+                ax,bx = corr[:lena], corr[lena:]
 
             if clust == "gmm":
-
-                self.mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((x,y)))
-                x=self.mymap.transform(x)
-                y=self.mymap.transform(y)
-                clu1 = sim.predictgmm(num,x)
-                clu2 = sim.predictgmm(num2,y)
-                return x,y,clu1, clu2
+                self.mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax,bx)))
+                ax=self.mymap.transform(ax)
+                bx=self.mymap.transform(bx)
+                clu1 = sim.predictgmm(num,ax)
+                clu2 = sim.predictgmm(num2,bx)
+                return ax,bx,clu1, clu2
             
 
-            '''
+    '''
             elif clust == 'load':
                 
                 clu1 = self.csv_crap(classpaths[0])
@@ -78,13 +76,13 @@ class markers():
             else:
                 clu1 = sim.predictlou(num,self.a.X.toarray(),{'n_neighbors':10})
                 clu2 = sim.predictlou(num2,self.b.X.toarray(),{'n_neighbors':10})
-            ''' 
             return self.a.X.toarray(), self.b.X.toarray(), clu1, clu2
         
     def csv_crap(self,f):
         lines =open(f,'r').readlines()
         return np.array([int(cls) for cls in lines[1:]])
             
+    ''' 
     def preprocess(self,adata,markers):
         '''we want to 0. basic filtering???  1.rows to 10k  2.select genes 3.normalize columns to 10xcells 4. log'''
         sc.pp.filter_cells(adata, min_genes=200)

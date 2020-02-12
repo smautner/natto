@@ -3,8 +3,6 @@ from scipy.stats import gmean
 import scanpy as sc
 import sklearn.neighbors as skn
 from scipy.optimize import curve_fit
-
-
 import anndata as ad
 from sklearn import  mixture
 
@@ -13,16 +11,47 @@ from sklearn import  mixture
 ########
 # Clustering
 #########
-def predictgmm(n_classes,X):
-    algorithm = mixture.GaussianMixture( n_components=n_classes, covariance_type='full')
-    algorithm.fit(X)
-    # agglo can not just predict :((( so we have this here
+
+
+def get_y(algorithm,X):
     if hasattr(algorithm, 'labels_'):
         y_pred = algorithm.labels_.astype(np.int)
     else:
         y_pred = algorithm.predict(X)
     return y_pred
 
+def predictgmm(n_classes,X):
+    algorithm = mixture.GaussianMixture( n_components=n_classes, covariance_type='full')
+    algorithm.fit(X)
+    # agglo can not just predict :((( so we have this here
+    return get_y(algorithm,X)
+
+def predictgmm_BIC(X):
+    # GET INITIAL BIC
+    algorithm = mixture.GaussianMixture( n_components=4, covariance_type='full')
+    algorithm.fit(X)
+    ob= algorithm.bic(X)
+    old_delta = -1
+    # FOR ALL CLUSTERCOUNTS
+    for n in range(5,30):
+        algorithm = mixture.GaussianMixture( n_components=n, covariance_type='full')
+        # GET BIC
+        algorithm.fit(X)
+        bx = algorithm.bic(X)
+        
+        # compare delta ch
+        # if the new delta is small (50%) .. stop 
+        delta = bx-ob
+        if  (-old_delta * .5 ) > -delta:
+            print("clusters:",n-1, old_delta, delta)
+            break
+        # save old values
+        old_delta = delta
+        ob = bx
+        oldalgorithm = algorithm 
+        
+    return get_y(oldalgorithm,X)
+        
 def predictlou(_,X,params={}):
     adata = ad.AnnData(X)
     sc.pp.neighbors(adata, **params)

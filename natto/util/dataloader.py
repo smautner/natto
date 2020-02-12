@@ -1,5 +1,11 @@
 import scanpy as sc
+from lmz import *
+import anndata as ad
 import numpy as np
+import scipy as sp
+
+
+
 load = lambda f: [l for l in open(f,'r').read().split('\n') if len(l)>1]
 
 #load = lambda f: open(f,'r').read()
@@ -72,3 +78,36 @@ def load4k8k(subsample=False,pathprefix='..'):
 
 def loadimmune(subsample=False, pathprefix='..'):
     return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample), loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample)
+
+
+def loadarti(path):
+    
+
+    grp = open(path+"/group.csv", "r").readlines()[1:]
+    grp = np.array( [ int(x[-2]) for x in grp] )
+    
+    batch = open(path+"/batch.csv", "r").readlines()[1:]
+    batch = np.array([ int(x[-2]) for x in batch])
+    
+    cnts = open(path+"/counts.csv", "r").readlines()[1:]
+    
+    cnts = [ Map(int,line.split(',')[1:])  for line in cnts]
+    cnts= sp.sparse.csr_matrix(Transpose(cnts))
+    #cnts= np.matrix(Transpose(cnts))
+    
+    a = ad.AnnData( cnts[batch == 1] )
+    b = ad.AnnData( cnts[batch == 2] )
+    b.var['gene_ids'] = {i:i for i in range(cnts.shape[1])}
+    a.var['gene_ids'] = {i:i for i in range(cnts.shape[1])}
+    
+    return a,b
+    
+
+def loadarti_truth(path):
+    grp = open(path+"/group.csv", "r").readlines()[1:]
+    grp = [ int(x[-2]) for x in grp]
+    
+    batch = open(path+"/batch.csv", "r").readlines()[1:]
+    batch = [ int(x[-2]) for x in batch]
+    return grp[batch == 1], grp[batch==2]
+    

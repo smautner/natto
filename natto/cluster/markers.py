@@ -83,12 +83,6 @@ class markers():
            
             
             
-            
-            
-            
-            
-            
-            
              
             
             
@@ -120,12 +114,14 @@ class markers():
         return ax,bx,clu1, clu2
             
     def preprocess2(self, maxgenes):
-        sc.pp.filter_cells(self.a, min_genes=200)
-        sc.pp.filter_cells(self.b, min_genes=200)
+        self.cellfa,_=sc.pp.filter_cells(self.a, min_genes=200,inplace=False)
+        self.cellfb,_=sc.pp.filter_cells(self.b, min_genes=200,inplace=False)
+        self.a = self.a[self.cellfa,:]
+        self.b = self.b[self.cellfb,:]
         #sc.pp.filter_genes(self.a, min_cells=3)
         #sc.pp.filter_genes(self.b, min_cells=3)
-        self.a.obs['n_counts'] = self.a.X.sum(axis=1).A1
-        self.b.obs['n_counts'] = self.b.X.sum(axis=1).A1
+        #self.a.obs['n_counts'] = self.a.X.sum(axis=1).A1
+        #self.b.obs['n_counts'] = self.b.X.sum(axis=1).A1
         sc.pp.normalize_total(self.a,1e4)
         sc.pp.normalize_total(self.b,1e4)
         sc.pp.log1p(self.a)

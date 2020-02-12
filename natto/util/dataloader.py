@@ -103,11 +103,15 @@ def loadarti(path):
     return a,b
     
 
-def loadarti_truth(path):
+def loadarti_truth(path, p1, p2):
     grp = open(path+"/group.csv", "r").readlines()[1:]
-    grp = [ int(x[-2]) for x in grp]
+    grp = np.array([ int(x[-2]) for x in grp])
     
     batch = open(path+"/batch.csv", "r").readlines()[1:]
-    batch = [ int(x[-2]) for x in batch]
-    return grp[batch == 1], grp[batch==2]
+    batch = np.array([ int(x[-2]) for x in batch])
+    
+    
+    gr1, gr2 =  grp[batch == 1 ], grp[batch==2]
+    
+    return gr1[p1], gr2[p2]
     

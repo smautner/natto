@@ -28,12 +28,12 @@ def predictgmm(n_classes,X):
 
 def predictgmm_BIC(X):
     # GET INITIAL BIC
-    algorithm = mixture.GaussianMixture( n_components=4, covariance_type='full')
+    algorithm = mixture.GaussianMixture( n_components=3, covariance_type='full')
     algorithm.fit(X)
     ob= algorithm.bic(X)
     old_delta = -1
     # FOR ALL CLUSTERCOUNTS
-    for n in range(5,30):
+    for n in range(4,30):
         algorithm = mixture.GaussianMixture( n_components=n, covariance_type='full')
         # GET BIC
         algorithm.fit(X)

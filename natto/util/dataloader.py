@@ -92,8 +92,8 @@ def loadarti(path):
     cnts = open(path+"/counts.csv", "r").readlines()[1:]
     
     cnts = [ Map(int,line.split(',')[1:])  for line in cnts]
-    cnts= sp.sparse.csr_matrix(Transpose(cnts))
-    #cnts= np.matrix(Transpose(cnts))
+    #cnts= sp.sparse.csr_matrix(Transpose(cnts))
+    cnts= np.matrix(Transpose(cnts))
     
     a = ad.AnnData( cnts[batch == 1] )
     b = ad.AnnData( cnts[batch == 2] )

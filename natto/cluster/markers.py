@@ -1,3 +1,4 @@
+from lmz import * 
 import scanpy as sc
 import numpy as np
 from sklearn.preprocessing import normalize
@@ -126,39 +127,46 @@ class markers():
             clu1 = sim.predictgmm(num,ax)
             clu2 = sim.predictgmm(num,bx)
         return ax,bx,clu1, clu2
-            
+    
+    
+    
+    
     def preprocess2(self, maxgenes, scale=False, regout= False):
+        
+        self.a.X,self.b.X = self.toarray()
+        
         self.cellfa,_=sc.pp.filter_cells(self.a, min_genes=200,inplace=False)
         self.cellfb,_=sc.pp.filter_cells(self.b, min_genes=200,inplace=False)
+        geneb,_= sc.pp.filter_genes(self.b, min_counts=6,inplace=False)
+        genea,_= sc.pp.filter_genes(self.a, min_counts=6,inplace=False)
         
         
-        self.a = self.a[self.cellfa,:]
-        self.b = self.b[self.cellfb,:]
-        #sc.pp.filter_genes(self.a, min_cells=3)
-        #sc.pp.filter_genes(self.b, min_cells=3)
+        geneab = Map(lambda x,y: x or y , genea, geneb)
+        self.a = self.a[self.cellfa,geneab].copy() 
+        self.b = self.b[self.cellfb,geneab].copy()
+        
         
         if regout:
-            self.a.obs['n_counts'] = self.a.X.sum(axis=1).A1
-            self.b.obs['n_counts'] = self.b.X.sum(axis=1).A1
+            self.a.obs['n_counts'] = self.a.X.sum(axis=1)
+            self.b.obs['n_counts'] = self.b.X.sum(axis=1)
+            print("blabla",self.a.obs['n_counts'])
+            
+            
         sc.pp.normalize_total(self.a,1e4)
         sc.pp.normalize_total(self.b,1e4)
         sc.pp.log1p(self.a)
         sc.pp.log1p(self.b)
-        
         sc.pp.highly_variable_genes(self.a,n_top_genes=maxgenes)
         sc.pp.highly_variable_genes(self.b,n_top_genes=maxgenes)
         
         
         genes= [f or g for f,g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
-        self.a = self.a[:, genes]
-        self.b = self.b[:, genes ]
+        self.a = self.a[:, genes].copy()
+        self.b = self.b[:, genes].copy()
         
         # they do this here: 
         # https://icb-scanpy-tutorials.readthedocs-hosted.com/en/latest/pbmc3k.html
         if regout:
-            self.a.X,self.b.X = self.toarray()
-            self.a=self.a.copy()
-            self.b=self.b.copy()
             print("regout",self.a.obs['n_counts'].shape ,self.a.shape)
             sc.pp.regress_out(self.a, ['n_counts'])
             sc.pp.regress_out(self.b, ['n_counts'])

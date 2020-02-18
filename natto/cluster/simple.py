@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from scipy.stats import gmean
 import scanpy as sc
 import sklearn.neighbors as skn
@@ -25,6 +26,57 @@ def predictgmm(n_classes,X):
     algorithm.fit(X)
     # agglo can not just predict :((( so we have this here
     return get_y(algorithm,X)
+
+def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20):  
+    # THE PAPER DOESNT TALK ABOT THE VALUE FOR N;; also n doesnt matter?
+
+    
+    # get all the  values
+    getbic = lambda n_comp: mixture.GaussianMixture( n_components=n_comp, covariance_type='full').fit(X).bic(X)
+    values = [-getbic(a) for a in range(cmin,cmax)] 
+    
+    # INITIALIZE
+    cur,pre,aft = [values[0]]*3
+
+    # GET DIFFs 
+    diffs = []
+    for i,m in enumerate(range(cmin, cmax)):
+        cur = values[i]
+        aft = values[i+1]
+        diffs.append((i, m, pre+aft-2*cur ))
+        pre = cur
+
+    # find local minima in diff function
+    locmin = [ v for i,v in enumerate(diffs[:-1]) 
+            if diffs[i][2] < diffs[i-1][2] and diffs[i][2] < diffs[i+1][2] ]
+
+    
+    # for each n with decreasing order of localmin value ( is this bic or diff?)
+    locmin.sort(key= lambda x: x[2], reverse=True) # decreasing order of locmin
+    
+    cur = -999999999
+    lastm = -1
+    angle = lambda a,b,c: math.atan(1/abs(b-a)) + math.atan(1/abs(c-b))
+    for i,m,v in locmin:
+        a = angle(*value[i-1:i+2]) 
+        
+        if a < cur:
+            break
+        else:
+            cur = a
+            lastm = m 
+    else:
+        print("something went wrong")
+    
+    # lastm is hte answer 
+
+    return get_y(mixture.GaussianMixture( n_components=lastm, covariance_type='full').fit(X)  ,X)
+
+    
+        
+
+
+
 
 def predictgmm_BIC(X):
     # GET INITIAL BIC

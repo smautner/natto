@@ -121,8 +121,10 @@ class markers():
         bx=self.mymap.transform(bx)
     
         if num == -1:
-            clu1 = sim.predictgmm_BIC(ax)
-            clu2 = sim.predictgmm_BIC(bx)
+            #clu1 = sim.predictgmm_BIC(ax)
+            #clu2 = sim.predictgmm_BIC(bx)
+            clu1 = sim.predictgmm_angle_based(ax)
+            clu2 = sim.predictgmm_angle_based(bx)
         else:
             clu1 = sim.predictgmm(num,ax)
             clu2 = sim.predictgmm(num,bx)

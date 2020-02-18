@@ -29,13 +29,16 @@ def predictgmm(n_classes,X):
 
 def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20):  
     #http://cs.uef.fi/sipu/pub/BIC-acivs2008
+    
+    # maybe also consider this:
+    # https://scikit-learn.org/stable/auto_examples/mixture/plot_gmm.html#sphx-glr-auto-examples-mixture-plot-gmm-py
     # THE PAPER DOESNT TALK ABOT THE VALUE FOR N;; also n doesnt matter?
 
     
     # get all the  values
     getbic = lambda n_comp: mixture.GaussianMixture( n_components=n_comp, covariance_type='full').fit(X).bic(X)
     values = [-getbic(a) for a in range(cmin,cmax)] 
-    
+    values.append(values[-1])
     # INITIALIZE
     cur,pre,aft = [values[0]]*3
 
@@ -59,7 +62,7 @@ def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20):
     lastm = -1
     angle = lambda a,b,c: math.atan(1/abs(b-a)) + math.atan(1/abs(c-b))
     for i,m,v in locmin:
-        a = angle(*value[i-1:i+2]) 
+        a = angle(*values[i-1:i+2]) 
         
         if a < cur:
             break

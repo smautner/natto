@@ -28,6 +28,7 @@ def predictgmm(n_classes,X):
     return get_y(algorithm,X)
 
 def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20):  
+    #http://cs.uef.fi/sipu/pub/BIC-acivs2008
     # THE PAPER DOESNT TALK ABOT THE VALUE FOR N;; also n doesnt matter?
 
     

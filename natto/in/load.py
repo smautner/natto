@@ -2,13 +2,11 @@ import scanpy as sc
 from lmz import *
 import anndata as ad
 import numpy as np
-import scipy as sp
 
 
 
 load = lambda f: [l for l in open(f,'r').read().split('\n') if len(l)>1]
 
-#load = lambda f: open(f,'r').read()
 
 
 def loadlabels(labels, ids):
@@ -81,11 +79,7 @@ def loadimmune(subsample=False, pathprefix='..'):
 
 
 def loadarti(path):
-    
 
-    grp = open(path+"/group.csv", "r").readlines()[1:]
-    grp = np.array( [ int(x[-2]) for x in grp] )
-    
     batch = open(path+"/batch.csv", "r").readlines()[1:]
     batch = np.array([ int(x[-2]) for x in batch])
     

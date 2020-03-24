@@ -45,7 +45,7 @@ def predictgmm_mdk(X,cmin=4,cmax=23):
     values = ba.mpmap(getbic, range(cmin,cmax), chunksize = 1 , poolsize = 4)
 
     n_clusters =  mdk.maxdropknee(values)+cmin
-    print("cluster/simple,mdropvalues",values)
+    print("old/simple,mdropvalues",values)
     return get_y(fitgmm(n_clusters,X)  ,X)
 
 def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20): 
@@ -235,7 +235,6 @@ def logtransform(adata):
 
 
 
-
 ###############
 # CELL FILTER 
 ###############
@@ -257,14 +256,11 @@ def cell_reads(adata, cutreads=2):
 ##########
 # NORMALISATION
 ##########
-
-
 def CPM(adata):
     # according to the documentation this is called normalize_total #####
     #sc.pp.normalize_total(adata, target_sum=1000000, key_added=None, layers=None, layer_norm=None, inplace=True)
     sc.pp.normalize_per_cell(adata, 100000)
     return adata
-
 
 def upperquantile(adata):
     divby = [ np.percentile(row.data,75) for row in adata.X] # get the quantiles...

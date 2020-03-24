@@ -1,5 +1,4 @@
 from collections import Counter
-from sklearn.model_selection import cross_val_predict
 from  sklearn.neighbors import KNeighborsClassifier as KNC
 import numpy as np
 from sklearn.metrics import pairwise_distances
@@ -46,8 +45,8 @@ def compare_heatmap(y11,y12,y21,y22,mata,matb):
     
     from lapsolver import solve_dense
     from sklearn.metrics.pairwise import euclidean_distances as ed
-    from natto.hungutil import make_canvas_and_spacemaps
-    from natto.util.draw import quickdoubleheatmap
+    from natto.process.hungutil import make_canvas_and_spacemaps
+    from natto.out.draw import quickdoubleheatmap
     distances = ed(mata,matb)
     hungmatch = solve_dense(distances)
 
@@ -100,32 +99,7 @@ def doubleclust(X,X2, Y,Y2):
     
     return (asd(X,X2,Y,Y2)+asd(X2,X,Y2,Y))/2
 
-# preprocessing test
-def pptest(distmatrix,matches):
-    # return avg dist among hits / meddian dist 
-    
-    # this should work becausue integer indexing...  
-    #return np.mean(distmatrix[*matches])/np.median(distmatrix)
-    pass
 
-
-
-def mergetest(inst_a, inst_b, labels_a, labels_b, matches):
-    # average distance of clusters 
-    
-    labels = Counter(labsls_a)
-    labels.update(Counter(labels_b)) # dunno if this works one might concatenate l_a and l_b somehow
-    
-    clustercenters_a = [ np.mean(inst_a[labels_a==label], axis=0)  for label in labels]
-    clustercenters_b = [ np.mean(inst_b[labels_b==label], axis=0)  for label in labels]
-    
-    m = pairwise_distances(clustercensters_a, clustercenters_b)
-    
-    #return np.mean(m[*matches])/np.median(m)
-    pass
-    
-    
-    
     
     
     

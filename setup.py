@@ -95,7 +95,7 @@ setup(
     version=get_version(),
     author='Stefan Mautner',
     author_email='myl4stn4m3@cs.uni-freiburg.de',
-    packages=['natto','natto.util', 'natto.cluster'],
+    packages=['natto','natto.util', 'natto.old'],
     scripts=[ ],
     include_package_data=True,
     package_data={},
@@ -110,7 +110,8 @@ setup(
         "scipy >= 1.3",
         "sklearn >= 0.21",
         "seaborn >= 0.9",
-        "networkx >= 2.3"
+        "networkx >= 2.3",
+        "lmz"
     ],
     cmdclass={'sdist': sdist, 'install': install}
 )

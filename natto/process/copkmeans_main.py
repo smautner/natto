@@ -1,8 +1,8 @@
 
 from collections import defaultdict
-from natto import hungutil as hu
+from natto.process import hungutil as hu
 import numpy as np
-from natto.util.copkmeans import cop_kmeans as ckmeans
+from natto.process.copkmeans import cop_kmeans as ckmeans
 def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps=6):
     
     ro,co,dists = hu.hungarian(a,b)
@@ -20,7 +20,7 @@ def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps
 
 def getconstraints(ro,co,dists,ca,cb, reverse=False, draw= lambda x,y:None, debug = False): 
     
-    # for each cluster in a: 
+    # for each old in a:
     # get all matching cells, drop those with high dist
     
     mustlink = []

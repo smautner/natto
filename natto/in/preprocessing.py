@@ -2,31 +2,107 @@ from lmz import *
 import ubergauss as ug
 import scanpy as sc
 import numpy as np
-from sklearn.preprocessing import normalize
 load = lambda f: open(f,'r').readlines()
-import natto.cluster.simple as sim
+import natto.old.simple as sim
 import umap
 from scipy.sparse import csr_matrix as csr
-import sklearn.cluster as skc
-# so the idea is that we use seurat to get markers.
-
-# then row norm 10k transcripts per cell
-# then we select the columns with the markers 
-# then we pp 10k and log them
 
 
-class markers():
+class Data():
+    """will have .a .b .umap_a .umap_b"""
+    def fit(self,adata, bdata,  maxgenes=100, corrcoef=True,
+                 dimensions=6, num=-1, scale=False):
+        self.a = adata
+        self.b = bdata
+
+        # this will work on the count matrix:
+        self.preprocess(maxgenes, scale)
+
+        lena = self.a.shape[0]
+        ax, bx = self.toarray()
+        if corrcoef:
+            corr = np.corrcoef(np.vstack((ax, bx)))
+            corr = np.nan_to_num(corr)
+            ax, bx = corr[:lena], corr[lena:]
+
+        self.mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax, bx)))
+        self.umap_a = self.mymap.transform(ax)
+        self.umap_b = self.mymap.transform(bx)
+
+        return self
+
+    def preprocess(self, maxgenes, scale=False):
+        self.a.X, self.b.X = self.toarray()
+
+        # this weeds out obvious lemons (gens and cells)
+        cellfa, gene_fa  = self._filter_cells_and_genes(self.a)
+        cellfb, gene_fb  = self._filter_cells_and_genes(self.b)
+        geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
+        self.a = self.a[cellfa, geneab].copy()
+        self.b = self.b[cellfb, geneab].copy()
+
+        # normalize:
+        Map(lambda x: sc.pp.normalize_total(x, 1e4), [self.a, self.b])
+        Map(lambda x: sc.pp.log1p(x), [self.a,self.b])
+
+        # sophisticated feature selection
+        Map(lambda x: sc.pp.highly_variable_genes(x, n_top_genes=maxgenes),[self.a,self.b])
+        genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
+        self.a = self.a[:, genes].copy()
+        self.b = self.b[:, genes].copy()
+
+        # they do this here:
+        # https://icb-scanpy-tutorials.readthedocs-hosted.com/en/latest/pbmc3k.html
+        # removed regout...
+        if scale:
+            sc.pp.scale(self.a, max_value=10)
+            sc.pp.scale(self.b, max_value=10)
+
+
+    ####
+    # helper functions:
+    ####
+    def readmarkerfile(self, markerfile, maxgenes):
+        """this reads a marker-gene file, it will extract and return: FEATURES, N_CLUSTERS"""
+        markers_l = load(markerfile)
+        markersets = [line.split(',') for line in markers_l[1:maxgenes]]
+        numclusters = len(markersets[0])
+        markers = {m.strip() for markerline in markersets for m in markerline}
+        return markers, numclusters
+
+    def _filter_cells_and_genes(self,ad):
+        cellf, _ = sc.pp.filter_cells(ad, min_genes=200, inplace=False)
+        genef, _ = sc.pp.filter_genes(ad, min_counts=6, inplace=False)
+        return cellf, genef
+
+    def _toarray(self):
+        if isinstance(self.a.X, csr):
+            ax = self.a.X.toarray()
+            bx = self.b.X.toarray()
+        else:
+            ax = self.a.X
+            bx = self.b.X
+        return ax, bx
+
+
+
+######
+# old crap:
+########
+class markers_this_is_an_old_class():
     def __init__(self,adata,adata2):
         self.a = adata
         self.b = adata2
-        
-        
+
+
     def readmarkerfile(self,markerfile,maxgenes):
-            markers_l = load(markerfile)
-            markersets=[ line.split(',') for line in markers_l[1:maxgenes] ]
-            numclusters = len(markersets[0])
-            markers = {m.strip() for markerline in markersets for m in markerline} 
+        markers_l = load(markerfile)
+        markersets=[ line.split(',') for line in markers_l[1:maxgenes] ]
+        numclusters = len(markersets[0])
+        markers = {m.strip() for markerline in markersets for m in markerline}
             return markers, numclusters
+
+
             
     def transform(self):
         '''returns dim reduced data'''
@@ -184,34 +260,3 @@ class markers():
         if scale:
             sc.pp.scale(self.a, max_value=10)
             sc.pp.scale(self.b, max_value=10)
-
-    
-    
-    
-
-    '''
-            elif clust == 'load':
-                
-                clu1 = self.csv_crap(classpaths[0])
-                clu2 = self.csv_crap(classpaths[1])
-                self.a.obs['class'] = clu1
-                self.b.obs['class'] = clu2
-                if sample: 
-                    sc.pp.subsample(self.a, fraction=None, n_obs=sample, random_state=0, copy=False)
-                    sc.pp.subsample(self.b, fraction=None, n_obs=sample, random_state=0, copy=False)
-                clu1 = self.a.obs['class']
-                clu2 = self.b.obs['class']
-                
-            else:
-                clu1 = sim.predictlou(num,self.a.X.toarray(),{'n_neighbors':10})
-                clu2 = sim.predictlou(num2,self.b.X.toarray(),{'n_neighbors':10})
-            return self.a.X.toarray(), self.b.X.toarray(), clu1, clu2
-        
-    def csv_crap(self,f):
-        lines =open(f,'r').readlines()
-        return np.array([int(cls) for cls in lines[1:]])
-            
-    ''' 
-
-
-            

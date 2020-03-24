@@ -49,7 +49,7 @@ def find_clustermap_hung(Y1,Y2, hungmatch, debug=False):
     pairs = zip(Y1[row_ind],Y2[col_ind])
     pairs = Counter(pairs) # pair:occurances
     
-    # normalize for cluster size
+    # normalize for old size
     clustersizes= Counter(Y1) # class:occurence 
     clustersizes2 = Counter(Y2) # class:occurence 
 

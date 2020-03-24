@@ -1,10 +1,5 @@
-import scanpy as sc
-import numpy as np
-from sklearn.preprocessing import normalize
 load = lambda f: open(f,'r').readlines()
-import natto.cluster.simple as sim
-import umap
-#  we load the data from clustermap 
+#  we load the data from clustermap
 from collections import defaultdict
 
 class clustermapdata():

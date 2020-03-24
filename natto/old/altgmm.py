@@ -1,8 +1,8 @@
 from collections import defaultdict
-from natto import hungutil as hu
+from natto.process import hungutil as hu
 import numpy as np
 from sklearn import  mixture
-from natto.hungutil import spacemap 
+from natto.process.hungutil import spacemap
 
 class priorizedgmm(mixture.GaussianMixture):
     '''gmm where i set the initial class labels'''

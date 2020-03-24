@@ -6,13 +6,12 @@ import sklearn.neighbors as skn
 from scipy.optimize import curve_fit
 import anndata as ad
 from sklearn import  mixture
-
-
-
+import maxdropknee as mdk 
+import basics as ba 
+import functools as fu
 ########
-# Clustering
+# THIS SECTION IS CRAP -> overclust
 #########
-
 
 def get_y(algorithm,X):
     if hasattr(algorithm, 'labels_'):
@@ -27,7 +26,30 @@ def predictgmm(n_classes,X):
     # agglo can not just predict :((( so we have this here
     return get_y(algorithm,X)
 
-def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20):  
+def fitbgmm(n_classes,X):
+    return mixture.BayesianGaussianMixture( n_components=n_classes, covariance_type='full').fit(X)
+
+
+def fitgmm(n_classes=4,X=None):
+    return  mixture.GaussianMixture(n_init = 50, init_params='random',
+            n_components=n_classes, covariance_type='full').fit(X)
+
+def bic(n_classes=4,X=None):
+    return -1* fitgmm(n_classes, X).bic(X)
+
+
+def predictgmm_mdk(X,cmin=4,cmax=23):
+    #getbic = lambda n_comp: fitgmm(n_comp,X).bic(X)
+    #values = [getbic(a) for a in range(cmin,cmax)] 
+    getbic = fu.partial(bic, X=X)
+    values = ba.mpmap(getbic, range(cmin,cmax), chunksize = 1 , poolsize = 4)
+
+    n_clusters =  mdk.maxdropknee(values)+cmin
+    print("cluster/simple,mdropvalues",values)
+    return get_y(fitgmm(n_clusters,X)  ,X)
+
+def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20): 
+    # this used 
     #http://cs.uef.fi/sipu/pub/BIC-acivs2008
     
     # maybe also consider this:
@@ -36,9 +58,10 @@ def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20):
 
     
     # get all the  values
-    getbic = lambda n_comp: mixture.GaussianMixture( n_components=n_comp, covariance_type='full').fit(X).bic(X)
+    getbic = lambda n_comp: fitgmm(n_comp,X).bic(X)
     values = [-getbic(a) for a in range(cmin,cmax)] 
     values.append(values[-1])
+    
     # INITIALIZE
     cur,pre,aft = [values[0]]*3
 
@@ -73,8 +96,33 @@ def predictgmm_angle_based(X, n=30, cmin=4, cmax= 20):
         print("something went wrong")
     
     # lastm is hte answer 
-
-    return get_y(mixture.GaussianMixture( n_components=lastm, covariance_type='full').fit(X)  ,X)
+    # this selects the maximum bic:
+    #lastm = np.argmax(values)+cmin
+    
+    # this is my fuckery 
+    '''
+    cv=-9999999
+    for i,v in enumerate(values):
+        if v < cv:
+            lastm = i + cmin
+            break
+        cv=v
+        
+    # max drop after high 
+    cv=-99999999
+    drops=[]
+    for i,v in enumerate(values):
+        if v < cv:
+            lastm = i + cmin
+            drops.append([v - cv ,lastm])
+        cv=v
+    drops.sort()
+    lastm= drops[0][1]
+    print("applying max drop")
+    '''
+    
+    print ("gmm_angles:",lastm, values, [a[2] for a in diffs])
+    return get_y(fitgmm(lastm,X)  ,X)
 
     
         

@@ -1,4 +1,5 @@
 from lmz import * 
+import ubergauss as ug
 import scanpy as sc
 import numpy as np
 from sklearn.preprocessing import normalize
@@ -6,6 +7,7 @@ load = lambda f: open(f,'r').readlines()
 import natto.cluster.simple as sim
 import umap
 from scipy.sparse import csr_matrix as csr
+import sklearn.cluster as skc
 # so the idea is that we use seurat to get markers.
 
 # then row norm 10k transcripts per cell
@@ -43,10 +45,8 @@ class markers():
             self.b = self.preprocess(self.b,markers)
             lena = self.a.shape[0]
 
-
             ax= self.a.X.toarray()
             bx= self.b.X.toarray()
-
 
             if corrcoef:
                 corr = np.corrcoef(np.vstack((ax,bx))) 
@@ -121,10 +121,19 @@ class markers():
         bx=self.mymap.transform(bx)
     
         if num == -1:
-            #clu1 = sim.predictgmm_BIC(ax)
-            #clu2 = sim.predictgmm_BIC(bx)
-            clu1 = sim.predictgmm_angle_based(ax)
-            clu2 = sim.predictgmm_angle_based(bx)
+            #clu1 = skc.DBSCAN().fit_predict(ax)
+            #clu2 = skc.DBSCAN().fit_predict(bx)
+            #clu1 = sim.predictgmm_mdk(ax)
+            #clu2 = sim.predictgmm_mdk(bx)
+            #clu1 = sim.fitbgmm(8,ax).predict(ax)
+            #clu2 = sim.fitbgmm(8,bx).predict(bx)
+            clu1 = ug.get_model(ax).predict(ax)
+            clu2 = ug.get_model(bx).predict(bx)
+            
+            
+            # TRY THIS ,,, ALSO TRY THE NORM BY COLUMN? 
+            #clu1 = sim.predictlou(123,ax,{'n_neighbors':10})
+            #clu2 = sim.predictlou(123,bx,{'n_neighbors':10})
         else:
             clu1 = sim.predictgmm(num,ax)
             clu2 = sim.predictgmm(num,bx)

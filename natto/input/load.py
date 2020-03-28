@@ -78,12 +78,16 @@ def loadimmune(subsample=False, pathprefix='..'):
     return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample), loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample)
 
 
-def loadarti(path):
 
-    batch = open(path+"/batch.csv", "r").readlines()[1:]
+
+datanames = ["default","even",'si1','si2','c7','c6','c5','facl0.05','facl2']
+
+def loadarti(path, dataname):
+
+    batch = open(path+"/%sbatch.art.csv" % dataname, "r").readlines()[1:]
     batch = np.array([ int(x[-2]) for x in batch])
     
-    cnts = open(path+"/counts.csv", "r").readlines()[1:]
+    cnts = open(path+"/%scounts.art.csv" % dataname, "r").readlines()[1:]
     
     cnts = [ Map(int,line.split(',')[1:])  for line in cnts]
     #cnts= sp.sparse.csr_matrix(Transpose(cnts))
@@ -97,11 +101,11 @@ def loadarti(path):
     return a,b
     
 
-def loadarti_truth(path, p1, p2):
-    grp = open(path+"/group.csv", "r").readlines()[1:]
+def loadarti_truth(path, p1, p2, dataname):
+    grp = open(path+"/%sgroup.art.csv" % dataname, "r").readlines()[1:]
     grp = np.array([ int(x[-2]) for x in grp])
     
-    batch = open(path+"/batch.csv", "r").readlines()[1:]
+    batch = open(path+"/%sbatch.art.csv" % dataname, "r").readlines()[1:]
     batch = np.array([ int(x[-2]) for x in batch])
     
     

@@ -7,6 +7,7 @@ from umap import UMAP
 import seaborn as sns
 from matplotlib_venn import *
 
+'''
 # make a list of colors 
 colors = list(permutations([0,.25,.5,.75,1],3))
 random.seed(5) #making shuffle consistent
@@ -19,9 +20,11 @@ colors += f(plt.cm.get_cmap("tab20c"))
 # put the list in col for usage
 col = { i-2:e for i,e in enumerate(colors)}
 col.update( {a+100:b for a,b in col.items()}  )
+'''
 
+col = plt.cm.get_cmap('tab20').colors
 
-def umap(X,Y, reducer = None,
+def umap(X,Y,
         title="No title",
         acc : "y:str_description"={}, 
         black = None, 
@@ -29,21 +32,20 @@ def umap(X,Y, reducer = None,
         markerscale=4,
         getmarker = lambda color: {"marker":'o'},
         size=None):
-    assert reducer != None  , "give me a reducer"
         
     plt.title(title, size=20)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     
     if type(black) != type(None): 
-        embed = reducer.transform(black)
+        embed = black
         plt.scatter(embed[:, 0],
                     embed[:, 1],
                     c=[(0,0,0) for e in range(black.shape[0])], 
                     s=size,
                     label='del',marker='X')
     
-    embed = reducer.transform(X)
+    embed = X
     for cla in np.unique(Y):
         plt.scatter(embed[Y==cla, 0],
                     embed[Y==cla, 1],
@@ -54,24 +56,19 @@ def umap(X,Y, reducer = None,
     plt.xlabel('UMAP 2')
     plt.ylabel('UMAP 1')
 
-
     plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
     if show: plt.show()
-    return reducer
 
-def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):    
+def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):    
 
     sns.set(font_scale=1.2,style='white')
-    if not red:
-        red = UMAP()
-        red.fit(np.vstack((X1,X2)))
     plt.figure(figsize=(16,8))    
 
     #plt.tight_layout()    
     ax=plt.subplot(121)
-    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4, acc=labelappend)
+    umap(X1,Y1,show=False,title=title[0],size=4,markerscale=4, acc=labelappend)
     ax=plt.subplot(122)
-    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend)
+    umap(X2,Y2,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend)
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
@@ -176,7 +173,12 @@ def quickdoubleheatmap(comp1,comp2, save=None):
         plt.savefig(save, dpi=300)
     plt.show()
 
-
+def radviz(matrix,classes):
+    df = pd.DataFrame(matrix)
+    df['class']=classes
+    size=10 # default is too large
+    pd.plotting.radviz(df,'class',s=size, colormap=plt.cm.get_cmap('tab20'))
+    plt.show()
 
 def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):
         # there is a version that sorts the hits to the diagonal in util/bad... 
@@ -250,3 +252,64 @@ def sankey(canvasbackup ,y1map, y2map):
         figureName="Matching",
         colorDict= col
     )
+
+
+'''
+def umap(X,Y, reducer = None,
+        title="No title",
+        acc : "y:str_description"={}, 
+        black = None, 
+        show=True,
+        markerscale=4,
+        getmarker = lambda color: {"marker":'o'},
+        size=None):
+    assert reducer != None  , "give me a reducer"
+        
+    plt.title(title, size=20)
+    Y=np.array(Y)
+    size=  max( int(4000/Y.shape[0]), 1) if not size else size
+    
+    if type(black) != type(None): 
+        embed = reducer.transform(black)
+        plt.scatter(embed[:, 0],
+                    embed[:, 1],
+                    c=[(0,0,0) for e in range(black.shape[0])], 
+                    s=size,
+                    label='del',marker='X')
+    
+    embed = reducer.transform(X)
+    for cla in np.unique(Y):
+        plt.scatter(embed[Y==cla, 0],
+                    embed[Y==cla, 1],
+                    color= col[cla],
+                    s=size,
+                    label= str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
+    #plt.axis('off')
+    plt.xlabel('UMAP 2')
+    plt.ylabel('UMAP 1')
+
+
+    plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
+    if show: plt.show()
+    return reducer
+
+def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):    
+
+    sns.set(font_scale=1.2,style='white')
+    if not red:
+        red = UMAP()
+        red.fit(np.vstack((X1,X2)))
+
+    plt.figure(figsize=(16,8))    
+
+    #plt.tight_layout()    
+    ax=plt.subplot(121)
+    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4, acc=labelappend)
+    ax=plt.subplot(122)
+    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend)
+    if save:
+        plt.tight_layout()
+        plt.savefig(save, dpi=300)
+    plt.show()
+
+'''

@@ -168,16 +168,10 @@ def rename(tuplemap, Y1, Y2, rn1, rn2):
     return r1, r2
 
 
-def recluster(data, Y, problemclusters, reclu=None, n_clust=2, rnlog=None, debug=False, showset={}):
+def recluster(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, showset={}):
     # data=umap.UMAP(n_components=2).fit_transform(data)
     indices = [y in problemclusters for y in Y]
     data2 = data[indices]
-
-    if type(reclu) == str:
-        if reclu == '2D':
-            data2 = umap.UMAP(n_components=2).fit_transform(data2)
-    else:
-        data2 = reclu.mymap.transform(data2)
 
     yh = predictgmm(n_clust, data2)
     maxy = np.max(Y)
@@ -193,7 +187,6 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                    debug=False,
                    normalize=True,
                    maxerror=.15,
-                   reclu=None,
                    rn=None,
                    saveheatmap=None,
                    showset=None, distmatrix=None):
@@ -224,14 +217,14 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     for a, bb in da.items():
         if any([b in db for b in bb]):  # do nothing if the target is conflicted in a and b
             continue
-        recluster(data1, Y1, [y1map.getitem[a]], n_clust=len(bb), reclu=reclu, rnlog=rn1, debug=debug, showset=showset)
+        recluster(data1, Y1, [y1map.getitem[a]], n_clust=len(bb), rnlog=rn1, debug=debug, showset=showset)
         # print(f"reclustered {y1map.getitem[a]} of data1 into {len(bb)}")
         done = False
 
     for b, aa in db.items():
         if any([a in da for a in aa]):  # do nothing if the target is conflicted in a and b
             continue
-        recluster(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), reclu=reclu, rnlog=rn2, debug=debug, showset=showset)
+        recluster(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset)
         # print(f"reclustered {y2map.getitem[b]} of data2 into {len(aa)}")
         done = False
 
@@ -306,12 +299,12 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     if debug: draw.cmp2(Y1, Y2, data1, data2)
 
     return split_and_mors(Y1, Y2, hungmatch, data1, data2, debug=debug, normalize=normalize, maxerror=maxerror,
-                          reclu=reclu, rn=(rn1, rn2), saveheatmap=saveheatmap, showset=showset, distmatrix=distmatrix)
+                         rn=(rn1, rn2), saveheatmap=saveheatmap, showset=showset, distmatrix=distmatrix)
 
 
 def bit_by_bit(mata, matb, claa, clab,
                debug=True, normalize=True, maxerror=.13,
-               reclu='dont :#', saveheatmap=None, showset={}):
+             saveheatmap=None, showset={}):
     t = time.time()
     a, b, dist = hungarian(mata, matb, debug=debug)
     hungmatch = (a, b)
@@ -325,10 +318,15 @@ def bit_by_bit(mata, matb, claa, clab,
                           maxerror=maxerror,
                           rn=(rn1, rn2),
                           saveheatmap=saveheatmap,
-                          reclu=reclu,
                           showset=showset,
                           distmatrix=dist)
 
+
+import ubergauss as ug
+def cluster_ab(a,b):
+    d= {"nclust_min":9, "nclust_max":9, "n_init": 10}
+    return ug.get_model(a,**d).predict(a), ug.get_model(b,**d).predict(b)
+    
 
 
 

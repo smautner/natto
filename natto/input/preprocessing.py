@@ -9,41 +9,61 @@ from scipy.sparse import csr_matrix as csr
 
 
 class Data():
-    """will have .a .b .umap_a .umap_b"""
+    """will have .a .b .d2 .dx"""
     def fit(self,adata, bdata,  maxgenes=100, corrcoef=True,
-                 dimensions=6, num=-1, scale=False):
+                 dimensions=6, scale=False):
+
         self.a = adata
         self.b = bdata
 
         # this will work on the count matrix:
         self.preprocess(maxgenes, scale)
-
+        
         lena = self.a.shape[0]
-        ax, bx = self.toarray()
+        ax, bx = self._toarray()
+        
+        assert self.a.shape == ax.shape
+        assert self.b.shape == bx.shape
+        
         if corrcoef:
             corr = np.corrcoef(np.vstack((ax, bx)))
             corr = np.nan_to_num(corr)
             ax, bx = corr[:lena], corr[lena:]
 
-        self.mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax, bx)))
-        self.umap_a = self.mymap.transform(ax)
-        self.umap_b = self.mymap.transform(bx)
+        self.a, self.b  = ax,bx
 
+        mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax, bx)))
+        self.dx = mymap.transform(ax), mymap.transform(bx)
+
+        mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax, bx)))
+        self.d2 = mymap.transform(ax), mymap.transform(bx)
         return self
-
-    def preprocess(self, maxgenes, scale=False):
-        self.a.X, self.b.X = self.toarray()
-
+    
+    
+    def basic_filter(self):
+        #self.a.X, self.b.X = self._toarray()
         # this weeds out obvious lemons (gens and cells)
-        cellfa, gene_fa  = self._filter_cells_and_genes(self.a)
-        cellfb, gene_fb  = self._filter_cells_and_genes(self.b)
+        self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a)
+        self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b)
         geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
-        self.a = self.a[cellfa, geneab].copy()
-        self.b = self.b[cellfb, geneab].copy()
-
-        # normalize:
-        Map(lambda x: sc.pp.normalize_total(x, 1e4), [self.a, self.b])
-        Map(lambda x: sc.pp.log1p(x), [self.a,self.b])
+        self.a = self.a[self.cellfa, geneab]
+        self.b = self.b[self.cellfb, geneab]
+        
+    def normalize(self):
+        sc.pp.normalize_total(self.a, 1e4)
+        sc.pp.normalize_total(self.b, 1e4)
+        
+        sc.pp.log1p(self.a)
+        sc.pp.log1p(self.b)
+       
+    def preprocess2(self, maxgenes, scale=False):
+        self.basic_filter()
+        self.normalize()
+        # lets try to implement this ourselfs..
+        
+    def preprocess(self, maxgenes, scale=False):
+        self.basic_filter()
+        self.normalize()
 
         # sophisticated feature selection
         Map(lambda x: sc.pp.highly_variable_genes(x, n_top_genes=maxgenes),[self.a,self.b])
@@ -100,7 +120,7 @@ class markers_this_is_an_old_class():
         markersets=[ line.split(',') for line in markers_l[1:maxgenes] ]
         numclusters = len(markersets[0])
         markers = {m.strip() for markerline in markersets for m in markerline}
-            return markers, numclusters
+        return markers, numclusters
 
 
             

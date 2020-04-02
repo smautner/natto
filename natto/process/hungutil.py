@@ -1,4 +1,5 @@
 import basics as ba
+import anndata as ad
 import time
 import tabulate
 import math
@@ -13,6 +14,7 @@ from lapsolver import solve_dense
 from natto.out import draw
 import matplotlib.pyplot as plt
 
+import scanpy as sc
 import umap
 from natto.old.simple import predictgmm
 
@@ -322,11 +324,25 @@ def bit_by_bit(mata, matb, claa, clab,
                           distmatrix=dist)
 
 
+
+####
+# clustering algos.. 
+#####
+
 import ubergauss as ug
 def cluster_ab(a,b):
+    return predictgmm(a), predictgmm(b)
+
+def predictgmm(a):
     d= {"nclust_min":9, "nclust_max":9, "n_init": 10}
-    return ug.get_model(a,**d).predict(a), ug.get_model(b,**d).predict(b)
-    
+    return ug.get_model(a,**d).predict(a)
+
+def predictlou(X,params={}):
+    adata = ad.AnnData(X)
+    sc.pp.scale(adata, max_value=10)
+    sc.pp.neighbors(adata, **params)
+    sc.tl.louvain(adata)
+    return np.array([int(x) for x in adata.obs['louvain']])
 
 
 

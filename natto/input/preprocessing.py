@@ -6,31 +6,41 @@ load = lambda f: open(f,'r').readlines()
 import natto.old.simple as sim
 import umap
 from scipy.sparse import csr_matrix as csr
-
+import sklearn 
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+fun = lambda x,a,b,c: a+b/(1+x*c)
+from scipy.stats import norm
+from scipy import stats
 
 class Data():
     """will have .a .b .d2 .dx"""
-    def fit(self,adata, bdata,  maxgenes=100, corrcoef=True,
-                 dimensions=6, scale=False):
+    def fit(self,adata, bdata,  maxgenes=100, corrcoef=True,mindisp=1.5,
+                 dimensions=6,maxmean=3,scale=False, minmean=0.0125, debug_ftsel=False):
 
         self.a = adata
         self.b = bdata
-
+        self.debug_ftsel = debug_ftsel
         # this will work on the count matrix:
-        self.preprocess(maxgenes, scale)
-        
+        self.preprocess2( mindisp=mindisp, 
+                         maxmean=maxmean,
+                        minmean=minmean)
+        #self.preprocess2( maxgenes)
+        if scale:
+            self.scale()
+            
         lena = self.a.shape[0]
         ax, bx = self._toarray()
         
         assert self.a.shape == ax.shape
         assert self.b.shape == bx.shape
         
+        self.a, self.b  = ax,bx
         if corrcoef:
             corr = np.corrcoef(np.vstack((ax, bx)))
             corr = np.nan_to_num(corr)
             ax, bx = corr[:lena], corr[lena:]
 
-        self.a, self.b  = ax,bx
 
         mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax, bx)))
         self.dx = mymap.transform(ax), mymap.transform(bx)
@@ -39,29 +49,23 @@ class Data():
         self.d2 = mymap.transform(ax), mymap.transform(bx)
         return self
     
-    
-    def basic_filter(self):
-        #self.a.X, self.b.X = self._toarray()
-        # this weeds out obvious lemons (gens and cells)
-        self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a)
-        self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b)
-        geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
-        self.a = self.a[self.cellfa, geneab]
-        self.b = self.b[self.cellfb, geneab]
-        
-    def normalize(self):
-        sc.pp.normalize_total(self.a, 1e4)
-        sc.pp.normalize_total(self.b, 1e4)
-        
-        sc.pp.log1p(self.a)
-        sc.pp.log1p(self.b)
-       
-    def preprocess2(self, maxgenes, scale=False):
+
+
+    def preprocess2(self, mindisp=1.5,maxmean = 3, minmean = None):
         self.basic_filter()
         self.normalize()
-        # lets try to implement this ourselfs..
+        a,b = self._toarray()
         
-    def preprocess(self, maxgenes, scale=False):
+        #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
+        #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
+        ag = self.get_var_genes_normtest(a,mindisp)
+        bg = self.get_var_genes_normtest(b,mindisp)
+        genes = [a or b for a,b in zip(ag,bg)]
+        self.a = self.a[:, genes].copy()
+        self.b = self.b[:, genes].copy()
+        
+        
+    def preprocess(self, maxgenes):
         self.basic_filter()
         self.normalize()
 
@@ -71,10 +75,8 @@ class Data():
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
 
-        # they do this here:
-        # https://icb-scanpy-tutorials.readthedocs-hosted.com/en/latest/pbmc3k.html
-        # removed regout...
-        if scale:
+    
+    def scale(self):
             sc.pp.scale(self.a, max_value=10)
             sc.pp.scale(self.b, max_value=10)
 
@@ -103,8 +105,141 @@ class Data():
             ax = self.a.X
             bx = self.b.X
         return ax, bx
+    
+    def basic_filter(self):
+        #self.a.X, self.b.X = self._toarray()
+        # this weeds out obvious lemons (gens and cells)
+        self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a)
+        self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b)
+        geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
+        self.a = self.a[self.cellfa, geneab]
+        self.b = self.b[self.cellfb, geneab]
+        
+    def normalize(self):
+        sc.pp.normalize_total(self.a, 1e4)
+        sc.pp.normalize_total(self.b, 1e4)
+        sc.pp.log1p(self.a)
+        sc.pp.log1p(self.b)
+    
+    
+    
+    def normtest(self, item):
+        if len(item) < 8: 
+            return 1 
+        return stats.normaltest(item)[1]
+    
+    def get_var_genes_normtest(self,matrix, cutoff):
+        result = []
+        for i in range(matrix.shape[1]): # every feature
+            values = [matrix[j,i] for j in range(matrix.shape[0]) if matrix[j,i]>0]
+            result.append(self.normtest(values))
+        result = np.array(result)
+        ret =  result < cutoff 
+        print('ok-genes:',sum(ret))
+        return ret
+        
+            
+            
+        
+    def get_variable_genes(self, matrix, minmean=0.0125, maxmean=3, mindisp=1.5):
+        
+        # get log-dispersion, log-mean, basic filtering (same as seurat)
+        a=np.expm1(matrix)
+        var     = np.var(a, axis=0)
+        mean    = np.mean(a, axis=0)
+        disp2= var/mean
+        disp = np.log(disp2)
+        mean = np.log1p(mean)
+        good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
+        
+        # train lin model, get intercept and coef to transform 
+        
 
+        res= self.transform(mean[good].reshape(-1, 1),disp[good], ran = maxmean)
+        
+        '''
+        mod= sklearn.linear_model.LinearRegression()
+        mod.fit(*res)
+        coef = mod.coef_[0]
+        intercept =mod.intercept_
+        # transform 
+        disp-= intercept
+        disp = np.array([ di/(me*mod.coef_[0]) for me,di in zip(mean,disp)])
+        '''
+        #disp = self.norm_dlin(disp,mean,res)
+        #disp = self.norm_ceil(disp,mean,res)
+        disp = self.norm_linear(disp,mean,res)
+        
+        disp[disp<-4] = -4
+        disp[disp> 5] = 5
+        
+        # draw new values.... 
+        if self.debug_ftsel:
+            plt.scatter(mean[good],disp[good])
+            plt.show()
+        
+        disp=disp.reshape(1,-1)[0]
+        good[good] = np.array([ d>mindisp for d in disp[good] ])
+        
+        
+        if self.debug_ftsel: print(f"ft selected:{sum(good)}")
+            
+        return good, disp # returning disp, for drawing purposes
 
+    def transform(self,means,var, stepsize=.2, ran=3):
+        x = np.arange(0,ran,stepsize)
+        items = [(m,v) for m,v in zip(means,var)]
+        boxes = [ [i[1]  for i in items if r<i[0]<r+(stepsize) ]  for r in x  ]
+        y = np.array([np.mean(st) for st in boxes])
+        y_std = np.array([np.std(st) for st in boxes])
+        x=x+(stepsize/2)
+
+        # draw regression points 
+        if self.debug_ftsel:plt.scatter(x,y)
+        x = x.reshape(-1,1)
+        return x,y,y_std
+    
+    def norm_dlin(self,disp,mean,res):
+        ymod   = sklearn.linear_model.LinearRegression()
+        stdmod = sklearn.linear_model.LinearRegression()
+        ymod.fit(res[0],res[1])
+        stdmod.fit(res[0],res[2])
+        
+        if self.debug_ftsel:
+            plt.plot(res[0],ymod.predict(res[0]), color='green')
+            plt.plot(res[0],stdmod.predict(res[0]), color='green')
+            
+        def nuvalue(x,y):
+            m = ymod.predict(np.matrix([x]))
+            s = stdmod.predict(np.matrix([x]))
+            return norm.cdf(y,m,s)
+            
+        disp = np.array([ nuvalue(me,di) for me,di in zip(mean,disp)])
+        return disp
+    
+    def norm_linear(self,disp,mean,res):
+        mod= sklearn.linear_model.LinearRegression()
+        mod.fit(*res)
+        if self.debug_ftsel:plt.plot(res[0],mod.predict(res[0]), color='green')
+            
+        '''
+        coef = mod.coef_[0]
+        intercept = mod.intercept_+1
+        disp-= intercept
+        disp = np.array([ di/(1+(me*mod.coef_[0])) for me,di in zip(mean,disp)])
+        '''
+        disp-=mod.predict(mean.reshape(-1,1))
+        return disp
+    
+ 
+
+    def norm_ceil(self,disp,mean,res):
+        x,y =res[0].reshape(1,-1)[0],res[1]
+        plt.scatter(x,y)
+        d1,d2 = curve_fit(fun,x,y)
+        if self.debug_ftsel:plt.plot(x,[fun(xx,*d1) for xx in x], color='green')
+        disp = np.array([ di-fun(me,*d1) for me,di in zip(mean,disp)])
+        return disp
 
 ######
 # old crap:

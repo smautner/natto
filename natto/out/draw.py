@@ -187,9 +187,7 @@ def radviz_sort_features(matrix):
     return matrix[:, sorted_ft]
 
 def radviz(matrix,classes):
-    print("hello from radi")
     matrix= radviz_sort_features(matrix)
-    print (matrix, matrix.shape)
     df = pd.DataFrame(matrix)
     #df.boxplot()
     

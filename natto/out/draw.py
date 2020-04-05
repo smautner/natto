@@ -1,4 +1,5 @@
 from itertools import permutations
+from sklearn.cluster import AgglomerativeClustering as agg 
 import random
 import matplotlib.pyplot as plt
 import numpy as np
@@ -173,8 +174,25 @@ def quickdoubleheatmap(comp1,comp2, save=None):
         plt.savefig(save, dpi=300)
     plt.show()
 
+    
+    
+    
+def radviz_sort_features(matrix):
+
+    Agg = agg(n_clusters=None,distance_threshold=0)
+    #m.preprocess(500)
+    #data = m.a.X.todense()
+    Agg.fit(matrix.T)
+    sorted_ft = [ a for a in Agg.children_.flatten() if a < matrix.shape[1]]
+    return matrix[:, sorted_ft]
+
 def radviz(matrix,classes):
+    print("hello from radi")
+    matrix= radviz_sort_features(matrix)
+    print (matrix, matrix.shape)
     df = pd.DataFrame(matrix)
+    #df.boxplot()
+    
     df['class']=classes
     size=10 # default is too large
     pd.plotting.radviz(df,'class',s=size, colormap=plt.cm.get_cmap('tab20'))

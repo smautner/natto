@@ -22,10 +22,8 @@ class Data():
         self.b = bdata
         self.debug_ftsel = debug_ftsel
         # this will work on the count matrix:
-        self.preprocess2( mindisp=mindisp, 
-                         maxmean=maxmean,
-                        minmean=minmean)
-        #self.preprocess2( maxgenes)
+        #self.preprocess2( mindisp=mindisp,  maxmean=maxmean, minmean=minmean)
+        self.preprocess( maxgenes)
         if scale:
             self.scale()
             
@@ -56,10 +54,10 @@ class Data():
         self.normalize()
         a,b = self._toarray()
         
-        #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
-        #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
-        ag = self.get_var_genes_normtest(a,mindisp)
-        bg = self.get_var_genes_normtest(b,mindisp)
+        ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
+        bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
+        #ag = self.get_var_genes_normtest(a,mindisp)
+        #bg = self.get_var_genes_normtest(b,mindisp)
         genes = [a or b for a,b in zip(ag,bg)]
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
@@ -71,7 +69,8 @@ class Data():
 
         # sophisticated feature selection
         Map(lambda x: sc.pp.highly_variable_genes(x, n_top_genes=maxgenes),[self.a,self.b])
-        genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
+        #genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
+        genes = [f and g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
 
@@ -147,7 +146,7 @@ class Data():
         a=np.expm1(matrix)
         var     = np.var(a, axis=0)
         mean    = np.mean(a, axis=0)
-        disp2= var/mean
+        disp2= var #/mean
         disp = np.log(disp2)
         mean = np.log1p(mean)
         good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
@@ -228,7 +227,12 @@ class Data():
         disp-= intercept
         disp = np.array([ di/(1+(me*mod.coef_[0])) for me,di in zip(mean,disp)])
         '''
-        disp-=mod.predict(mean.reshape(-1,1))
+        #disp-=mod.predict(mean.reshape(-1,1))
+        disp+= (-mod.intercept_)
+        #disp/=mod.coef_[0]
+        disp = np.array([ di/(me*mod.coef_[0]) for me,di in zip(mean,disp)])
+        
+        
         return disp
     
  

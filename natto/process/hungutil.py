@@ -331,10 +331,13 @@ def bit_by_bit(mata, matb, claa, clab,
 
 import ubergauss as ug
 def cluster_ab(a,b):
-    return predictgmm(a), predictgmm(b)
+    return predict_gmm(a), predict_gmm(b)
 
-def predictgmm(a):
-    d= {"nclust_min":9, "nclust_max":9, "n_init": 10}
+def predict_gmm(a,nc=None):
+    if nc:
+        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 10}
+    else:
+        d= {"nclust_min":4, "nclust_max":20, "n_init": 10}
     return ug.get_model(a,**d).predict(a)
 
 def predictlou(X,params={}):

@@ -176,18 +176,21 @@ def quickdoubleheatmap(comp1,comp2, save=None):
 
     
     
-    
-def radviz_sort_features(matrix):
+
+from lmz import grouper 
+def radviz_sort_features(matrix, reduce=4):
 
     Agg = agg(n_clusters=None,distance_threshold=0)
     #m.preprocess(500)
     #data = m.a.X.todense()
     Agg.fit(matrix.T)
     sorted_ft = [ a for a in Agg.children_.flatten() if a < matrix.shape[1]]
+    if reduce: sorted_ft = [g[0] for g in grouper(sorted_ft,reduce)]
     return matrix[:, sorted_ft]
 
-def radviz(matrix,classes):
-    matrix= radviz_sort_features(matrix)
+def radviz(matrix,classes, sort_ft= True, reduce=4):
+    if sort_ft: 
+        matrix= radviz_sort_features(matrix, reduce=reduce)
     df = pd.DataFrame(matrix)
     #df.boxplot()
     

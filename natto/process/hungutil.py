@@ -330,8 +330,8 @@ def bit_by_bit(mata, matb, claa, clab,
 #####
 
 import ubergauss as ug
-def cluster_ab(a,b):
-    return predict_gmm(a), predict_gmm(b)
+def cluster_ab(a,b,nc=None):
+    return predict_gmm(a, nc), predict_gmm(b,nc)
 
 def predict_gmm(a,nc=None):
     if nc:
@@ -354,9 +354,6 @@ def predictlou(X,params={}):
 ##################
 #  old stuff below, probably not used anymore
 ##################
-
-
-
 
 """
 

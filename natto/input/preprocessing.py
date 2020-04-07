@@ -22,8 +22,8 @@ class Data():
         self.b = bdata
         self.debug_ftsel = debug_ftsel
         # this will work on the count matrix:
-        #self.preprocess2( mindisp=mindisp,  maxmean=maxmean, minmean=minmean)
-        self.preprocess( maxgenes)
+        self.preprocess2( mindisp=mindisp,  maxmean=maxmean, minmean=minmean)
+        #self.preprocess( maxgenes)
         if scale:
             self.scale()
             
@@ -54,10 +54,12 @@ class Data():
         self.normalize()
         a,b = self._toarray()
         
-        ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
-        bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
+        #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
+        #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
         #ag = self.get_var_genes_normtest(a,mindisp)
         #bg = self.get_var_genes_normtest(b,mindisp)
+        ag = self.get_var_genes_simple(a, minmean,maxmean, cutoff= mindisp)
+        bg = self.get_var_genes_simple(b,minmean,maxmean, cutoff = mindisp)
         genes = [a or b for a,b in zip(ag,bg)]
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
@@ -138,7 +140,27 @@ class Data():
         return ret
         
             
-            
+    def get_var_genes_simple(self, matrix,minmean,maxmean , cutoff =.2):
+        """not done yet """
+        a=np.expm1(matrix)
+        var     = np.var(a, axis=0)
+        mean    = np.mean(a, axis=0)
+        disp2= var /mean
+        disp = np.log(disp2)
+        mean = np.log1p(mean)
+        #print (mean, disp2,maxmean,minmean)
+        good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
+        res= self.transform(mean[good].reshape(-1, 1),disp[good], ran = maxmean, minbin=1)
+        
+        mod= sklearn.linear_model.LinearRegression()
+        mod.fit(*res)
+        pre = mod.predict(mean[good].reshape(-1,1))
+        good[good] = np.array([ (d-m)>cutoff for d,m in zip(disp[good],pre) ])
+        if self.debug_ftsel: print(f"ft selected:{sum(good)}")
+        return good 
+        
+        
+        
         
     def get_variable_genes(self, matrix, minmean=0.0125, maxmean=3, mindisp=1.5):
         
@@ -146,7 +168,7 @@ class Data():
         a=np.expm1(matrix)
         var     = np.var(a, axis=0)
         mean    = np.mean(a, axis=0)
-        disp2= var #/mean
+        disp2= var /mean
         disp = np.log(disp2)
         mean = np.log1p(mean)
         good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
@@ -185,8 +207,8 @@ class Data():
             
         return good, disp # returning disp, for drawing purposes
 
-    def transform(self,means,var, stepsize=.2, ran=3):
-        x = np.arange(0,ran,stepsize)
+    def transform(self,means,var, stepsize=.5, ran=3, minbin=0):
+        x = np.arange(minbin*stepsize,ran,stepsize)
         items = [(m,v) for m,v in zip(means,var)]
         boxes = [ [i[1]  for i in items if r<i[0]<r+(stepsize) ]  for r in x  ]
         y = np.array([np.mean(st) for st in boxes])

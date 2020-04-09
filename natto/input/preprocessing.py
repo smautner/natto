@@ -16,14 +16,23 @@ from scipy import stats
 class Data():
     """will have .a .b .d2 .dx"""
     def fit(self,adata, bdata,  maxgenes=100, corrcoef=True,mindisp=1.5,
-                 dimensions=6,maxmean=3,scale=False, minmean=0.0125, debug_ftsel=False):
+                 dimensions=6,pp='bins',maxmean=3,scale=False, minmean=0.0125, debug_ftsel=False):
 
         self.a = adata
         self.b = bdata
         self.debug_ftsel = debug_ftsel
         # this will work on the count matrix:
-        self.preprocess2( mindisp=mindisp,  maxmean=maxmean, minmean=minmean)
-        #self.preprocess( maxgenes)
+        
+        if pp == 'linear':
+            self.preprocess_linear( mindisp=mindisp,
+                                   maxmean=maxmean,
+                                   minmean=minmean,
+                                  maxgenes=maxgenes)
+        if pp == 'bins':
+            self.preprocess_bins( maxgenes)
+        else:
+            print("pp musst be linear or bins")
+            
         if scale:
             self.scale()
             
@@ -49,30 +58,35 @@ class Data():
     
 
 
-    def preprocess2(self, mindisp=1.5,maxmean = 3, minmean = None):
+    def preprocess_linear(self, mindisp=1.5,maxmean = 3, minmean = None, maxgenes=None):
         self.basic_filter()
         self.normalize()
         a,b = self._toarray()
-        
         #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
         #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
         #ag = self.get_var_genes_normtest(a,mindisp)
         #bg = self.get_var_genes_normtest(b,mindisp)
-        ag = self.get_var_genes_simple(a, minmean,maxmean, cutoff= mindisp)
-        bg = self.get_var_genes_simple(b,minmean,maxmean, cutoff = mindisp)
-        genes = [a or b for a,b in zip(ag,bg)]
+        ag = self.get_var_genes_simple(a, minmean,maxmean,
+                                       cutoff= mindisp,
+                                       Z=True,
+                                       maxgenes=maxgenes)
+        bg = self.get_var_genes_simple(b, minmean,maxmean,
+                                       cutoff = mindisp, 
+                                       maxgenes=maxgenes,
+                                       Z=True)
+        genes = [a and b for a,b in zip(ag,bg)] # and, cutoff .25 is good 
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
         
         
-    def preprocess(self, maxgenes):
+    def preprocess_bins(self, maxgenes):
         self.basic_filter()
         self.normalize()
 
         # sophisticated feature selection
         Map(lambda x: sc.pp.highly_variable_genes(x, n_top_genes=maxgenes),[self.a,self.b])
         #genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
-        genes = [f and g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
+        genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
 
@@ -124,6 +138,70 @@ class Data():
     
     
     
+    
+    def transform(self,means,var, stepsize=.5, ran=3, minbin=0):
+        x = np.arange(minbin*stepsize,ran,stepsize)
+        items = [(m,v) for m,v in zip(means,var)]
+        boxes = [ [i[1]  for i in items if r<i[0]<r+(stepsize) ]  for r in x  ]
+        y = np.array([np.mean(st) for st in boxes])
+        y_std = np.array([np.std(st) for st in boxes])
+        x=x+(stepsize/2)
+        # draw regression points 
+        if self.debug_ftsel:plt.scatter(x,y)
+        x = x.reshape(-1,1)
+        return x,y,y_std       
+            
+    def get_var_genes_simple(self, matrix,minmean,maxmean,
+                             cutoff =.2, Z= True, maxgenes=None):
+        
+        if maxgenes and not Z: 
+            print ("maxgenes without Z transform is meaningless")
+            
+        """not done yet """
+        a=np.expm1(matrix)
+        var     = np.var(a, axis=0)
+        mean    = np.mean(a, axis=0)
+        disp2= var/mean
+        disp = np.log(disp2)
+        mean = np.log1p(mean)
+        #print (mean, disp2,maxmean,minmean)
+        good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
+        x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good], ran = maxmean, minbin=1)
+        
+        mod= sklearn.linear_model.LinearRegression()
+        mod.fit(x,y)
+        pre = mod.predict(mean[good].reshape(-1,1))
+        
+        if Z:
+            mod_std= sklearn.linear_model.LinearRegression()
+            mod_std.fit(x,ystd)
+            std = mod_std.predict(mean[good].reshape(-1,1))
+            disp[good]-= pre 
+            disp[good]/=std
+            if not maxgenes:
+                accept = [d > cutoff for d in disp[good]]
+            else: 
+                srt = np.argsort(disp[good])
+                accept = np.full(disp[good].shape, False)
+                accept[ srt[-maxgenes:] ] = True
+            
+        else:
+            accept = [ (d-m)>cutoff for d,m in zip(disp[good],pre) ]
+        
+        
+        if self.debug_ftsel: 
+            print(f"ft selected:{sum(accept)}")
+            plt.scatter(mean[good], disp[good],alpha=.2, s=3)
+            plt.plot(mean[good], pre+cutoff)
+            plt.plot(x, ystd, alpha= .4)
+            plt.show()
+        
+        good[good] = np.array(accept)
+        
+        return good 
+        
+"""
+ 
     def normtest(self, item):
         if len(item) < 8: 
             return 1 
@@ -137,30 +215,7 @@ class Data():
         result = np.array(result)
         ret =  result < cutoff 
         print('ok-genes:',sum(ret))
-        return ret
-        
-            
-    def get_var_genes_simple(self, matrix,minmean,maxmean , cutoff =.2):
-        """not done yet """
-        a=np.expm1(matrix)
-        var     = np.var(a, axis=0)
-        mean    = np.mean(a, axis=0)
-        disp2= var /mean
-        disp = np.log(disp2)
-        mean = np.log1p(mean)
-        #print (mean, disp2,maxmean,minmean)
-        good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
-        res= self.transform(mean[good].reshape(-1, 1),disp[good], ran = maxmean, minbin=1)
-        
-        mod= sklearn.linear_model.LinearRegression()
-        mod.fit(*res)
-        pre = mod.predict(mean[good].reshape(-1,1))
-        good[good] = np.array([ (d-m)>cutoff for d,m in zip(disp[good],pre) ])
-        if self.debug_ftsel: print(f"ft selected:{sum(good)}")
-        return good 
-        
-        
-        
+        return ret       
         
     def get_variable_genes(self, matrix, minmean=0.0125, maxmean=3, mindisp=1.5):
         
@@ -207,18 +262,7 @@ class Data():
             
         return good, disp # returning disp, for drawing purposes
 
-    def transform(self,means,var, stepsize=.5, ran=3, minbin=0):
-        x = np.arange(minbin*stepsize,ran,stepsize)
-        items = [(m,v) for m,v in zip(means,var)]
-        boxes = [ [i[1]  for i in items if r<i[0]<r+(stepsize) ]  for r in x  ]
-        y = np.array([np.mean(st) for st in boxes])
-        y_std = np.array([np.std(st) for st in boxes])
-        x=x+(stepsize/2)
 
-        # draw regression points 
-        if self.debug_ftsel:plt.scatter(x,y)
-        x = x.reshape(-1,1)
-        return x,y,y_std
     
     def norm_dlin(self,disp,mean,res):
         ymod   = sklearn.linear_model.LinearRegression()
@@ -266,6 +310,7 @@ class Data():
         if self.debug_ftsel:plt.plot(x,[fun(xx,*d1) for xx in x], color='green')
         disp = np.array([ di-fun(me,*d1) for me,di in zip(mean,disp)])
         return disp
+"""
 
 ######
 # old crap:

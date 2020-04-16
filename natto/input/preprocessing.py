@@ -15,52 +15,130 @@ from scipy import stats
 
 class Data():
     """will have .a .b .d2 .dx"""
-    def fit(self,adata, bdata,  maxgenes=100, corrcoef=True,mindisp=1.5,
-                 dimensions=6,pp='bins',maxmean=3,scale=False, minmean=0.0125, debug_ftsel=False):
+    def fit(self,adata, bdata,  
+            maxgenes=750, 
+            maxmean=3,
+            mindisp=.25,
+            minmean=0.0125, 
+            corrcoef=True,
+            dimensions=6,
+            pp='linear',
+            scale=False,
+            debug_ftsel=False):
 
         self.a = adata
         self.b = bdata
         self.debug_ftsel = debug_ftsel
-        # this will work on the count matrix:
         
+        self.preprocess(pp=pp, 
+                        scale=scale,
+                        corrcoef=corrcoef,
+                        mindisp=mindisp,
+                        maxmean=maxmean,
+                        minmean=minmean,
+                        maxgenes=maxgenes)
+        
+        #########
+        # umap 
+        ##########
+        self.dx = self.umapify(dimensions)
+        self.d2 = self.umapify(2)
+        return self           
+    
+
+        
+    def preprocess(self,pp='linear',
+                   scale = False,
+                   corrcoef = True,
+                   ft_combine= lambda x,y: x and y,
+                   mindisp=.25, maxmean=3,minmean=0.015,maxgenes=750):
+        
+        ###
+        # prep
+        ###
+        self.norm_data()
+
+        
+        ######
+        # feature selection 
+        ########
         if pp == 'linear':
-            self.preprocess_linear( mindisp=mindisp,
+            ag,bg =self.preprocess_linear( mindisp=mindisp,
                                    maxmean=maxmean,
                                    minmean=minmean,
                                   maxgenes=maxgenes)
-        if pp == 'bins':
-            self.preprocess_bins( maxgenes)
+        elif pp == 'bins':
+            ag,bg = self.preprocess_bins( maxgenes)
+        elif pp == 'simple':
+            ag,bg = self.preprocess_simple(maxgenes)
         else:
-            print("pp musst be linear or bins")
-            
-        if scale:
-            self.scale()
-            
+            print("pp musst be linear, simple or bins")
+        
+        
+        #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
+        genes = list(map(ft_combine,ag,bg))
+        self.a = self.a[:, genes].copy()
+        self.b = self.b[:, genes].copy()
+        
+        
+        
+        ######
+        # finalizing 
+        #####
+        self.corrcoef(corrcoef,scale)
+        
+        
+    
+    def corrcoef(self, corrcoef, scale):
+        ########
+        # corrcoef
+        ########
         lena = self.a.shape[0]
         ax, bx = self._toarray()
-        
         assert self.a.shape == ax.shape
         assert self.b.shape == bx.shape
-        
         self.a, self.b  = ax,bx
+        if scale:
+            self.scale()      
         if corrcoef:
             corr = np.corrcoef(np.vstack((ax, bx)))
             corr = np.nan_to_num(corr)
-            ax, bx = corr[:lena], corr[lena:]
+            self.a, self.b = corr[:lena], corr[lena:]
+        return 
 
-
-        mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax, bx)))
-        self.dx = mymap.transform(ax), mymap.transform(bx)
-
-        mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((ax, bx)))
-        self.d2 = mymap.transform(ax), mymap.transform(bx)
-        return self
     
+    def umapify(self, dimensions):
+        mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((self.a, self.b)))
+        return  mymap.transform(self.a), mymap.transform(self.b)
+
+        
+    def preprocess_simple(self, maxgenes=700):
+
+        a,b = self._toarray()
+        #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
+        #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
+        #ag = self.get_var_genes_normtest(a,mindisp)
+        #bg = self.get_var_genes_normtest(b,mindisp)
+        A=np.expm1(a)
+        B=np.expm1(b)
+        def select(X):
+            var = X.var(axis=0)
+            srt = np.argsort(var)
+            accept = srt>(srt.shape[0]-maxgenes)
+            if self.debug_ftsel: 
+                print(f"ft selected:{sum(accept)}")
+            return accept
+            
+        return select(A),select(B)
+        
 
 
-    def preprocess_linear(self, mindisp=1.5,maxmean = 3, minmean = None, maxgenes=None):
-        self.basic_filter()
-        self.normalize()
+    def preprocess_linear(self, 
+                          mindisp=1.5,
+                          maxmean = 3,
+                          minmean = None,
+                          maxgenes=None):
+
         a,b = self._toarray()
         #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
         #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
@@ -74,26 +152,17 @@ class Data():
                                        cutoff = mindisp, 
                                        maxgenes=maxgenes,
                                        Z=True)
-        genes = [a and b for a,b in zip(ag,bg)] # and, cutoff .25 is good 
-        self.a = self.a[:, genes].copy()
-        self.b = self.b[:, genes].copy()
+        
+        return ag,bg
+
         
         
     def preprocess_bins(self, maxgenes):
-        self.basic_filter()
-        self.normalize()
-
-        # sophisticated feature selection
         Map(lambda x: sc.pp.highly_variable_genes(x, n_top_genes=maxgenes),[self.a,self.b])
         #genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
-        genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
-        self.a = self.a[:, genes].copy()
-        self.b = self.b[:, genes].copy()
+        return self.a.var.highly_variable, self.b.var.highly_variable
 
     
-    def scale(self):
-            sc.pp.scale(self.a, max_value=10)
-            sc.pp.scale(self.b, max_value=10)
 
 
     ####
@@ -136,9 +205,13 @@ class Data():
         sc.pp.log1p(self.a)
         sc.pp.log1p(self.b)
     
+    def scale(self):
+        sc.pp.scale(self.a, max_value=10)
+        sc.pp.scale(self.b, max_value=10)
     
-    
-    
+    def norm_data(self):
+        self.basic_filter()
+        self.normalize()   
     def transform(self,means,var, stepsize=.5, ran=3, minbin=0):
         x = np.arange(minbin*stepsize,ran,stepsize)
         items = [(m,v) for m,v in zip(means,var)]
@@ -199,6 +272,9 @@ class Data():
         good[good] = np.array(accept)
         
         return good 
+    
+    def __init__(self):
+        self.debug_ftsel = False
         
 """
  

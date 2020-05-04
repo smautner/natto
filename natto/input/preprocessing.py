@@ -176,9 +176,9 @@ class Data():
         markers = {m.strip() for markerline in markersets for m in markerline}
         return markers, numclusters
 
-    def _filter_cells_and_genes(self,ad):
-        cellf, _ = sc.pp.filter_cells(ad, min_genes=200, inplace=False)
-        genef, _ = sc.pp.filter_genes(ad, min_counts=6, inplace=False)
+    def _filter_cells_and_genes(self,ad, min_genes=200, min_counts=6):
+        cellf, _ = sc.pp.filter_cells(ad, min_genes=min_genes, inplace=False)
+        genef, _ = sc.pp.filter_genes(ad, min_counts=min_counts, inplace=False)
         return cellf, genef
 
     def _toarray(self):
@@ -190,11 +190,11 @@ class Data():
             bx = self.b.X
         return ax, bx
     
-    def basic_filter(self):
+    def basic_filter(self, min_counts=6, min_genes=200):
         #self.a.X, self.b.X = self._toarray()
         # this weeds out obvious lemons (gens and cells)
-        self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a)
-        self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b)
+        self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a, min_genes, min_counts)
+        self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b, min_genes, min_counts)
         geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
         self.a = self.a[self.cellfa, geneab]
         self.b = self.b[self.cellfb, geneab]
@@ -223,9 +223,18 @@ class Data():
         if self.debug_ftsel:plt.scatter(x,y)
         x = x.reshape(-1,1)
         return x,y,y_std       
-            
+    
+    
+    def generalize(self,x,y,x_all):
+        mod= sklearn.linear_model.LinearRegression()
+        mod.fit(x,y)
+        res = mod.predict(x_all.reshape(-1,1))
+        res[x_all < x[0]] = y[0]
+        return res
+        
     def get_var_genes_simple(self, matrix,minmean,maxmean,
-                             cutoff =.2, Z= True, maxgenes=None):
+                             cutoff =.2, Z= True, maxgenes=None, 
+                             return_raw = False):
         
         if maxgenes and not Z: 
             print ("maxgenes without Z transform is meaningless")
@@ -239,35 +248,41 @@ class Data():
         mean = np.log1p(mean)
         #print (mean, disp2,maxmean,minmean)
         good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
+        
+        if self.debug_ftsel: 
+            plt.scatter(mean[good], disp[good],alpha=.2, s=3)
+            
         x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good], ran = maxmean, minbin=1)
-        
-        mod= sklearn.linear_model.LinearRegression()
-        mod.fit(x,y)
-        pre = mod.predict(mean[good].reshape(-1,1))
-        
+            
+        pre = self.generalize(x,y,mean[good])
         if Z:
-            mod_std= sklearn.linear_model.LinearRegression()
-            mod_std.fit(x,ystd)
-            std = mod_std.predict(mean[good].reshape(-1,1))
+            std = self.generalize(x,ystd,mean[good])
             disp[good]-= pre 
             disp[good]/=std
             if not maxgenes:
-                accept = [d > cutoff for d in disp[good]]
+                accept = [d > cutoff for d in disp[good]]                
+                if return_raw:
+                    bad=np.logical_not(good)
+                    disp[bad] = -2
+                    return disp
             else: 
                 srt = np.argsort(disp[good])
                 accept = np.full(disp[good].shape, False)
                 accept[ srt[-maxgenes:] ] = True
+
             
         else:
             accept = [ (d-m)>cutoff for d,m in zip(disp[good],pre) ]
         
         
-        if self.debug_ftsel: 
-            print(f"ft selected:{sum(accept)}")
-            plt.scatter(mean[good], disp[good],alpha=.2, s=3)
-            plt.plot(mean[good], pre+cutoff)
+        if self.debug_ftsel:
+            srt= np.argsort(mean[good])
+            plt.plot(mean[good][srt], pre[srt])
             plt.plot(x, ystd, alpha= .4)
             plt.show()
+            plt.scatter(mean[good], disp[good],alpha=.2, s=3)
+            plt.show()
+            print(f"ft selected:{sum(accept)}")
         
         good[good] = np.array(accept)
         
@@ -386,7 +401,6 @@ class Data():
         if self.debug_ftsel:plt.plot(x,[fun(xx,*d1) for xx in x], color='green')
         disp = np.array([ di-fun(me,*d1) for me,di in zip(mean,disp)])
         return disp
-"""
 
 ######
 # old crap:
@@ -562,3 +576,5 @@ class markers_this_is_an_old_class():
         if scale:
             sc.pp.scale(self.a, max_value=10)
             sc.pp.scale(self.b, max_value=10)
+
+"""

@@ -272,7 +272,28 @@ def sankey(canvasbackup ,y1map, y2map):
         colorDict= col
     )
 
+from sklearn.neighbors import NearestNeighbors
 
+def dreibeidrei(bins,cnt=3): 
+    for i,e in enumerate(bins):
+            plt.subplot(cnt,cnt,i+1)
+            plt.bar(list(range(len(e))),e)
+    plt.show()
+    
+def get_centers(zy,cnt=3):
+    mod = NearestNeighbors(n_neighbors=1).fit(zy)
+    X,Y = get_centers_1d(zy[:,0], cnt = cnt), get_centers_1d(zy[:,1], cnt=cnt)
+    search = [(x,y) for x in X for y in Y]
+    distances, indices = mod.kneighbors(search)
+    return indices.flatten()
+            
+            
+def get_centers_1d(li,cnt = 3):
+    dist = li.max()-li.min()
+    dist/=  cnt*2
+    return [(li.min()+(a+1)*dist) for a in range(cnt)]
+    
+    
 '''
 def umap(X,Y, reducer = None,
         title="No title",

@@ -12,7 +12,7 @@ from scipy.optimize import curve_fit
 fun = lambda x,a,b,c: a+b/(1+x*c)
 from scipy.stats import norm
 from scipy import stats
-
+from sklearn.preprocessing import PolynomialFeatures
 class Data():
     """will have .a .b .d2 .dx"""
     def fit(self,adata, bdata,  
@@ -225,7 +225,18 @@ class Data():
         return x,y,y_std       
     
     
+    def generalize_quadradic(self,y,x):
+        
+        poly_reg=PolynomialFeatures(degree=2)
+        x=poly_reg.fit_transform(x.reshape(-1,1))
+        mod= sklearn.linear_model.LinearRegression()
+        mod.fit(x,y)
+        return mod.predict(x)
+    
     def generalize(self,x,y,x_all):
+        
+
+        
         mod= sklearn.linear_model.LinearRegression()
         mod.fit(x,y)
         res = mod.predict(x_all.reshape(-1,1))
@@ -255,6 +266,11 @@ class Data():
         x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good], ran = maxmean, minbin=1)
             
         pre = self.generalize(x,y,mean[good])
+        ###
+        # make it quadratic
+        ####
+        #pre = self.generalize_quadradic(pre,mean[good])
+        
         if Z:
             std = self.generalize(x,ystd,mean[good])
             disp[good]-= pre 

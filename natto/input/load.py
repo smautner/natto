@@ -82,7 +82,7 @@ def loadimmune(subsample=False, pathprefix='..'):
 
 datanames = ["default","even",'si1','si2','c7','c6','c5','facl0.05','facl2']
 
-def loadarti(path, dataname):
+def loadarti(path, dataname,subsample=False):
 
     batch = open(path+"/%sbatch.art.csv" % dataname, "r").readlines()[1:]
     batch = np.array([ int(x[-2]) for x in batch])
@@ -97,6 +97,13 @@ def loadarti(path, dataname):
     b = ad.AnnData( cnts[batch == 2] )
     b.var['gene_ids'] = {i:i for i in range(cnts.shape[1])}
     a.var['gene_ids'] = {i:i for i in range(cnts.shape[1])}
+    if subsample:
+        if subsample <1:
+            sc.pp.subsample(a, fraction=subsample, n_obs=None, random_state=0, copy=False)
+            sc.pp.subsample(b, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        else:
+            sc.pp.subsample(a, fraction=None, n_obs=subsample, random_state=0, copy=False)
+            sc.pp.subsample(b, fraction=None, n_obs=subsample, random_state=0, copy=False)
     
     return a,b
     

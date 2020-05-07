@@ -8,6 +8,17 @@ import numpy as np
 load = lambda f: [l for l in open(f,'r').read().split('\n') if len(l)>1]
 
 
+def do_subsample(adata, subsample):
+    if not subsample:
+        return adata
+
+    if subsample <1:
+        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+    else:
+        if adata.shape[0] < subsample:
+            return adata
+        sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
+    return adata
 
 def loadlabels(labels, ids):
     cellid_to_clusterid = {row.split(',')[0]:hash(row.split(',')[1]) for row in labels[1:]} #
@@ -33,11 +44,9 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
     adata.obs['labels']= loadlabels(load( "../data/pbmc.3k.labels"), load( "../data/filtered_gene_bc_matrices/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
-    if subsample:
-        if subsample <1:
-            sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
-        else:
-            sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
+    
+    
+    adata = do_subsample(adata, subsample)
     return adata
 
 def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
@@ -48,21 +57,16 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
     adata.obs['labels']= loadlabels(load( "../data/pbmc.6k.labels"), load( "../data/filtered_matrices_mex/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
-    if subsample:
-        if subsample <1:
-            sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
-        else:
-            sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
+    adata = do_subsample(adata, subsample)
+    
+    
     return adata
+
 
 
 def loadpbmc(path, subsample=None):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
-    if subsample:
-        if subsample <1:
-            sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
-        else:
-            sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
+    adata = do_subsample(adata, subsample)
     return adata
 
 def load3k6k(subsample=False):
@@ -97,14 +101,9 @@ def loadarti(path, dataname,subsample=False):
     b = ad.AnnData( cnts[batch == 2] )
     b.var['gene_ids'] = {i:i for i in range(cnts.shape[1])}
     a.var['gene_ids'] = {i:i for i in range(cnts.shape[1])}
-    if subsample:
-        if subsample <1:
-            sc.pp.subsample(a, fraction=subsample, n_obs=None, random_state=0, copy=False)
-            sc.pp.subsample(b, fraction=subsample, n_obs=None, random_state=0, copy=False)
-        else:
-            sc.pp.subsample(a, fraction=None, n_obs=subsample, random_state=0, copy=False)
-            sc.pp.subsample(b, fraction=None, n_obs=subsample, random_state=0, copy=False)
-    
+    a= do_subsample(a, subsample)
+    b = do_subsample(b, subsample)
+
     return a,b
     
 

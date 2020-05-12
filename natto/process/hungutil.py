@@ -13,7 +13,7 @@ from scipy.optimize import linear_sum_assignment
 from lapsolver import solve_dense
 from natto.out import draw
 import matplotlib.pyplot as plt
-
+import natto.process.copkmeans as CKM 
 import scanpy as sc
 import umap
 from natto.old.simple import predictgmm
@@ -32,6 +32,7 @@ def hungarian(X1,X2, solver='scipy', debug = False):
     if debug: 
         x = distances[row_ind, col_ind]
         num_bins = 100
+        print("hungarian: debug hist")
         plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
         plt.show()
     return row_ind, col_ind, distances
@@ -172,10 +173,12 @@ def rename(tuplemap, Y1, Y2, rn1, rn2):
 
 def recluster(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, showset={}):
     # data=umap.UMAP(n_components=2).fit_transform(data)
+    
     indices = [y in problemclusters for y in Y]
     data2 = data[indices]
 
     yh = predictgmm(n_clust, data2)
+    
     maxy = np.max(Y)
     Y[indices] = yh + maxy + 1
 
@@ -183,6 +186,37 @@ def recluster(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, show
     if debug or 'renaming' in showset:
         print('ranaming: set%s' % rnlog.dataset, problemclusters, np.unique(yh) + maxy + 1)
     return Y
+
+def recluster_copkmeans(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, showset={},
+                roind=None,coind=None, target_cls=None, Y2=None):
+    
+    indices = [y in problemclusters for y in Y]
+    data2 = data[indices]
+    
+    
+    #  OLD CRAB 
+    # yh = predictgmm(n_clust, data2)
+    
+    # Nu start 
+    roco = dict(zip(roind,coind))
+    indices_int_y1 = np.nonzero(indices)[0]
+    indices_int_y2 = np.array([roco.get(a,-1) for a in indices_int_y1])
+    target_ok_mask = [(Y2[i] in target_cls) if i >=0 else False for i in indices_int_y2]
+    indices_int_y1 = indices_int_y1[target_ok_mask]
+    indices_int_y2 = indices_int_y2[target_ok_mask]
+    grps = [ indices_int_y1[ [Y2[i]==targetcls for i in indices_int_y2 ]]  for targetcls in target_cls  ]
+    mustlink= [ (a,b) for grp in grps for a in grp for b in grp ] # i hope this produces all the contraints 
+    yh = CKM.cop_kmeans(data2,ml=mustlink,k=n_clust)[0]
+    
+    ##### Nu end
+    maxy = np.max(Y)
+    Y[indices] = yh + maxy + 1
+
+    rnlog.log(problemclusters, np.unique(yh) + maxy + 1)
+    if debug or 'renaming' in showset:
+        print('ranaming: set%s' % rnlog.dataset, problemclusters, np.unique(yh) + maxy + 1)
+    return Y
+
 
 
 def split_and_mors(Y1, Y2, hungmatch, data1, data2,
@@ -219,15 +253,43 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     for a, bb in da.items():
         if any([b in db for b in bb]):  # do nothing if the target is conflicted in a and b
             continue
-        recluster(data1, Y1, [y1map.getitem[a]], n_clust=len(bb), rnlog=rn1, debug=debug, showset=showset)
-        # print(f"reclustered {y1map.getitem[a]} of data1 into {len(bb)}")
+        
+        # normal recluster
+        #recluster(data1, Y1, [y1map.getitem[a]], n_clust=len(bb), rnlog=rn1, debug=debug, showset=showset)
+        
+        
+        # reclustering with copkmeanz
+        target_classes = [y2map.getitem[b] for b in bb]
+        recluster_copkmeans(data1,
+                            Y1,
+                            [y1map.getitem[a]],
+                            n_clust=len(bb),
+                            rnlog=rn1,
+                            debug=debug,
+                            showset=showset,
+                            roind=row_ind,
+                            coind=col_ind,
+                            target_cls= target_classes,
+                            Y2=Y2)
+        
         done = False
 
     for b, aa in db.items():
         if any([a in da for a in aa]):  # do nothing if the target is conflicted in a and b
             continue
-        recluster(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset)
-        # print(f"reclustered {y2map.getitem[b]} of data2 into {len(aa)}")
+            
+            
+            
+        #recluster(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset)
+        
+        # reclustering with copkmeanz
+        target_classes = [y1map.getitem[a] for a in aa]
+        recluster_copkmeans(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset,
+                        roind=col_ind,
+                        coind=row_ind,
+                        target_cls=target_classes,
+                        Y2=Y1)
+        
         done = False
 
     if done:
@@ -337,7 +399,7 @@ def predict_gmm(a,nc=None):
     if nc:
         d= {"nclust_min":nc, "nclust_max":nc, "n_init": 10}
     else:
-        d= {"nclust_min":4, "nclust_max":20, "n_init": 10}
+        d= {"nclust_min":4, "nclust_max":20, "n_init": 20, 'covariance_type':'tied'}
     return ug.get_model(a,**d).predict(a)
 
 def predictlou(X,params={}):

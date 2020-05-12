@@ -212,6 +212,7 @@ class Data():
     def norm_data(self):
         self.basic_filter()
         self.normalize()   
+        
     def transform(self,means,var, stepsize=.5, ran=3, minbin=0):
         x = np.arange(minbin*stepsize,ran,stepsize)
         items = [(m,v) for m,v in zip(means,var)]

@@ -17,7 +17,7 @@ import natto.process.copkmeans as CKM
 import scanpy as sc
 import umap
 from natto.old.simple import predictgmm
-
+from sklearn.neighbors import KNeighborsClassifier as KNC
 #####
 # first some utils
 ######
@@ -188,7 +188,7 @@ def recluster(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, show
     return Y
 
 def recluster_copkmeans(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, showset={},
-                roind=None,coind=None, target_cls=None, Y2=None):
+                roind=None,coind=None, target_cls=None, Y2=None, algo='knn'):
     
     indices = [y in problemclusters for y in Y]
     data2 = data[indices]
@@ -204,9 +204,16 @@ def recluster_copkmeans(data, Y, problemclusters, n_clust=2, rnlog=None, debug=F
     target_ok_mask = [(Y2[i] in target_cls) if i >=0 else False for i in indices_int_y2]
     indices_int_y1 = indices_int_y1[target_ok_mask]
     indices_int_y2 = indices_int_y2[target_ok_mask]
-    grps = [ indices_int_y1[ [Y2[i]==targetcls for i in indices_int_y2 ]]  for targetcls in target_cls  ]
-    mustlink= [ (a,b) for grp in grps for a in grp for b in grp ] # i hope this produces all the contraints 
-    yh = CKM.cop_kmeans(data2,ml=mustlink,k=n_clust)[0]
+    if algo == 'copkmeans':
+        grps = [ indices_int_y1[ [Y2[i]==targetcls for i in indices_int_y2 ]]  for targetcls in target_cls  ]
+        mustlink= [ (a,b) for grp in grps for a in grp for b in grp ] # i hope this produces all the contraints 
+        yh = CKM.cop_kmeans(data2,ml=mustlink,k=n_clust)[0]
+    else: 
+        model=KNC(weights='distance')# might also try uniform 
+        train_y = Y2[indices_int_y2] 
+        s= spacemap(np.unique(train_y))
+        model.fit(data[indices_int_y1], [s.getint[y] for y in train_y])
+        yh = model.predict(data2)
     
     ##### Nu end
     maxy = np.max(Y)
@@ -232,7 +239,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
 
     rn1, rn2 = rn
     # get a mapping
-    row_ind, col_ind = hungmatch
+    #row_ind, col_ind = hungmatch
     y1map, y2map, canvas = make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=normalize)
     row_ind, col_ind = solve_dense(canvas)
     canvas, canvasbackup = clean_matrix(canvas)
@@ -267,8 +274,8 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                             rnlog=rn1,
                             debug=debug,
                             showset=showset,
-                            roind=row_ind,
-                            coind=col_ind,
+                            roind=hungmatch[0],
+                            coind=hungmatch[1],
                             target_cls= target_classes,
                             Y2=Y2)
         
@@ -285,8 +292,8 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
         # reclustering with copkmeanz
         target_classes = [y1map.getitem[a] for a in aa]
         recluster_copkmeans(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset,
-                        roind=col_ind,
-                        coind=row_ind,
+                        roind=hungmatch[1],
+                        coind=hungmatch[0],
                         target_cls=target_classes,
                         Y2=Y1)
         

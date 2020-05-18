@@ -22,12 +22,17 @@ class Data():
             minmean=0.0125, 
             corrcoef=True,
             dimensions=6,
+            umap_n_neighbors = 15,
             pp='linear',
             scale=False,
-            debug_ftsel=False):
+            debug_ftsel=False,
+            make_even=False):
 
         self.a = adata
         self.b = bdata
+        if make_even: 
+            self.make_even()
+            
         self.debug_ftsel = debug_ftsel
         
         self.preprocess(pp=pp, 
@@ -41,16 +46,28 @@ class Data():
         #########
         # umap 
         ##########
-        self.dx = self.umapify(dimensions)
-        self.d2 = self.umapify(2)
+        self.dx = self.umapify(dimensions, umap_n_neighbors)
+        self.d2 = self.umapify(2, umap_n_neighbors)
         return self           
     
-
+    def make_even(self):
+        assert self.a.X.shape[1] == self.b.X.shape[1]
+        if self.a.X.shape[0] > self.b.X.shape[0]:
+            num=self.b.X.shape[0]
+            target = self.a
+        else:
+            num= self.a.X.shape[0]
+            target = self.b
+        sc.pp.subsample(target,
+                        fraction=None, 
+                        n_obs=num, 
+                        random_state=0, 
+                        copy=False)
         
     def preprocess(self,pp='linear',
                    scale = False,
                    corrcoef = True,
-                   ft_combine= lambda x,y: x and y,
+                   ft_combine= lambda x,y: x or y,
                    mindisp=.25, maxmean=3,minmean=0.015,maxgenes=750):
         
         ###
@@ -77,6 +94,8 @@ class Data():
         
         #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
         genes = list(map(ft_combine,ag,bg))
+        if self.debug_ftsel:
+            print("number of features combined:", sum(genes))
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
         
@@ -107,8 +126,8 @@ class Data():
         return 
 
     
-    def umapify(self, dimensions):
-        mymap = umap.UMAP(n_components=dimensions).fit(np.vstack((self.a, self.b)))
+    def umapify(self, dimensions, n_neighbors):
+        mymap = umap.UMAP(n_components=dimensions,n_neighbors=n_neighbors).fit(np.vstack((self.a, self.b)))
         return  mymap.transform(self.a), mymap.transform(self.b)
 
         
@@ -246,7 +265,7 @@ class Data():
         
     def get_var_genes_simple(self, matrix,minmean,maxmean,
                              cutoff =.2, Z= True, maxgenes=None, 
-                             return_raw = False):
+                             return_raw = False, minbin=1,stepsize_lintrans=.25):
         
         if maxgenes and not Z: 
             print ("maxgenes without Z transform is meaningless")
@@ -264,7 +283,7 @@ class Data():
         if self.debug_ftsel: 
             plt.scatter(mean[good], disp[good],alpha=.2, s=3)
             
-        x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good], ran = maxmean, minbin=1)
+        x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good],stepsize=stepsize_lintrans, ran = maxmean, minbin=minbin)
             
         pre = self.generalize(x,y,mean[good])
         ###
@@ -280,7 +299,11 @@ class Data():
                 accept = [d > cutoff for d in disp[good]]                
                 if return_raw:
                     bad=np.logical_not(good)
-                    disp[bad] = -2
+                    
+                    pre_bad = self.generalize(x,y,mean[bad])
+                    std_bad = self.generalize(x,ystd,mean[bad])
+                    disp[bad] -= pre_bad
+                    disp[bad] /= std_bad
                     return disp
             else: 
                 srt = np.argsort(disp[good])

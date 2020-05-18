@@ -399,14 +399,14 @@ def bit_by_bit(mata, matb, claa, clab,
 #####
 
 import ubergauss as ug
-def cluster_ab(a,b,nc=None):
-    return predict_gmm(a, nc), predict_gmm(b,nc)
+def cluster_ab(a,b,nc=None, cov ='tied'):
+    return predict_gmm(a, nc, cov), predict_gmm(b,nc,cov)
 
-def predict_gmm(a,nc=None):
+def predict_gmm(a,nc=None, cov = 'tied'):
     if nc:
-        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 10}
+        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 10, "covariance_type":cov}
     else:
-        d= {"nclust_min":4, "nclust_max":20, "n_init": 20, 'covariance_type':'tied'}
+        d= {"nclust_min":4, "nclust_max":20, "n_init": 20, 'covariance_type':cov}
     return ug.get_model(a,**d).predict(a)
 
 def predictlou(X,params={}):

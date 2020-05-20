@@ -59,7 +59,33 @@ def umap(X,Y,
 
     plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
     if show: plt.show()
-
+        
+        
+        
+def umap_gradient(X,Y,
+        title="No title",
+        show=True,
+        markerscale=4,
+        size=None):
+    
+    # Y is
+    plt.title(title, size=20)
+    Y=np.array(Y)
+    size=  max( int(4000/Y.shape[0]), 1) if not size else size
+    
+    embed = X
+    plt.scatter(embed[:, 0],
+                embed[:, 1],
+                c= Y,
+                s=size,cmap='gist_rainbow')
+    #plt.axis('off')
+    plt.xlabel('UMAP 2')
+    plt.ylabel('UMAP 1')
+    #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
+    if show: plt.show()
+        
+        
+        
 def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):    
 
     sns.set(font_scale=1.2,style='white')
@@ -75,6 +101,21 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):
         plt.savefig(save, dpi=300)
     plt.show()
 
+def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'), save=None):    
+
+    sns.set(font_scale=1.2,style='white')
+    plt.figure(figsize=(16,8))    
+
+    #plt.tight_layout()    
+    ax=plt.subplot(121)
+    umap_gradient(X1,Y1,show=False,title=title[0],size=4,markerscale=4)
+    ax=plt.subplot(122)
+    umap_gradient(X2,Y2,show=False,title=title[1],size=4,markerscale=4)
+    if save:
+        plt.tight_layout()
+        plt.savefig(save, dpi=300)
+    plt.show()   
+    
 def plot_blobclust(Y1,X1,X2,red=None, save=None):    
     sns.set(font_scale=1.2,style='white')
     if not red:

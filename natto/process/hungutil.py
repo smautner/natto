@@ -409,12 +409,22 @@ def predict_gmm(a,nc=None, cov = 'tied'):
         d= {"nclust_min":4, "nclust_max":20, "n_init": 20, 'covariance_type':cov}
     return ug.get_model(a,**d).predict(a)
 
+
+
 def predictlou(X,params={}):
     adata = ad.AnnData(X)
     sc.pp.scale(adata, max_value=10)
     sc.pp.neighbors(adata, **params)
     sc.tl.louvain(adata)
     return np.array([int(x) for x in adata.obs['louvain']])
+
+def predictleiden(X,params={}, resolution = 1):
+    adata = ad.AnnData(X)
+    sc.pp.scale(adata, max_value=10)
+    sc.pp.neighbors(adata, **params)
+    sc.tl.leiden(adata, resolution = resolution)
+    return np.array([int(x) for x in adata.obs['leiden']])
+
 
 
 

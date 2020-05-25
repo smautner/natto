@@ -25,6 +25,7 @@ class Data():
             umap_n_neighbors = 15,
             pp='linear',
             scale=False,
+            ft_combine = lambda x,y: x and y,
             debug_ftsel=False,
             make_even=False):
 
@@ -40,6 +41,7 @@ class Data():
                         corrcoef=corrcoef,
                         mindisp=mindisp,
                         maxmean=maxmean,
+                        ft_combine = ft_combine,
                         minmean=minmean,
                         maxgenes=maxgenes)
         
@@ -67,7 +69,7 @@ class Data():
     def preprocess(self,pp='linear',
                    scale = False,
                    corrcoef = True,
-                   ft_combine= lambda x,y: x or y,
+                   ft_combine= lambda x,y: x or y,minbin=1, binsize=.25,
                    mindisp=.25, maxmean=3,minmean=0.015,maxgenes=750):
         
         ###
@@ -83,7 +85,9 @@ class Data():
             ag,bg =self.preprocess_linear( mindisp=mindisp,
                                    maxmean=maxmean,
                                    minmean=minmean,
-                                  maxgenes=maxgenes)
+                                  maxgenes=maxgenes, 
+                                    minbin=minbin,
+                                    binsize=binsize)
         elif pp == 'bins':
             ag,bg = self.preprocess_bins( maxgenes)
         elif pp == 'simple':
@@ -96,6 +100,7 @@ class Data():
         genes = list(map(ft_combine,ag,bg))
         if self.debug_ftsel:
             print("number of features combined:", sum(genes))
+        print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
         
@@ -156,7 +161,7 @@ class Data():
                           mindisp=1.5,
                           maxmean = 3,
                           minmean = None,
-                          maxgenes=None):
+                          maxgenes=None, minbin=1,binsize=.25):
 
         a,b = self._toarray()
         #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
@@ -166,10 +171,12 @@ class Data():
         ag = self.get_var_genes_simple(a, minmean,maxmean,
                                        cutoff= mindisp,
                                        Z=True,
+                                       minbin=minbin, binsize = binsize,
                                        maxgenes=maxgenes)
         bg = self.get_var_genes_simple(b, minmean,maxmean,
                                        cutoff = mindisp, 
                                        maxgenes=maxgenes,
+                                       minbin=minbin, binsize = binsize,
                                        Z=True)
         
         return ag,bg
@@ -265,7 +272,7 @@ class Data():
         
     def get_var_genes_simple(self, matrix,minmean,maxmean,
                              cutoff =.2, Z= True, maxgenes=None, 
-                             return_raw = False, minbin=1,stepsize_lintrans=.25):
+                             return_raw = False, minbin=1,binsize=.25):
         
         if maxgenes and not Z: 
             print ("maxgenes without Z transform is meaningless")
@@ -283,7 +290,7 @@ class Data():
         if self.debug_ftsel: 
             plt.scatter(mean[good], disp[good],alpha=.2, s=3)
             
-        x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good],stepsize=stepsize_lintrans, ran = maxmean, minbin=minbin)
+        x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good],stepsize=binsize, ran = maxmean, minbin=minbin)
             
         pre = self.generalize(x,y,mean[good])
         ###

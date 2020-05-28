@@ -92,15 +92,25 @@ class Data():
             ag,bg = self.preprocess_bins( maxgenes)
         elif pp == 'simple':
             ag,bg = self.preprocess_simple(maxgenes)
+        
+        
+
+        if pp == 'mergelinear':
+            a,b= self._toarray()
+            mat = np.vstack((a,b))
+            genes = self.get_var_genes_simple( mat,minmean,maxmean,
+                             cutoff = mindisp, Z= True, maxgenes=maxgenes, 
+                             return_raw = False, minbin=minbin,binsize=binsize)
+            print(f"genes: {sum(genes)}")
         else:
-            print("pp musst be linear, simple or bins")
-        
-        
-        #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
-        genes = list(map(ft_combine,ag,bg))
-        if self.debug_ftsel:
-            print("number of features combined:", sum(genes))
-        print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
+            #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
+            genes = list(map(ft_combine,ag,bg))
+            if self.debug_ftsel:
+                print("number of features combined:", sum(genes))
+            print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
+
+
+
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
         
@@ -157,7 +167,7 @@ class Data():
         
 
 
-    def preprocess_linear(self, 
+    def preprocess_linear(self,
                           mindisp=1.5,
                           maxmean = 3,
                           minmean = None,

@@ -1,10 +1,13 @@
 import scanpy as sc
+import pandas as pd
 from lmz import *
 import anndata as ad
 import numpy as np
 
 
-
+#### 
+# oldest datasets
+#######
 load = lambda f: [l for l in open(f,'r').read().split('\n') if len(l)>1]
 
 
@@ -82,7 +85,24 @@ def loadimmune(subsample=False, pathprefix='..'):
     return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample), loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample)
 
 
+###
+# grunreader
+####
 
+def loadgruen_single(path,subsample): 
+    mtx_path = path+".1.counts_raw.csv.gz"
+    things = pd.read_csv(mtx_path, sep='\t').T
+    adata = ad.AnnData(things)
+    do_subsample(adata, subsample)
+    return adata
+
+def loadgruen(subsample=False, pathprefix='..', methods=['human1','human2']):
+    return [loadgruen_single('%s/data/punk/%s'% (pathprefix,method),subsample) for method in methods]
+
+
+###
+# artificial data
+#########
 
 datanames = ["default","even",'si1','si2','c7','c6','c5','facl0.05','facl2']
 

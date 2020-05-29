@@ -72,6 +72,8 @@ class Data():
                    ft_combine= lambda x,y: x or y,minbin=1, binsize=.25,
                    mindisp=.25, maxmean=3,minmean=0.015,maxgenes=750):
         
+        if mindisp>0 and maxgenes>0:
+            print ("processing data preprocess, needs explicit instructions on how to select features, defaulting to maxgenes")
         ###
         # prep
         ###

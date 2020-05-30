@@ -95,9 +95,8 @@ class Data():
         elif pp == 'simple':
             ag,bg = self.preprocess_simple(maxgenes)
         
-        
 
-        if pp == 'mergelinear':
+        elif pp == 'mergelinear':
             a,b= self._toarray()
             mat = np.vstack((a,b))
             genes = self.get_var_genes_simple( mat,minmean,maxmean,
@@ -129,14 +128,11 @@ class Data():
         ########
         # corrcoef
         ########
-        lena = self.a.shape[0]
-        ax, bx = self._toarray()
-        assert self.a.shape == ax.shape
-        assert self.b.shape == bx.shape
-        self.a, self.b  = ax,bx
         if scale:
             self.scale()      
         if corrcoef:
+            ax, bx = self._toarray()
+            lena = self.a.shape[0]
             corr = np.corrcoef(np.vstack((ax, bx)))
             corr = np.nan_to_num(corr)
             self.a, self.b = corr[:lena], corr[lena:]
@@ -144,8 +140,9 @@ class Data():
 
     
     def umapify(self, dimensions, n_neighbors):
-        mymap = umap.UMAP(n_components=dimensions,n_neighbors=n_neighbors).fit(np.vstack((self.a, self.b)))
-        return  mymap.transform(self.a), mymap.transform(self.b)
+        a,b= self._toarray()
+        mymap = umap.UMAP(n_components=dimensions,n_neighbors=n_neighbors).fit(np.vstack((a, b)))
+        return  mymap.transform(a), mymap.transform(b)
 
         
     def preprocess_simple(self, maxgenes=700):

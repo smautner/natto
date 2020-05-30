@@ -93,6 +93,12 @@ def loadgruen_single(path,subsample):
     mtx_path = path+".1.counts_raw.csv.gz"
     things = pd.read_csv(mtx_path, sep='\t').T
     adata = ad.AnnData(things)
+
+    truthpath = path+".cell_assignments.csv.gz"
+    truth  = pd.read_csv(truthpath, sep='\t')
+    adata.obs['true']  = list(truth['assigned_cluster'])
+
+
     do_subsample(adata, subsample)
     return adata
 

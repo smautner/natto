@@ -58,8 +58,11 @@ class renamelog:
         self.rn = { n:oldlookup[o]  for o,n in a.items() }
         self.getlastname={n:o for o,n in a.items()}
 
+def distances_nrm(dists): 
+    V = np.var(dists/np.mean(dists))
+    return 1-V
 
-def make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=True, maxerr=0):
+def make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=True, maxerr=0, dist = False):
     row_ind, col_ind = hungmatch
     pairs = zip(Y1[row_ind], Y2[col_ind])
     pairs = Counter(pairs)  # pair:occurance
@@ -76,7 +79,16 @@ def make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=True, maxerr=0):
     y1map = spacemap(clustersizes.keys())
     y2map = spacemap(clustersizes2.keys())
 
-    if normalize:
+    if normalize and dist:
+        # new dist thing: pair: distances
+        d = defaultdict(list) 
+        for a,b,c in zip(Y1[row_ind], Y2[col_ind], dist):
+            d[(a,b)].append(c)
+
+        normpairs = {k: (2 * sizemulti * float(-v) * distances_nrm(d[k]) ) / float(clustersizes[k[0]] + clustersizes2[k[1]]) for k, v in
+                     pairs.items()}  # pair:relative_occur
+
+    elif normalize:
         normpairs = {k: (2 * sizemulti * float(-v)) / float(clustersizes[k[0]] + clustersizes2[k[1]]) for k, v in
                      pairs.items()}  # pair:relative_occur
 
@@ -232,7 +244,8 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                    maxerror=.15,
                    rn=None,
                    saveheatmap=None,
-                   showset=None, distmatrix=None):
+                   showset=None, 
+                   distmatrix=None ):
     '''
     rn is for the renaming log
     '''
@@ -240,7 +253,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     rn1, rn2 = rn
     # get a mapping
     #row_ind, col_ind = hungmatch
-    y1map, y2map, canvas = make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=normalize)
+    y1map, y2map, canvas = make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=normalize, dist = False)
     row_ind, col_ind = solve_dense(canvas)
     canvas, canvasbackup = clean_matrix(canvas)
     if debug or 'inbetweenheatmap' in showset:

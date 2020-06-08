@@ -81,7 +81,7 @@ class Data():
 
         
         ######
-        # feature selection 
+        # SELECT GENES
         ########
         if pp == 'linear':
             ag,bg =self.preprocess_linear( mindisp=mindisp,
@@ -92,11 +92,9 @@ class Data():
                                     binsize=binsize)
         elif pp == 'bins':
             ag,bg = self.preprocess_bins( maxgenes)
-        elif pp == 'simple':
-            ag,bg = self.preprocess_simple(maxgenes)
-        
 
-        elif pp == 'mergelinear':
+
+        if pp == 'mergelinear':
             a,b= self._toarray()
             mat = np.vstack((a,b))
             genes = self.get_var_genes_simple( mat,minmean,maxmean,
@@ -110,8 +108,6 @@ class Data():
                 print("number of features combined:", sum(genes))
             print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
 
-
-
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
         
@@ -124,19 +120,7 @@ class Data():
         
         
     
-    def corrcoef(self, corrcoef, scale):
-        ########
-        # corrcoef
-        ########
-        if scale:
-            self.scale()      
-        if corrcoef:
-            ax, bx = self._toarray()
-            lena = self.a.shape[0]
-            corr = np.corrcoef(np.vstack((ax, bx)))
-            corr = np.nan_to_num(corr)
-            self.a, self.b = corr[:lena], corr[lena:]
-        return 
+
 
     
     def umapify(self, dimensions, n_neighbors):
@@ -144,26 +128,7 @@ class Data():
         mymap = umap.UMAP(n_components=dimensions,n_neighbors=n_neighbors).fit(np.vstack((a, b)))
         return  mymap.transform(a), mymap.transform(b)
 
-        
-    def preprocess_simple(self, maxgenes=700):
 
-        a,b = self._toarray()
-        #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
-        #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
-        #ag = self.get_var_genes_normtest(a,mindisp)
-        #bg = self.get_var_genes_normtest(b,mindisp)
-        A=np.expm1(a)
-        B=np.expm1(b)
-        def select(X):
-            var = X.var(axis=0)
-            srt = np.argsort(var)
-            accept = srt>(srt.shape[0]-maxgenes)
-            if self.debug_ftsel: 
-                print(f"ft selected:{sum(accept)}")
-            return accept
-            
-        return select(A),select(B)
-        
 
 
     def preprocess_linear(self,
@@ -216,14 +181,20 @@ class Data():
         genef, _ = sc.pp.filter_genes(ad, min_counts=min_counts, inplace=False)
         return cellf, genef
 
-    def _toarray(self):
-        if isinstance(self.a.X, csr):
-            ax = self.a.X.toarray()
-            bx = self.b.X.toarray()
-        else:
-            ax = self.a.X
-            bx = self.b.X
-        return ax, bx
+
+    def _toarray(self): 
+        return self.__toarray(self.a), self.__toarray(self.b)
+
+    def __toarray(self,thing):       
+        if isinstance(thing, np.ndarray):
+            return thing
+        elif isinstance(thing, csr):
+            return thing.toarray()
+        elif isinstance(thing.X, np.ndarray):
+            return thing.X
+        elif isinstance(thing.X, csr):
+            return  thing.X.toarray()
+        print("type problem in to array ")
     
     def basic_filter(self, min_counts=6, min_genes=200):
         #self.a.X, self.b.X = self._toarray()
@@ -240,14 +211,16 @@ class Data():
         sc.pp.log1p(self.a)
         sc.pp.log1p(self.b)
     
-    def scale(self):
-        sc.pp.scale(self.a, max_value=10)
-        sc.pp.scale(self.b, max_value=10)
-    
+ 
     def norm_data(self):
         self.basic_filter()
         self.normalize()   
         
+    
+
+    ####
+    # ft select 
+    ###
     def transform(self,means,var, stepsize=.5, ran=3, minbin=0):
         x = np.arange(minbin*stepsize,ran,stepsize)
         items = [(m,v) for m,v in zip(means,var)]
@@ -270,9 +243,6 @@ class Data():
         return mod.predict(x)
     
     def generalize(self,x,y,x_all):
-        
-
-        
         mod= sklearn.linear_model.LinearRegression()
         mod.fit(x,y)
         res = mod.predict(x_all.reshape(-1,1))
@@ -346,9 +316,45 @@ class Data():
     
     def __init__(self):
         self.debug_ftsel = False
-        
+
+    def scale(self):
+        sc.pp.scale(self.a, max_value=10)
+        sc.pp.scale(self.b, max_value=10)
+
+    def corrcoef(self, corrcoef, scale):
+        ########
+        # corrcoef
+        ########
+        if scale:
+            self.scale()      
+        if corrcoef:
+            ax, bx = self._toarray()
+            lena = self.a.shape[0]
+            corr = np.corrcoef(np.vstack((ax, bx)))
+            corr = np.nan_to_num(corr)
+            self.a, self.b = corr[:lena], corr[lena:]
+        return    
 """
- 
+         
+    def preprocess_simple(self, maxgenes=700):
+
+        a,b = self._toarray()
+        #ag, _ = self.get_variable_genes(a, mindisp=mindisp, maxmean=maxmean, minmean=minmean)
+        #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
+        #ag = self.get_var_genes_normtest(a,mindisp)
+        #bg = self.get_var_genes_normtest(b,mindisp)
+        A=np.expm1(a)
+        B=np.expm1(b)
+        def select(X):
+            var = X.var(axis=0)
+            srt = np.argsort(var)
+            accept = srt>(srt.shape[0]-maxgenes)
+            if self.debug_ftsel: 
+                print(f"ft selected:{sum(accept)}")
+            return accept
+            
+        return select(A),select(B)
+        
     def normtest(self, item):
         if len(item) < 8: 
             return 1 

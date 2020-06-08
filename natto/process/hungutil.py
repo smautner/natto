@@ -448,7 +448,41 @@ def predictleiden(X,params={}, resolution = 1):
 
 
 
+from scipy.sparse import csr_matrix
+from scipy.stats import randint 
 
+class fromdata: 
+    def fit(self, things):
+        self.things =  things 
+    def get(self): 
+        return random.choice(self.things) 
+
+import random
+
+
+
+def noisiate(mtx,noise_percentage=.05, noisemodel=fromdata()): 
+    
+    # OK THIS IS HOW WE NOISE
+    # 1. have a global percentage of affected cells
+    # 2. pick from distri (with zeros) 
+
+
+    #matrix to fill with noise 
+    noisy = mtx.copy() 
+
+    # columnwise add noise
+    for colid in range(mtx.shape[1]):
+
+        #distribution of values
+        cval = mtx[:,colid] 
+        noisemodel.fit(cval)
+
+        rando = ( np.random.rand(mtx.shape[0]) < noise_percentage ).nonzero()[0]
+        noisy[rando,colid] = [noisemodel.get() for r in range(len(rando))]
+
+    return noisy
+    
 
 ##################
 #  old stuff below, probably not used anymore

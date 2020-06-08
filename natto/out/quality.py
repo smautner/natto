@@ -100,7 +100,9 @@ def doubleclust(X,X2, Y,Y2):
     return (asd(X,X2,Y,Y2)+asd(X2,X,Y2,Y))/2
 
 
-    
+
+
+
     
     
     

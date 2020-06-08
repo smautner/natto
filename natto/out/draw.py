@@ -91,10 +91,23 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
 
+    same_limit=True
+
+    if same_limit:
+        X  = np.concatenate((X1, X2), axis=0)
+        xmin,ymin = X.min(axis = 0) 
+        xmax,ymax = X.max(axis = 0) 
+
     #plt.tight_layout()    
     ax=plt.subplot(121)
+    if same_limit:
+        plt.xlim(xmin,xmax)
+        plt.ylim(ymin,ymax)
     umap(X1,Y1,show=False,title=title[0],size=4,markerscale=4, acc=labelappend)
     ax=plt.subplot(122)
+    if same_limit:
+        plt.xlim(xmin,xmax)
+        plt.ylim(ymin,ymax)
     umap(X2,Y2,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend)
     if save:
         plt.tight_layout()

@@ -380,7 +380,6 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
         return Y1, Y2, out
 
     #########################
-    if debug: draw.cmp2(Y1, Y2, data1, data2)
 
     return split_and_mors(Y1, Y2, hungmatch, data1, data2, debug=debug, normalize=normalize, maxerror=maxerror,
                          rn=(rn1, rn2), saveheatmap=saveheatmap, showset=showset, distmatrix=distmatrix)

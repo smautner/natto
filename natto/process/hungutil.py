@@ -478,7 +478,12 @@ def noisiate(mtx,noise_percentage=.05, noisemodel=fromdata()):
         noisemodel.fit(cval)
 
         rando = ( np.random.rand(mtx.shape[0]) < noise_percentage ).nonzero()[0]
-        noisy[rando,colid] = [noisemodel.get() for r in range(len(rando))]
+
+
+        values  = np.array([noisemodel.get() for r in range(len(rando))])
+        nonzero = values>0 
+
+        noisy[rando[nonzero],colid] = values[nonzero]
 
     return noisy
     

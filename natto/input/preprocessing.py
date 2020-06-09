@@ -230,6 +230,13 @@ class Data():
         x=x+(stepsize/2)
         # draw regression points 
         if self.debug_ftsel:plt.scatter(x,y)
+
+
+        nonan=np.isfinite(y)
+        x= x[nonan]
+        y=y[nonan]
+        y_std = y_std[nonan]
+
         x = x.reshape(-1,1)
         return x,y,y_std       
     
@@ -270,7 +277,8 @@ class Data():
             plt.scatter(mean[good], disp[good],alpha=.2, s=3)
             
         x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good],stepsize=binsize, ran = maxmean, minbin=minbin)
-            
+        
+
         pre = self.generalize(x,y,mean[good])
         ###
         # make it quadratic

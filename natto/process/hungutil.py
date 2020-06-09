@@ -452,7 +452,7 @@ from scipy.stats import randint
 
 class fromdata: 
     def fit(self, things):
-        self.things =  things 
+        self.things =  list(things)
     def get(self): 
         return random.choice(self.things) 
 
@@ -460,7 +460,7 @@ import random
 
 
 
-def noisiate(mtx,noise_percentage=.05, noisemodel=fromdata()): 
+def noisiate(adata,noise_percentage=.05, noisemodel=fromdata()): 
     
     # OK THIS IS HOW WE NOISE
     # 1. have a global percentage of affected cells
@@ -468,24 +468,27 @@ def noisiate(mtx,noise_percentage=.05, noisemodel=fromdata()):
 
 
     #matrix to fill with noise 
-    noisy = mtx.copy() 
+    noisy = adata.X.copy() 
+    noisy = noisy.transpose() 
 
     # columnwise add noise
-    for colid in range(mtx.shape[1]):
+    for row in range(noisy.shape[0]):
 
         #distribution of values
-        cval = mtx[:,colid] 
-        noisemodel.fit(cval)
+        rval = noisy[row,:].todense().A1
+        noisemodel.fit(rval)
 
-        rando = ( np.random.rand(mtx.shape[0]) < noise_percentage ).nonzero()[0]
+        # write new numbers to rval 
+        loc = ( np.random.rand(noisy.shape[1]) < noise_percentage ).nonzero()[0]
+        values  = np.array([noisemodel.get() for r in range(len(loc))])
+        rval[loc] = values
 
+        # somehow integrate this in noisy... 
+        noisy[row] = csr_matrix(rval) # do it like this to prevent explicit 0s everywhere
+        
 
-        values  = np.array([noisemodel.get() for r in range(len(rando))])
-        nonzero = values>0 
-
-        noisy[rando[nonzero],colid] = values[nonzero]
-
-    return noisy
+    adata.X = noisy.transpose()
+    return adata
     
 
 ##################

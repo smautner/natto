@@ -101,6 +101,21 @@ def doubleclust(X,X2, Y,Y2):
 
 
 
+from sklearn.metrics import pairwise_distances
+from rari import rari
+from natto.process.hungutil import hungarian 
+def rari_score(Y1,Y2,X1,X2): 
+    a, b, dist = hungarian(X1, X2, debug=False)
+    aTb = dict(zip(a,b))
+    k=list(aTb.keys())
+    k.sort()
+    new_order = [aTb[kk] for kk in k]
+    X2 = X2[new_order]
+    Y2 = Y2[new_order]
+    dist_x1 = pairwise_distances(X1, metric='euclidean')
+    dist_x2 = pairwise_distances(X2, metric='euclidean')
+
+    return rari(Y1,Y2,dist_x1,dist_x2) , rand(Y1,Y2)
 
 
     

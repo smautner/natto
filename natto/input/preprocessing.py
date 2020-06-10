@@ -31,8 +31,7 @@ class Data():
 
         self.a = adata
         self.b = bdata
-        if make_even: 
-            self.make_even()
+        self.make_even = make_even 
             
         self.debug_ftsel = debug_ftsel
         
@@ -215,7 +214,8 @@ class Data():
     def norm_data(self):
         self.basic_filter()
         self.normalize()   
-        
+        if make_even: 
+            self.make_even()
     
 
     ####

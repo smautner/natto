@@ -31,7 +31,7 @@ class Data():
 
         self.a = adata
         self.b = bdata
-        self.make_even = make_even 
+        self.even = make_even  # will ssubsample to equal cells after cell outlayer rm
             
         self.debug_ftsel = debug_ftsel
         
@@ -214,7 +214,7 @@ class Data():
     def norm_data(self):
         self.basic_filter()
         self.normalize()   
-        if make_even: 
+        if self.even: 
             self.make_even()
     
 
@@ -315,6 +315,9 @@ class Data():
             plt.plot(x, ystd, alpha= .4)
             plt.show()
             plt.scatter(mean[good], disp[good],alpha=.2, s=3)
+            g=mean[good]
+            d=disp[good]
+            plt.scatter(g[accept], d[accept],alpha=.3, s=3, color='r')
             plt.show()
             print(f"ft selected:{sum(accept)}")
         

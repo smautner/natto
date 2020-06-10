@@ -458,8 +458,6 @@ class fromdata:
 
 import random
 
-
-
 def noisiate(adata,noise_percentage=.05, noisemodel=fromdata()): 
     
     # OK THIS IS HOW WE NOISE

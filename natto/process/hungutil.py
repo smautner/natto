@@ -71,25 +71,23 @@ def make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=True, maxerr=0, dist 
     clustersizes = Counter(Y1)  # class:occurence
     clustersizes2 = Counter(Y2)  # class:occurence
 
-    size1 = sum(clustersizes.values())
-    size2 = sum(clustersizes2.values())
-    if size1 > size2: size1, size2 = size2, size1
-    sizemulti = 1  # float(size1)/float(size2)
-
+   
     y1map = spacemap(clustersizes.keys())
     y2map = spacemap(clustersizes2.keys())
 
-    if normalize and dist:
+    if normalize and (dist is not False):
+        # see comments below on how this works out
         # new dist thing: pair: distances
         d = defaultdict(list) 
         for a,b,c in zip(Y1[row_ind], Y2[col_ind], dist):
             d[(a,b)].append(c)
 
-        normpairs = {k: (2 * sizemulti * float(-v) * distances_nrm(d[k]) ) / float(clustersizes[k[0]] + clustersizes2[k[1]]) for k, v in
+        normpairs = {k: (2  * float(-v) * distances_nrm(d[k]) ) / float(clustersizes[k[0]] + clustersizes2[k[1]]) for k, v in
                      pairs.items()}  # pair:relative_occur
+        
 
     elif normalize:
-        normpairs = {k: (2 * sizemulti * float(-v)) / float(clustersizes[k[0]] + clustersizes2[k[1]]) for k, v in
+        normpairs = {k: (2  * float(-v)) / float(clustersizes[k[0]] + clustersizes2[k[1]]) for k, v in
                      pairs.items()}  # pair:relative_occur
 
     else:
@@ -99,7 +97,6 @@ def make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=True, maxerr=0, dist 
     for (a, b), v in normpairs.items():
         if v < -maxerr:
             canvas[y1map.getint[a], y2map.getint[b]] = v
-
     return y1map, y2map, canvas
 
 
@@ -253,7 +250,8 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     rn1, rn2 = rn
     # get a mapping
     #row_ind, col_ind = hungmatch
-    y1map, y2map, canvas = make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=normalize, dist = False)
+    CANVASDISTARG = False # False/ distmatrix # this works but just end up 'marking' spread out clusters
+    y1map, y2map, canvas = make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=normalize, dist = CANVASDISTARG)
     row_ind, col_ind = solve_dense(canvas)
     canvas, canvasbackup = clean_matrix(canvas)
     if debug or 'inbetweenheatmap' in showset:
@@ -321,7 +319,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
 
         # this is to draw the final heatmap...
         # row_ind, col_ind = hungmatch
-        y1map, y2map, canvas = make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=normalize)
+        y1map, y2map, canvas = make_canvas_and_spacemaps(Y1, Y2, hungmatch, normalize=normalize, dist = CANVASDISTARG)
         # row_ind, col_ind = solve_dense(canvas)
         canvas, canvasbackup = clean_matrix(canvas)
         if debug or 'heatmap' in showset:

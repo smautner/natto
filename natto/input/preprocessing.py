@@ -96,7 +96,7 @@ class Data():
         if pp == 'mergelinear':
             a,b= self._toarray()
             mat = np.vstack((a,b))
-            genes = self.get_var_genes_simple( mat,minmean,maxmean,
+            genes = self.get_var_genes_linear( mat,minmean,maxmean,
                              cutoff = mindisp, Z= True, maxgenes=maxgenes, 
                              return_raw = False, minbin=minbin,binsize=binsize)
             print(f"genes: {sum(genes)}")
@@ -141,12 +141,12 @@ class Data():
         #bg,_  = self.get_variable_genes(b, mindisp=mindisp, maxmean = maxmean, minmean=minmean)
         #ag = self.get_var_genes_normtest(a,mindisp)
         #bg = self.get_var_genes_normtest(b,mindisp)
-        ag = self.get_var_genes_simple(a, minmean,maxmean,
+        ag = self.get_var_genes_linear(a, minmean,maxmean,
                                        cutoff= mindisp,
                                        Z=True,
                                        minbin=minbin, binsize = binsize,
                                        maxgenes=maxgenes)
-        bg = self.get_var_genes_simple(b, minmean,maxmean,
+        bg = self.get_var_genes_linear(b, minmean,maxmean,
                                        cutoff = mindisp, 
                                        maxgenes=maxgenes,
                                        minbin=minbin, binsize = binsize,
@@ -249,14 +249,18 @@ class Data():
         mod.fit(x,y)
         return mod.predict(x)
     
-    def generalize(self,x,y,x_all):
-        mod= sklearn.linear_model.LinearRegression()
+    def get_expected_values(self,x,y,x_all):
+        #mod= sklearn.linear_model.LinearRegression()
+        #mod= sklearn.linear_model.RANSACRegressor()
+        mod= sklearn.linear_model.HuberRegressor()
+        #mod.fit(x_all[x_all >= x[0]].reshape(-1,1),y_all[x_all >= x[0]]) # ...
         mod.fit(x,y)
         res = mod.predict(x_all.reshape(-1,1))
-        res[x_all < x[0]] = y[0]
+        #res[x_all < x[0]] = y[0] # produces a harsh step...
+        res[x_all <  x[0] ] = mod.predict([x[0]])
         return res
-        
-    def get_var_genes_simple(self, matrix,minmean,maxmean,
+
+    def get_var_genes_linear(self, matrix,minmean,maxmean,
                              cutoff =.2, Z= True, maxgenes=None, 
                              return_raw = False, minbin=1,binsize=.25):
         
@@ -268,55 +272,56 @@ class Data():
         var     = np.var(a, axis=0)
         mean    = np.mean(a, axis=0)
         disp2= var/mean
-        disp = np.log(disp2)
-        mean = np.log1p(mean)
+        Y = np.log(disp2)
+        X = np.log1p(mean)
+
         #print (mean, disp2,maxmean,minmean)
-        good = np.array( [not np.isnan(x) and me > minmean and me < maxmean for x,me in zip(disp2,mean)] )
+        good = np.array( [not np.isnan(y) and me > minmean and me < maxmean for y,me in zip(disp2,X)] )
         
         if self.debug_ftsel: 
-            plt.scatter(mean[good], disp[good],alpha=.2, s=3)
+            plt.scatter(X[good], Y[good],alpha=.2, s=3)
             
-        x,y,ystd = self.transform(mean[good].reshape(-1, 1),disp[good],stepsize=binsize, ran = maxmean, minbin=minbin)
+        x_bin,y_bin,ystd_bin = self.transform(X[good].reshape(-1, 1),Y[good],stepsize=binsize, ran = maxmean, minbin=minbin)
         
 
-        pre = self.generalize(x,y,mean[good])
+        pre = self.get_expected_values(x_bin,y_bin,X[good])
         ###
         # make it quadratic
         ####
-        #pre = self.generalize_quadradic(pre,mean[good])
+        #pre = self.generalize_quadradic(pre,X[good])
         
         if Z:
-            std = self.generalize(x,ystd,mean[good])
-            disp[good]-= pre 
-            disp[good]/=std
+            std = self.get_expected_values(x_bin,ystd_bin,X[good])
+            Y[good]-= pre 
+            Y[good]/=std
             if not maxgenes:
-                accept = [d > cutoff for d in disp[good]]                
+                accept = [d > cutoff for d in Y[good]]                
                 if return_raw:
                     bad=np.logical_not(good)
                     
-                    pre_bad = self.generalize(x,y,mean[bad])
-                    std_bad = self.generalize(x,ystd,mean[bad])
-                    disp[bad] -= pre_bad
-                    disp[bad] /= std_bad
-                    return disp
+                    pre_bad = self.get_expected_values(x_bin,y_bin,X[bad])
+                    std_bad = self.get_expected_values(x_bin,ystd_bin,X[bad])
+                    Y[bad] -= pre_bad
+                    Y[bad] /= std_bad
+                    return Y
             else: 
-                srt = np.argsort(disp[good])
-                accept = np.full(disp[good].shape, False)
+                srt = np.argsort(Y[good])
+                accept = np.full(Y[good].shape, False)
                 accept[ srt[-maxgenes:] ] = True
 
             
         else:
-            accept = [ (d-m)>cutoff for d,m in zip(disp[good],pre) ]
+            accept = [ (d-m)>cutoff for d,m in zip(Y[good],pre) ]
         
         
         if self.debug_ftsel:
-            srt= np.argsort(mean[good])
-            plt.plot(mean[good][srt], pre[srt])
-            plt.plot(x, ystd, alpha= .4)
+            srt= np.argsort(X[good])
+            plt.plot(X[good][srt], pre[srt],color='k')
+            plt.plot(x_bin, ystd_bin, alpha= .4)
             plt.show()
-            plt.scatter(mean[good], disp[good],alpha=.2, s=3)
-            g=mean[good]
-            d=disp[good]
+            plt.scatter(X[good], Y[good],alpha=.2, s=3)
+            g=X[good]
+            d=Y[good]
             plt.scatter(g[accept], d[accept],alpha=.3, s=3, color='r')
             plt.show()
             print(f"ft selected:{sum(accept)}")

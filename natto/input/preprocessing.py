@@ -146,6 +146,7 @@ class Data():
                                        Z=True,
                                        minbin=minbin, binsize = binsize,
                                        maxgenes=maxgenes)
+        self.prevres =  ag
         bg = self.get_var_genes_linear(b, minmean,maxmean,
                                        cutoff = mindisp, 
                                        maxgenes=maxgenes,
@@ -319,11 +320,22 @@ class Data():
             plt.plot(X[good][srt], pre[srt],color='k')
             plt.plot(x_bin, ystd_bin, alpha= .4)
             plt.show()
-            plt.scatter(X[good], Y[good],alpha=.2, s=3)
+            plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
+
             g=X[good]
             d=Y[good]
-            plt.scatter(g[accept], d[accept],alpha=.3, s=3, color='r')
+            plt.scatter(g[accept], d[accept],alpha=.3, s=3, color='r', label='selected')
+
+
+            if  "prevres" in self.__dict__:
+                argh = good.copy()
+                argh[good] = np.array(accept)
+                agree = argh & self.prevres
+                plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='overlap')
+
+            plt.legend()
             plt.show()
+
             print(f"ft selected:{sum(accept)}")
         
         good[good] = np.array(accept)

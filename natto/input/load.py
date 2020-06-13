@@ -82,7 +82,8 @@ def load4k8k(subsample=False,pathprefix='..'):
     return loadpbmc('%s/data/4k'% pathprefix,subsample), loadpbmc('%s/data/8k'%pathprefix,subsample)
 
 def loadimmune(subsample=False, pathprefix='..'):
-    return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample), loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample)
+    return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample),\
+           loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample)
 
 
 ###

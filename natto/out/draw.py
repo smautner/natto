@@ -77,7 +77,7 @@ def umap_gradient(X,Y,
     plt.scatter(embed[:, 0],
                 embed[:, 1],
                 c= Y,
-                s=size,cmap='gist_rainbow')
+                s=size,cmap='autumn')
     #plt.axis('off')
     plt.xlabel('UMAP 2')
     plt.ylabel('UMAP 1')

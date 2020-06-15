@@ -280,6 +280,7 @@ class Data():
         good = np.array( [not np.isnan(y) and me > minmean and me < maxmean for y,me in zip(disp2,X)] )
         
         if self.debug_ftsel: 
+            ax=plt.subplot(121)
             plt.scatter(X[good], Y[good],alpha=.2, s=3)
             
         x_bin,y_bin,ystd_bin = self.transform(X[good].reshape(-1, 1),Y[good],stepsize=binsize, ran = maxmean, minbin=minbin)
@@ -319,13 +320,12 @@ class Data():
             srt= np.argsort(X[good])
             plt.plot(X[good][srt], pre[srt],color='k')
             plt.plot(x_bin, ystd_bin, alpha= .4)
-            plt.show()
+            ax=plt.subplot(122)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
 
             g=X[good]
             d=Y[good]
             plt.scatter(g[accept], d[accept],alpha=.3, s=3, color='r', label='selected')
-
 
             if  "prevres" in self.__dict__:
                 argh = good.copy()

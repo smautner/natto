@@ -456,34 +456,31 @@ class fromdata:
 
 import random
 
-def noisiate(adata,noise_percentage=.05, noisemodel=fromdata()): 
+def noisiate(mtx,noise_percentage,noisemodel= fromdata()): 
+    
+    # column wise allply noise 
+    noisy = mtx.copy().transpose() 
+    for row in range(noisy.shape[0]):
+        #distribution of values
+        rval = noisy[row,:].todense().A1
+        noisemodel.fit(rval)
+        # write new numbers to rval 
+        loc = ( np.random.rand(noisy.shape[1]) < noise_percentage ).nonzero()[0]
+        values  = np.array([noisemodel.get() for r in range(len(loc))])
+        rval[loc] = values
+        # somehow integrate this in noisy... 
+        noisy[row] = csr_matrix(rval) # do it like this to prevent explicit 0s everywhere
+    return noisy.transpose()
+  
+def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()): 
     
     # OK THIS IS HOW WE NOISE
     # 1. have a global percentage of affected cells
     # 2. pick from distri (with zeros) 
 
-
     #matrix to fill with noise 
-    noisy = adata.X.copy() 
-    noisy = noisy.transpose() 
 
-    # columnwise add noise
-    for row in range(noisy.shape[0]):
-
-        #distribution of values
-        rval = noisy[row,:].todense().A1
-        noisemodel.fit(rval)
-
-        # write new numbers to rval 
-        loc = ( np.random.rand(noisy.shape[1]) < noise_percentage ).nonzero()[0]
-        values  = np.array([noisemodel.get() for r in range(len(loc))])
-        rval[loc] = values
-
-        # somehow integrate this in noisy... 
-        noisy[row] = csr_matrix(rval) # do it like this to prevent explicit 0s everywhere
-        
-
-    adata.X = noisy.transpose()
+    adata.X = noisiate(adata.X,noise_percentage, noisemodel )
     return adata
     
 

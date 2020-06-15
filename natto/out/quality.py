@@ -100,11 +100,24 @@ def doubleclust(X,X2, Y,Y2):
     return (asd(X,X2,Y,Y2)+asd(X2,X,Y2,Y))/2
 
 
-
 from sklearn.metrics import pairwise_distances
 from rari import rari
-from natto.process.hungutil import hungarian 
+from natto.process.hungutil import hungarian, spacemap
+
+def make_rari_compatible(ar): 
+    ''' not matching clusternames cause holes in clusternames causing rari 2 die'''
+    s= spacemap(np.unique(ar) )
+    for k,v in s.getint.items(): 
+        if k!=v:
+            ar[ar==k] = v
+    return ar 
+            
+
 def rari_score(Y1,Y2,X1,X2): 
+
+
+    # Y1 and Y2 are clculated on different data... 
+    # account for that by ordering Y2 ; such that the closest cells correspond
     a, b, dist = hungarian(X1, X2, debug=False)
     aTb = dict(zip(a,b))
     k=list(aTb.keys())
@@ -112,9 +125,15 @@ def rari_score(Y1,Y2,X1,X2):
     new_order = [aTb[kk] for kk in k]
     X2 = X2[new_order]
     Y2 = Y2[new_order]
+
+
+    # distances:
     dist_x1 = pairwise_distances(X1, metric='euclidean')
     dist_x2 = pairwise_distances(X2, metric='euclidean')
 
+    #
+    Y1 = make_rari_compatible(Y1)
+    Y2 = make_rari_compatible(Y2)
     return rari(Y1,Y2,dist_x1,dist_x2) , rand(Y1,Y2)
 
 

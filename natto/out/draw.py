@@ -23,7 +23,7 @@ col = { i-2:e for i,e in enumerate(colors)}
 col.update( {a+100:b for a,b in col.items()}  )
 '''
 
-col = plt.cm.get_cmap('tab20').colors
+col = plt.cm.get_cmap('tab20').colors + ((0,0,0),)
 
 def umap(X,Y,
         title="No title",
@@ -74,6 +74,7 @@ def umap_gradient(X,Y,
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     
     embed = X
+   
     plt.scatter(embed[:, 0],
                 embed[:, 1],
                 c= Y,
@@ -114,11 +115,19 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):
         plt.savefig(save, dpi=300)
     plt.show()
 
-def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'), save=None):    
+
+from matplotlib import cm 
+def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'), save=None, fix_colors=True):    
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
 
+    
+
+
+
+    
+    
     #plt.tight_layout()    
     ax=plt.subplot(121)
     umap_gradient(X1,Y1,show=False,title=title[0],size=4,markerscale=4)

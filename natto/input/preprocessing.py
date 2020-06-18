@@ -230,7 +230,7 @@ class Data():
         y_std = np.array([np.std(st) for st in boxes])
         x=x+(stepsize/2)
         # draw regression points 
-        if self.debug_ftsel:plt.scatter(x,y)
+        if self.debug_ftsel:plt.scatter(x,y,label='Mean of bins')
 
 
         nonan=np.isfinite(y)
@@ -281,7 +281,7 @@ class Data():
         
         if self.debug_ftsel: 
             ax=plt.subplot(121)
-            plt.scatter(X[good], Y[good],alpha=.2, s=3)
+            plt.scatter(X[good], Y[good],alpha=.2, s=3, label='all')
             
         x_bin,y_bin,ystd_bin = self.transform(X[good].reshape(-1, 1),Y[good],stepsize=binsize, ran = maxmean, minbin=minbin)
         
@@ -318,8 +318,9 @@ class Data():
         
         if self.debug_ftsel:
             srt= np.argsort(X[good])
-            plt.plot(X[good][srt], pre[srt],color='k')
-            plt.plot(x_bin, ystd_bin, alpha= .4)
+            plt.plot(X[good][srt], pre[srt],color='k', label='regression')
+            plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std')
+            plt.legens()
             ax=plt.subplot(122)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
 

@@ -4,12 +4,12 @@ from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
 
 
-def clusters(data, debug=False):
+def clusters(data,maxpoison=.125,debug=False):
     
     i=3
     while i < 20:
         r, poison = cluster(data, i, debug)
-        if poison < .125:
+        if poison < maxpoison:
             okcluster = r
         else:
             return okcluster

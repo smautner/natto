@@ -66,6 +66,7 @@ def umap_gradient(X,Y,
         title="No title",
         show=True,
         markerscale=4,
+        cmap='gist_rainbow',
         size=None):
     
     # Y is
@@ -78,7 +79,7 @@ def umap_gradient(X,Y,
     plt.scatter(embed[:, 0],
                 embed[:, 1],
                 c= Y,
-                s=size,cmap='autumn')
+                s=size,cmap=cmap)
     #plt.axis('off')
     plt.xlabel('UMAP 2')
     plt.ylabel('UMAP 1')
@@ -87,13 +88,12 @@ def umap_gradient(X,Y,
         
         
         
-def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):    
+def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):    
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
 
     same_limit=True
-
     if same_limit:
         X  = np.concatenate((X1, X2), axis=0)
         xmin,ymin = X.min(axis = 0) 
@@ -104,12 +104,12 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):
     if same_limit:
         plt.xlim(xmin,xmax)
         plt.ylim(ymin,ymax)
-    umap(X1,Y1,show=False,title=title[0],size=4,markerscale=4, acc=labelappend)
+    umap(X1,Y1,show=False,title=title[0],size=4,markerscale=4, acc=labelappend[0])
     ax=plt.subplot(122)
     if same_limit:
         plt.xlim(xmin,xmax)
         plt.ylim(ymin,ymax)
-    umap(X2,Y2,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend)
+    umap(X2,Y2,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend[1])
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
@@ -117,22 +117,19 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend={}):
 
 
 from matplotlib import cm 
-def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'), save=None, fix_colors=True):    
+def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
+        save=None,
+        fix_colors=True, cmap ='autumn'):    
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
-
-    
-
-
-
     
     
     #plt.tight_layout()    
     ax=plt.subplot(121)
-    umap_gradient(X1,Y1,show=False,title=title[0],size=4,markerscale=4)
+    umap_gradient(X1,Y1,show=False,title=title[0],size=4,markerscale=4, cmap = cmap)
     ax=plt.subplot(122)
-    umap_gradient(X2,Y2,show=False,title=title[1],size=4,markerscale=4)
+    umap_gradient(X2,Y2,show=False,title=title[1],size=4,markerscale=4, cmap = cmap)
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
@@ -404,6 +401,8 @@ def umap(X,Y, reducer = None,
     return reducer
 
 def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):    
+    
+
 
     sns.set(font_scale=1.2,style='white')
     if not red:
@@ -414,9 +413,9 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):
 
     #plt.tight_layout()    
     ax=plt.subplot(121)
-    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4, acc=labelappend)
+    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4, acc=labelappend[0])
     ax=plt.subplot(122)
-    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend)
+    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend[1])
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)

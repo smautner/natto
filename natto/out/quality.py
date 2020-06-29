@@ -1,4 +1,5 @@
 from collections import Counter
+import scanpy as sc
 from  sklearn.neighbors import KNeighborsClassifier as KNC
 import numpy as np
 from sklearn.metrics import pairwise_distances
@@ -6,7 +7,10 @@ from sklearn.neighbors import NearestNeighbors as NN
 from sklearn.metrics import adjusted_rand_score as rand
 # QUALITY MEASSUREMENTS
 import math
-
+from sklearn.metrics import pairwise_distances
+from rari import rari
+from natto.process.hungutil import hungarian, spacemap
+import pandas as pd
 
 # e^-dd / avg 1nn dist 
 
@@ -100,9 +104,6 @@ def doubleclust(X,X2, Y,Y2):
     return (asd(X,X2,Y,Y2)+asd(X2,X,Y2,Y))/2
 
 
-from sklearn.metrics import pairwise_distances
-from rari import rari
-from natto.process.hungutil import hungarian, spacemap
 
 def make_rari_compatible(ar): 
     ''' not matching clusternames cause holes in clusternames causing rari 2 die'''
@@ -137,7 +138,85 @@ def rari_score(Y1,Y2,X1,X2):
     return rari(Y1,Y2,dist_x1,dist_x2) , rand(Y1,Y2)
 
 
+from lmz import Map, Zip, Range
+    
+
+def make_res_dict( adata): 
+    cats = adata.obs['clust'].cat.categories
+    label_markers = {}
+    for e in cats:
+        cat = str(e)
+        genes = adata.uns['rank_genes_groups']['names'][cat]
+        scores = adata.uns['rank_genes_groups']['scores'][cat]
+        ranks = Range(scores)
+        label_markers[e] = Zip(genes,scores, ranks)
+    return label_markers
+    
+def print_scorediff(label, d1,d2,num):
+    #gen_score_1 = {a:b for a,b,c in d1.get(label,[])}
+    gen_score_2 = {a:b for a,b,c in d2.get(label,[])}
+    res= []
+    minscore = min(gen_score_2.values() or [0] )
+    for gene, score, _ in d1.get(label,[]): 
+        other_score = gen_score_2.get(gene,minscore)
+        res.append( (abs(score-other_score),gene,score-other_score) )
+    res.sort()
+
+    def mk_print(r):
+        return f"{r[1]}({r[2]:.2f})"
+    print (label,"\t",'\t'.join(map(mk_print,res[::-1][:num])))
     
     
     
+
+def markers(m,y1,y2, num=7): 
+    # add y1 and y2 to data in m 
+    cat1 = pd.Categorical(y1)
+    cat2 = pd.Categorical(y2)
+    m.a.obs['clust'] =  cat1 
+    m.b.obs['clust'] =  cat2
+
+    # do ttest analysis 
+    sc.tl.rank_genes_groups(m.a, 'clust', method='t-test')
+    sc.tl.rank_genes_groups(m.b, 'clust', method='t-test')
     
+
+    # ok first we get a good datastructure for the data
+    d1 = make_res_dict( m.a)
+    d2 = make_res_dict( m.b)
+
+    # report stuff 
+    def mk_printable(gene_score_rnk, d2_grank):
+        gene, score, rnk = gene_score_rnk
+        return f'{gene}({d2_grank.get(gene,"n/a")})'
+        #return f'{gene}({score:.1f})'
+
+    def print_ranked_genes(k,d,d2):
+        d2gen_rnk = {a:c for a,b,c in d2.get(k,[])}
+        if k in d:
+            print (k,"\t",'\t'.join(map(lambda x:mk_printable(x,d2gen_rnk),d[k][:num])))
+
+    for label in set(list(d1.keys())+list(d2.keys())):
+        print_ranked_genes(label,d1,d2)
+        print_ranked_genes(label,d2,d1)
+        print_scorediff(label, d1,d2, num)
+        print_scorediff(label, d2,d1, num)
+        print("*"*80)
+
+    # use distance as meassure of criticallity maybe 
+    return d1,d2
+    
+
+def mk_label_avghungdist(dx, y1,y2):
+    a,b, dist = hungarian(*dx)
+    y1dist = dist[a,b]
+    #y1dist -= y1dist.min()
+    #y1dist /= y1dist.max()
+
+    y2dist = y1dist[np.argsort(b)]
+
+    def mk_label_avgdist(y,dist): 
+        return {u: "%.2f" % dist[y==u].mean() for u in np.unique(y)}
+
+    return Map(mk_label_avgdist, [y1,y2], [y1dist, y2dist])
+

@@ -477,9 +477,7 @@ def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()):
     # OK THIS IS HOW WE NOISE
     # 1. have a global percentage of affected cells
     # 2. pick from distri (with zeros) 
-
     #matrix to fill with noise 
-
     adata.X = noisiate(adata.X,noise_percentage, noisemodel )
     return adata
     

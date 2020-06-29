@@ -99,7 +99,7 @@ class Data():
             genes = self.get_var_genes_linear( mat,minmean,maxmean,
                              cutoff = mindisp, Z= True, maxgenes=maxgenes, 
                              return_raw = False, minbin=minbin,binsize=binsize)
-            print(f"genes: {sum(genes)}")
+            print(f"genes: {sum(genes)} / {len(genes)}")
         else:
             #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
             genes = list(map(ft_combine,ag,bg))
@@ -280,6 +280,7 @@ class Data():
         good = np.array( [not np.isnan(y) and me > minmean and me < maxmean for y,me in zip(disp2,X)] )
         
         if self.debug_ftsel: 
+            plt.figure(figsize=(10,4)) 
             ax=plt.subplot(121)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label='all')
             
@@ -320,7 +321,7 @@ class Data():
             srt= np.argsort(X[good])
             plt.plot(X[good][srt], pre[srt],color='k', label='regression')
             plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std')
-            plt.legens()
+            plt.legend()
             ax=plt.subplot(122)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
 

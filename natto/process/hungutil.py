@@ -1,4 +1,4 @@
-import basics as ba
+from lmz import *
 import anndata as ad
 import time
 import tabulate
@@ -196,7 +196,7 @@ def recluster(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, show
         print('ranaming: set%s' % rnlog.dataset, problemclusters, np.unique(yh) + maxy + 1)
     return Y
 
-def recluster_copkmeans(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, showset={},
+def recluster_hungmatch_aware(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, showset={},
                 roind=None,coind=None, target_cls=None, Y2=None, algo='knn'):
     
     indices = [y in problemclusters for y in Y]
@@ -271,14 +271,15 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     for a, bb in da.items():
         if any([b in db for b in bb]):  # do nothing if the target is conflicted in a and b
             continue
+
         
+
+
         # normal recluster
         #recluster(data1, Y1, [y1map.getitem[a]], n_clust=len(bb), rnlog=rn1, debug=debug, showset=showset)
-        
-        
         # reclustering with copkmeanz
         target_classes = [y2map.getitem[b] for b in bb]
-        recluster_copkmeans(data1,
+        recluster_hungmatch_aware(data1,
                             Y1,
                             [y1map.getitem[a]],
                             n_clust=len(bb),
@@ -299,16 +300,42 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
             
             
         #recluster(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset)
-        
         # reclustering with copkmeanz
         target_classes = [y1map.getitem[a] for a in aa]
-        recluster_copkmeans(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset,
+        recluster_hungmatch_aware(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset,
                         roind=hungmatch[1],
                         coind=hungmatch[0],
                         target_cls=target_classes,
                         Y2=Y1)
         
         done = False
+
+    # SPECIAL TRIANGLE TREATMENT 
+    if False:
+        for a, bb in da.items():
+            print (a,bb)
+            if any([b in db for b in bb]): 
+                assert len(bb)==2,f"attempt to solve triangle encountered strange circumstances {bb}"
+
+                # base is the one we also expect find in db
+                base,angle = bb 
+                if angle in db: 
+                    angle, base = bb 
+
+                # also find pointy end and base in db ,,,, 
+                base_b,angle_b = db[base] 
+                if base_b != base:
+                    angle_b, base_b = db[base]
+                
+                # compare sizes and decide what to recluster 
+                if canvas[a,angle] > canvas[base,angle_b]:
+                    print(f"triangle recluster set 1: {a}")
+                    recluster(data1, Y1, [y1map.getitem[a]], n_clust=2, rnlog=rn1, debug=debug, showset=showset)
+                else:
+                    print(f"triangle recluster set 2: {base}")
+                    recluster(data2, Y2, [y2map.getitem[base]], n_clust=2, rnlog=rn2, debug=debug, showset=showset)
+                done = False 
+
 
     if done:
         row_ind, col_ind = solve_dense(canvas)
@@ -717,8 +744,8 @@ def multimapclusters(X,X2,Yh,Y2h, debug=False,method = 'lapsolver') -> 'new Yh,Y
     y2names = {i:y2map.getint[a] for a in y2names for i in a }
    
     # now we only need to translate
-    Yh = ba.lmap(lambda x:y1names.get(x,-2) , Yh) 
-    Y2h = ba.lmap(lambda x:y2names.get(x,-2) , Y2h) 
+    Yh = Map(lambda x:y1names.get(x,-2) , Yh) 
+    Y2h = Map(lambda x:y2names.get(x,-2) , Y2h) 
 
     clustermap = {y1map.getint[a]:y2map.getint[b] for a,b in clustermap }
     class_acc = qualitymeassure( Yh ,Y2h , hungmatch,clustermap)

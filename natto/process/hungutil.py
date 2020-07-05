@@ -313,7 +313,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     # SPECIAL TRIANGLE TREATMENT 
     if False:
         for a, bb in da.items():
-            print (a,bb)
+            print (y1map.getitem[a],Map(y2map.getitem.get,bb))
             if any([b in db for b in bb]): 
                 assert len(bb)==2,f"attempt to solve triangle encountered strange circumstances {bb}"
 
@@ -329,10 +329,10 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                 
                 # compare sizes and decide what to recluster 
                 if canvas[a,angle] > canvas[base,angle_b]:
-                    print(f"triangle recluster set 1: {a}")
+                    print(f"triangle recluster set 1: {y1map.getitem[a]}")
                     recluster(data1, Y1, [y1map.getitem[a]], n_clust=2, rnlog=rn1, debug=debug, showset=showset)
                 else:
-                    print(f"triangle recluster set 2: {base}")
+                    print(f"triangle recluster set 2: {y2map.getitem[base]}")
                     recluster(data2, Y2, [y2map.getitem[base]], n_clust=2, rnlog=rn2, debug=debug, showset=showset)
                 done = False 
 

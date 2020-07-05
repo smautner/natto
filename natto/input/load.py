@@ -47,8 +47,6 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
     adata.obs['labels']= loadlabels(load( "../data/pbmc.3k.labels"), load( "../data/filtered_gene_bc_matrices/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
-    
-    
     adata = do_subsample(adata, subsample)
     return adata
 
@@ -61,8 +59,6 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
 
     adata = filter(adata,cells)
     adata = do_subsample(adata, subsample)
-    
-    
     return adata
 
 
@@ -105,6 +101,54 @@ def loadgruen_single(path,subsample):
 
 def loadgruen(subsample=False, pathprefix='..', methods=['human1','human2']):
     return [loadgruen_single('%s/data/punk/%s'% (pathprefix,method),subsample) for method in methods]
+
+
+
+########
+# LOAD DCA 
+#########
+
+from anndata import read_h5ad
+
+def loaddca_h5(path,subsample): 
+    dca_path = path+"/adata.h5ad"
+    adata = read_h5ad(dca_path)
+    do_subsample(adata, subsample)
+    return adata
+
+def loaddca_late(path,subsample): 
+    dca_path = path+"/latent.tsv"
+    things = pd.read_csv(dca_path, index_col=0, header = None, sep='\t')
+    adata = ad.AnnData(things)
+    do_subsample(adata, subsample)
+    return adata
+
+#  h1  h2  h3  h4  immuneA  immuneB  m3k  m4k  m6k  m8k  p7d  p7e
+def loaddca(fname, subsample = False, latent = False):
+    path = "../data/dca/"+fname
+    if latent:
+        adata = loaddca_late(path, subsample)
+    else:
+        adata = loaddca_h5(path, subsample) 
+    return adata
+
+def loaddca_p7de(subsample):
+    return loaddca("p7d", subsample), loaddca("p7e", subsample)
+def loaddca_l_p7de(subsample):
+    return loaddca("p7d", subsample, latent=True), loaddca("p7e", subsample,latent=True)
+
+def loaddca_immuneab(subsample):
+    return loaddca("immuneA", subsample), loaddca("immuneB", subsample)
+def loaddca_l_immuneab(subsample):
+    return loaddca("immuneA", subsample, latent= True), loaddca("immuneB", subsample, latent=True)
+
+def loaddca_3k6k(subsample):
+    return loaddca("m3k", subsample), loaddca("m6k", subsample)
+def loaddca_l_3k6k(subsample):
+    return loaddca("m3k", subsample, latent= True), loaddca("m6k", subsample, latent=True)
+
+
+
 
 
 ###

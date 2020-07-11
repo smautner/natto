@@ -3,17 +3,15 @@ from sklearn.cluster import SpectralClustering
 from sklearn.neighbors import KNeighborsClassifier
 import numpy as np
 
-
-def clusters(data,maxpoison=.125,debug=False):
+def clusters(data,minclust = 3, maxpoison=.125,debug=False):
     
-    i=3
-    while i < 20:
-        r, poison = cluster(data, i, debug)
+    while minclust < 25:
+        r, poison = cluster(data, minclust, debug)
         if poison < maxpoison:
             okcluster = r
         else:
             return okcluster
-        i+=1
+        minclust+=1
     print("tried maxcluster, stopping")
     return okcluster
 

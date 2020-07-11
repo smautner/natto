@@ -94,7 +94,7 @@ def loadgruen_single(path,subsample):
     truthpath = path+".cell_assignments.csv.gz"
     truth  = pd.read_csv(truthpath, sep='\t')
     adata.obs['true']  = list(truth['assigned_cluster'])
-
+    
 
     do_subsample(adata, subsample)
     return adata
@@ -113,15 +113,21 @@ from anndata import read_h5ad
 def loaddca_h5(path,subsample): 
     dca_path = path+"/adata.h5ad"
     adata = read_h5ad(dca_path)
+    adata.obsm['tsv'] =  loaddca_late(path) 
+
     do_subsample(adata, subsample)
+
     return adata
 
-def loaddca_late(path,subsample): 
+def loaddca_late(path,subsample=None): 
     dca_path = path+"/latent.tsv"
     things = pd.read_csv(dca_path, index_col=0, header = None, sep='\t')
+    return things
+    '''
     adata = ad.AnnData(things)
     do_subsample(adata, subsample)
     return adata
+    '''
 
 #  h1  h2  h3  h4  immuneA  immuneB  m3k  m4k  m6k  m8k  p7d  p7e
 def loaddca(fname, subsample = False, latent = False):
@@ -144,9 +150,13 @@ def loaddca_l_immuneab(subsample):
 
 def loaddca_3k6k(subsample):
     return loaddca("m3k", subsample), loaddca("m6k", subsample)
+
 def loaddca_l_3k6k(subsample):
     return loaddca("m3k", subsample, latent= True), loaddca("m6k", subsample, latent=True)
 
+
+def loaddca_h1h2(subsample):
+    return loaddca("h1", subsample), loaddca("h2", subsample)
 
 
 

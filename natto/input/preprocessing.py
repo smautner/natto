@@ -17,15 +17,15 @@ class Data():
     """will have .a .b .d2 .dx"""
     def fit(self,adata, bdata,  
             maxgenes=750, 
-            maxmean=3,
-            mindisp=.25,
+            maxmean=7,
+            mindisp=1.4,
             minmean=0.0125, 
             corrcoef=True,
             dimensions=6,
             umap_n_neighbors = 15,
             pp='linear',
             scale=False,
-            ft_combine = lambda x,y: x and y,
+            ft_combine = lambda x,y: x or y,
             debug_ftsel=False,
             make_even=False):
 
@@ -196,7 +196,7 @@ class Data():
             return  thing.X.toarray()
         print("type problem in to array ")
     
-    def basic_filter(self, min_counts=6, min_genes=200):
+    def basic_filter(self, min_counts=3, min_genes=200):
         #self.a.X, self.b.X = self._toarray()
         # this weeds out obvious lemons (gens and cells)
         self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a, min_genes, min_counts)
@@ -222,11 +222,16 @@ class Data():
     ####
     # ft select 
     ###
-    def transform(self,means,var, stepsize=.5, ran=3, minbin=0):
+    def transform(self,means,var, stepsize=.5, ran=3, minbin=0, bin_avg = 'mean'):
         x = np.arange(minbin*stepsize,ran,stepsize)
         items = [(m,v) for m,v in zip(means,var)]
         boxes = [ [i[1]  for i in items if r<i[0]<r+(stepsize) ]  for r in x  ]
-        y = np.array([np.mean(st) for st in boxes])
+        if bin_avg == 'mean':
+            y = np.array([np.mean(st) for st in boxes])
+        elif bin_avg == 'median':
+            y = np.array([np.median(st) for st in boxes])
+        else:
+            assert False
         y_std = np.array([np.std(st) for st in boxes])
         x=x+(stepsize/2)
         # draw regression points 
@@ -250,15 +255,17 @@ class Data():
         mod.fit(x,y)
         return mod.predict(x)
     
-    def get_expected_values(self,x,y,x_all):
+    def get_expected_values(self,x,y,x_all, smooth_leftmost_values=False):
         #mod= sklearn.linear_model.LinearRegression()
         #mod= sklearn.linear_model.RANSACRegressor()
         mod= sklearn.linear_model.HuberRegressor()
         #mod.fit(x_all[x_all >= x[0]].reshape(-1,1),y_all[x_all >= x[0]]) # ...
         mod.fit(x,y)
         res = mod.predict(x_all.reshape(-1,1))
-        #res[x_all < x[0]] = y[0] # produces a harsh step...
-        res[x_all <  x[0] ] = mod.predict([x[0]])
+        if not smooth_leftmost_values:
+            res[x_all < x[0]] = y[0] # produces a harsh step...
+        else:
+            res[x_all <  x[0] ] = mod.predict([x[0]])
         return res
 
     def get_var_genes_linear(self, matrix,minmean,maxmean,
@@ -284,7 +291,12 @@ class Data():
             ax=plt.subplot(121)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label='all')
             
-        x_bin,y_bin,ystd_bin = self.transform(X[good].reshape(-1, 1),Y[good],stepsize=binsize, ran = maxmean, minbin=minbin)
+        x_bin,y_bin,ystd_bin = self.transform(X[good].reshape(-1, 1),
+                        Y[good],
+                        stepsize=binsize, 
+                        ran = maxmean,
+                        minbin=minbin,
+                        bin_avg = 'median') # median or mean
         
 
         pre = self.get_expected_values(x_bin,y_bin,X[good])

@@ -313,10 +313,11 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     # SPECIAL TRIANGLE TREATMENT 
     if False:
         for a, bb in da.items():
-            print (y1map.getitem[a],Map(y2map.getitem.get,bb))
+            print ("scanning a line for triangles.. ",y1map.getitem[a],Map(y2map.getitem.get,bb), end='')
             if any([b in db for b in bb]): 
-                assert len(bb)==2,f"attempt to solve triangle encountered strange circumstances {bb}"
+                #assert len(bb)==2,f"attempt to solve triangle encountered strange circumstances {bb}"
 
+                '''
                 # base is the one we also expect find in db
                 base,angle = bb 
                 if angle in db: 
@@ -334,6 +335,56 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                 else:
                     print(f"triangle recluster set 2: {y2map.getitem[base]}")
                     recluster(data2, Y2, [y2map.getitem[base]], n_clust=2, rnlog=rn2, debug=debug, showset=showset)
+                '''
+
+
+                
+                # killvectors
+                k1a, k1b_ = a,bb
+                
+                for b in bb: 
+                    if b in db:
+                        k2b, k2a_ = b,db[b]
+                        break
+                killa, killb  = min( [(k1a, k1b_[0]),
+                                         (k1a, k1b_[1]),
+                                         (k2a_[0], k2b),
+                                         (k2a_[1], k2b)] , key = lambda x: canvas[x])
+
+                # print(f"killab {y1map.getitem[killa]} {y2map.getitem[killb]}")
+                # if the vectos intersect the killpoint, execute order 66 
+                 
+                # ok now we think about how to actually do it 
+
+
+
+                Y1copy = Y1.copy()
+                if (killa, killb) in [(k1a, k1b) for k1b in k1b_ ]:
+
+                    recluster_hungmatch_aware(data1,
+                            Y1, [y1map.getitem[k1a]],
+                            n_clust=len(k1b_),
+                            rnlog=rn1,
+                            debug=debug,
+                            showset=showset,
+                            roind=hungmatch[0],
+                            coind=hungmatch[1],
+                            target_cls=[y2map.getitem[asd] for asd in k1b_],
+                            Y2=Y2)                   
+                    # THIS WILL UPDATE Y1!  -> use the copy below .. 
+
+                if (killa, killb) in [(k2a, k2b) for k2a in k2a_ ]:
+                    recluster_hungmatch_aware(data2,
+                            Y2, [y2map.getitem[k2b]],
+                            n_clust=len(k2a_),
+                            rnlog=rn2,
+                            debug=debug,
+                            showset=showset,
+                            roind=hungmatch[1],
+                            coind=hungmatch[0],
+                            target_cls=[y1map.getitem[asd] for asd in k2a_],
+                            Y2=Y1copy)
+
                 done = False 
 
 

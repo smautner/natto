@@ -25,6 +25,7 @@ class Data():
             umap_n_neighbors = 15,
             pp='linear',
             scale=False,
+            umap_pca = False, 
             ft_combine = lambda x,y: x or y,
             debug_ftsel=False,
             mitochondria = False, 
@@ -49,8 +50,8 @@ class Data():
         #########
         # umap 
         ##########
-        self.dx = self.umapify(dimensions, umap_n_neighbors)
-        self.d2 = self.umapify(2, umap_n_neighbors)
+        self.dx = self.umapify(dimensions, umap_n_neighbors, PCA = umap_pca)
+        self.d2 = self.umapify(2, umap_n_neighbors, PCA=umap_pca)
         return self           
     
     def make_even(self):
@@ -136,11 +137,33 @@ class Data():
 
 
     
-    def umapify(self, dimensions, n_neighbors):
+    def umapify(self, dimensions, n_neighbors, PCA = 0):
+        
         a,b= self._toarray()
-        mymap = umap.UMAP(n_components=dimensions,n_neighbors=n_neighbors).fit(np.vstack((a, b)))
+
+        if PCA:
+            ab= np.vstack((a, b))
+            pca = sklearn.decomposition.PCA(n_components=30)
+            ab = pca.fit_transform(ab)
+
+            if False:# kneedler
+                import kneed 
+                var = pca.explained_variance_ratio_
+                kneeder = kneed.KneeLocator(Range(30), var,S=5.0,  curve='convex', direction = 'decreasing')
+                #kneeder.plot_knee()
+                v = kneeder.knee
+                print(f'selecting {v} pca vectors')
+                #a = ab[:len(a),:v+1]
+                #b = ab[len(a):,:v+1]
+            a = ab[:len(a)]
+            b = ab[len(a):]
+
+
+        mymap = umap.UMAP(n_components=dimensions,n_neighbors=n_neighbors).fit(
+                np.vstack((a, b)))
         return  mymap.transform(a), mymap.transform(b)
 
+  
 
 
 

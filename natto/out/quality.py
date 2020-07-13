@@ -169,7 +169,7 @@ def print_scorediff(label, d1,d2,num):
     
     
 
-def markers(m,y1,y2, num=7): 
+def markers(m,y1,y2, num=7, diff = True): 
     # add y1 and y2 to data in m 
     cat1 = pd.Categorical(y1)
     cat2 = pd.Categorical(y2)
@@ -179,7 +179,6 @@ def markers(m,y1,y2, num=7):
     # do ttest analysis 
     sc.tl.rank_genes_groups(m.a, 'clust', method='t-test')
     sc.tl.rank_genes_groups(m.b, 'clust', method='t-test')
-    
 
     # ok first we get a good datastructure for the data
     d1 = make_res_dict( m.a)
@@ -199,9 +198,9 @@ def markers(m,y1,y2, num=7):
     for label in set(list(d1.keys())+list(d2.keys())):
         print_ranked_genes(label,d1,d2)
         print_ranked_genes(label,d2,d1)
-        print_scorediff(label, d1,d2, num)
-        print_scorediff(label, d2,d1, num)
-        print("*"*80)
+        if diff:
+            print_scorediff(label, d1,d2, num)
+            print_scorediff(label, d2,d1, num)
 
     # use distance as meassure of criticallity maybe 
     return d1,d2

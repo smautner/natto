@@ -117,6 +117,16 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):
 
 
 from matplotlib import cm 
+
+def cmp2_genes(data,X1,X2,gene, cmap = 'viridis'):
+    Y1 = data.a[:,data.a.var['gene_ids'].index == gene].X.T.todense()
+    Y2 = data.b[:,data.b.var['gene_ids'].index == gene].X.T.todense()
+    cmp2_grad(Y1,Y2, X1,X2,[f'{title}[{gene}]' for title in data.titles], cmap=cmap)
+    
+
+
+
+
 def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
         save=None,
         fix_colors=True, cmap ='autumn'):    

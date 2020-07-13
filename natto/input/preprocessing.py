@@ -27,12 +27,14 @@ class Data():
             scale=False,
             ft_combine = lambda x,y: x or y,
             debug_ftsel=False,
+            mitochondria = False, 
+            titles = ("no title set in data constructure","<-"), 
             make_even=False):
-
+        self.mitochondria = mitochondria
         self.a = adata
         self.b = bdata
+        self.titles = titles
         self.even = make_even  # will ssubsample to equal cells after cell outlayer rm
-            
         self.debug_ftsel = debug_ftsel
         
         self.preprocess(pp=pp, 
@@ -107,11 +109,23 @@ class Data():
                 print("number of features combined:", sum(genes))
             print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
 
+
+        
         self.a = self.a[:, genes].copy()
         self.b = self.b[:, genes].copy()
-        
-        
-        
+        if self.mitochondria:
+            pass
+            '''
+            self.basic_filter() 
+            self.a.X, self.b.X = self._toarray()
+            print(np.sum(self.a.X.sum(axis=0) == 0))  # this is true, HOW? 
+            print(np.sum(self.a.X.sum(axis=1) == 0))
+            print(np.sum(self.b.X.sum(axis=0) == 0)) 
+            print(np.sum(self.b.X.sum(axis=1) == 0))
+            sc.pp.regress_out(self.a, ['total_counts', 'pct_counts_mt'])
+            sc.pp.regress_out(self.b, ['total_counts', 'pct_counts_mt'])
+            '''
+
         ######
         # finalizing 
         #####
@@ -201,11 +215,28 @@ class Data():
         # this weeds out obvious lemons (gens and cells)
         self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a, min_genes, min_counts)
         self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b, min_genes, min_counts)
-        geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
+        if self.mitochondria:
+            print("filtering mito")
+            mitochondria= self.a.var['gene_ids'].index.str.match(f'^{self.mitochondria}.*')
+            geneab = Map(lambda x, y, mito : (x or y) and not mito, gene_fa, gene_fb, mitochondria)
+        else:
+            geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
         self.a = self.a[self.cellfa, geneab]
         self.b = self.b[self.cellfb, geneab]
         
     def normalize(self):
+
+        if self.mitochondria:
+            self.a.var['mt'] = self.a.var_names.str.startswith(self.mitochondria)  
+            sc.pp.calculate_qc_metrics(self.a, qc_vars=['mt'], percent_top=None, inplace=True)
+
+            self.b.var['mt'] = self.b.var_names.str.startswith(self.mitochondria)  
+            sc.pp.calculate_qc_metrics(self.b, qc_vars=['mt'], percent_top=None, inplace=True)
+            #print (f"doing mito: {sum(self.a.obs.pct_counts_mt < 5)}")
+            #print (list(self.a.obs.pct_counts_mt))
+            self.a = self.a[self.a.obs.pct_counts_mt < 5, :]
+            self.b = self.b[self.b.obs.pct_counts_mt < 5, :]
+
         sc.pp.normalize_total(self.a, 1e4)
         sc.pp.normalize_total(self.b, 1e4)
         sc.pp.log1p(self.a)

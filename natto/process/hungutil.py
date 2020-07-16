@@ -506,6 +506,10 @@ def predictlou(X,params={}):
     sc.tl.louvain(adata)
     return np.array([int(x) for x in adata.obs['louvain']])
 
+
+def doubleleiden(X,X2, prams={}, resolution=1):
+    return predictleiden(X,params, resolution), predictleiden(X2,params, resolution)
+
 def predictleiden(X,params={}, resolution = 1):
     adata = ad.AnnData(X)
     sc.pp.scale(adata, max_value=10)

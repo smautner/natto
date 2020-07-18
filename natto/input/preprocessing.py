@@ -216,6 +216,19 @@ class Data():
     def _filter_cells_and_genes(self,ad, min_genes=200, min_counts=6):
         cellf, _ = sc.pp.filter_cells(ad, min_genes=min_genes, inplace=False)
         genef, _ = sc.pp.filter_genes(ad, min_counts=min_counts, inplace=False)
+
+        if self.mitochondria:
+            # BLABLA DO STUFF 
+            mitochondria= ad.var['gene_ids'].index.str.match(f'^{self.mitochondria}.*')
+            rowcnt = ad.X.sum(axis =1) 
+            row_mitocnt  = ad.X[:,mitochondria].sum(axis=1)
+        
+            mitoarray = (row_mitocnt/rowcnt) < .05
+            print(f"filtering mito {sum( (row_mitocnt/rowcnt) > .05  )}  genes{sum(mitochondria)} ")
+            cellf = np.logical_and(cellf,mitoarray.getA1())
+            
+            
+
         return cellf, genef
 
 
@@ -238,12 +251,9 @@ class Data():
         # this weeds out obvious lemons (gens and cells)
         self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a, min_genes, min_counts)
         self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b, min_genes, min_counts)
-        if self.mitochondria:
-            print("filtering mito")
-            mitochondria= self.a.var['gene_ids'].index.str.match(f'^{self.mitochondria}.*')
-            geneab = Map(lambda x, y, mito : (x or y) and not mito, gene_fa, gene_fb, mitochondria)
-        else:
-            geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
+     
+        
+        geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
         self.a = self.a[self.cellfa, geneab]
         self.b = self.b[self.cellfb, geneab]
         

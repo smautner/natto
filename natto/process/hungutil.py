@@ -507,7 +507,7 @@ def predictlou(X,params={}):
     return np.array([int(x) for x in adata.obs['louvain']])
 
 
-def doubleleiden(X,X2, prams={}, resolution=1):
+def doubleleiden(X,X2, params={}, resolution=1):
     return predictleiden(X,params, resolution), predictleiden(X2,params, resolution)
 
 def predictleiden(X,params={}, resolution = 1):

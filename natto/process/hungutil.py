@@ -242,7 +242,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                    rn=None,
                    saveheatmap=None,
                    showset=None, 
-                   distmatrix=None ):
+                   distmatrix=None,do_splits=True):
     '''
     rn is for the renaming log
     '''
@@ -256,59 +256,62 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     canvas, canvasbackup = clean_matrix(canvas)
     if debug or 'inbetweenheatmap' in showset:
         draw.doubleheatmap(canvasbackup, canvas, y1map, y2map, row_ind, col_ind)
-
-    #  da and db are dictionaries pointing out mappings to multiple clusters in the other set
-    aa, bb = np.nonzero(canvas)
-    da = defaultdict(list)
-    db = defaultdict(list)
-    for a, b in zip(aa, bb):
-        da[a].append(b)
-        db[b].append(a)
-    da = {a: b for a, b in da.items() if len(b) > 1}
-    db = {a: b for a, b in db.items() if len(b) > 1}
     done = True
 
-    for a, bb in da.items():
-        if any([b in db for b in bb]):  # do nothing if the target is conflicted in a and b
-            continue
 
-        
+    
+    if do_splits:
+        #  da and db are dictionaries pointing out mappings to multiple clusters in the other set
+        aa, bb = np.nonzero(canvas)
+        da = defaultdict(list)
+        db = defaultdict(list)
+        for a, b in zip(aa, bb):
+            da[a].append(b)
+            db[b].append(a)
+        da = {a: b for a, b in da.items() if len(b) > 1}
+        db = {a: b for a, b in db.items() if len(b) > 1}
 
+        for a, bb in da.items():
+            if any([b in db for b in bb]):  # do nothing if the target is conflicted in a and b
+                continue
 
-        # normal recluster
-        #recluster(data1, Y1, [y1map.getitem[a]], n_clust=len(bb), rnlog=rn1, debug=debug, showset=showset)
-        # reclustering with copkmeanz
-        target_classes = [y2map.getitem[b] for b in bb]
-        recluster_hungmatch_aware(data1,
-                            Y1,
-                            [y1map.getitem[a]],
-                            n_clust=len(bb),
-                            rnlog=rn1,
-                            debug=debug,
-                            showset=showset,
-                            roind=hungmatch[0],
-                            coind=hungmatch[1],
-                            target_cls= target_classes,
-                            Y2=Y2)
-        
-        done = False
-
-    for b, aa in db.items():
-        if any([a in da for a in aa]):  # do nothing if the target is conflicted in a and b
-            continue
             
+
+
+            # normal recluster
+            #recluster(data1, Y1, [y1map.getitem[a]], n_clust=len(bb), rnlog=rn1, debug=debug, showset=showset)
+            # reclustering with copkmeanz
+            target_classes = [y2map.getitem[b] for b in bb]
+            recluster_hungmatch_aware(data1,
+                                Y1,
+                                [y1map.getitem[a]],
+                                n_clust=len(bb),
+                                rnlog=rn1,
+                                debug=debug,
+                                showset=showset,
+                                roind=hungmatch[0],
+                                coind=hungmatch[1],
+                                target_cls= target_classes,
+                                Y2=Y2)
             
+            done = False
+
+        for b, aa in db.items():
+            if any([a in da for a in aa]):  # do nothing if the target is conflicted in a and b
+                continue
+                
+                
+                
+            #recluster(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset)
+            # reclustering with copkmeanz
+            target_classes = [y1map.getitem[a] for a in aa]
+            recluster_hungmatch_aware(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset,
+                            roind=hungmatch[1],
+                            coind=hungmatch[0],
+                            target_cls=target_classes,
+                            Y2=Y1)
             
-        #recluster(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset)
-        # reclustering with copkmeanz
-        target_classes = [y1map.getitem[a] for a in aa]
-        recluster_hungmatch_aware(data2, Y2, [y2map.getitem[b]], n_clust=len(aa), rnlog=rn2, debug=debug, showset=showset,
-                        roind=hungmatch[1],
-                        coind=hungmatch[0],
-                        target_cls=target_classes,
-                        Y2=Y1)
-        
-        done = False
+            done = False
 
     # SPECIAL TRIANGLE TREATMENT 
     if False:
@@ -316,29 +319,6 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
             print ("scanning a line for triangles.. ",y1map.getitem[a],Map(y2map.getitem.get,bb), end='')
             if any([b in db for b in bb]): 
                 #assert len(bb)==2,f"attempt to solve triangle encountered strange circumstances {bb}"
-
-                '''
-                # base is the one we also expect find in db
-                base,angle = bb 
-                if angle in db: 
-                    angle, base = bb 
-
-                # also find pointy end and base in db ,,,, 
-                base_b,angle_b = db[base] 
-                if base_b != base:
-                    angle_b, base_b = db[base]
-                
-                # compare sizes and decide what to recluster 
-                if canvas[a,angle] > canvas[base,angle_b]:
-                    print(f"triangle recluster set 1: {y1map.getitem[a]}")
-                    recluster(data1, Y1, [y1map.getitem[a]], n_clust=2, rnlog=rn1, debug=debug, showset=showset)
-                else:
-                    print(f"triangle recluster set 2: {y2map.getitem[base]}")
-                    recluster(data2, Y2, [y2map.getitem[base]], n_clust=2, rnlog=rn2, debug=debug, showset=showset)
-                '''
-
-
-                
                 # killvectors
                 k1a, k1b_ = a,bb
                 
@@ -353,10 +333,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
 
                 # print(f"killab {y1map.getitem[killa]} {y2map.getitem[killb]}")
                 # if the vectos intersect the killpoint, execute order 66 
-                 
                 # ok now we think about how to actually do it 
-
-
 
                 Y1copy = Y1.copy()
                 if (killa, killb) in [(k1a, k1b) for k1b in k1b_ ]:
@@ -458,12 +435,13 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
     #########################
 
     return split_and_mors(Y1, Y2, hungmatch, data1, data2, debug=debug, normalize=normalize, maxerror=maxerror,
-                         rn=(rn1, rn2), saveheatmap=saveheatmap, showset=showset, distmatrix=distmatrix)
+                         rn=(rn1, rn2), saveheatmap=saveheatmap, 
+                         showset=showset, distmatrix=distmatrix, do_splits=do_splits)
 
 
 def bit_by_bit(mata, matb, claa, clab,
                debug=True, normalize=True, maxerror=.13,
-             saveheatmap=None, showset={}):
+             saveheatmap=None, showset={},do_splits=True):
     t = time.time()
     a, b, dist = hungarian(mata, matb, debug=debug)
     hungmatch = (a, b)
@@ -478,7 +456,7 @@ def bit_by_bit(mata, matb, claa, clab,
                           rn=(rn1, rn2),
                           saveheatmap=saveheatmap,
                           showset=showset,
-                          distmatrix=dist)
+                          distmatrix=dist, do_splits = do_splits)
 
 
 
@@ -492,7 +470,7 @@ def cluster_ab(a,b,nc=None, cov ='tied'):
 
 def predict_gmm(a,nc=None, cov = 'tied'):
     if nc:
-        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 10, "covariance_type":cov}
+        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 40, "covariance_type":cov}
     else:
         d= {"nclust_min":4, "nclust_max":20, "n_init": 20, 'covariance_type':cov}
     return ug.get_model(a,**d).predict(a)
@@ -526,42 +504,6 @@ def predictleiden(X,params={}, resolution = 1):
 # use musst/cannot link from hungarian 
 
 
-
-from scipy.sparse import csr_matrix
-from scipy.stats import randint 
-
-class fromdata: 
-    def fit(self, things):
-        self.things =  list(things)
-    def get(self): 
-        return random.choice(self.things) 
-
-import random
-
-def noisiate(mtx,noise_percentage,noisemodel= fromdata()): 
-    
-    # column wise allply noise 
-    noisy = mtx.copy().transpose() 
-    for row in range(noisy.shape[0]):
-        #distribution of values
-        rval = noisy[row,:].todense().A1
-        noisemodel.fit(rval)
-        # write new numbers to rval 
-        loc = ( np.random.rand(noisy.shape[1]) < noise_percentage ).nonzero()[0]
-        values  = np.array([noisemodel.get() for r in range(len(loc))])
-        rval[loc] = values
-        # somehow integrate this in noisy... 
-        noisy[row] = csr_matrix(rval) # do it like this to prevent explicit 0s everywhere
-    return noisy.transpose()
-  
-def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()): 
-    
-    # OK THIS IS HOW WE NOISE
-    # 1. have a global percentage of affected cells
-    # 2. pick from distri (with zeros) 
-    #matrix to fill with noise 
-    adata.X = noisiate(adata.X,noise_percentage, noisemodel )
-    return adata
     
 
 ##################

@@ -432,3 +432,29 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):
     plt.show()
 
 '''
+
+def tinyumap(X,Y,
+        title="No title",
+        acc : "y:str_description"={}, 
+        markerscale=4,
+        getmarker = lambda color: {"marker":'o'},
+        size=None):
+        
+    plt.title(title, size=7)
+    Y=np.array(Y)
+    size=  max( int(4000/Y.shape[0]), 1) if not size else size
+    embed = X
+    plt.gca().axes.yaxis.set_ticklabels([])
+    plt.gca().axes.xaxis.set_ticklabels([])
+    for cla in np.unique(Y):
+        plt.scatter(embed[Y==cla, 0],
+                    embed[Y==cla, 1],
+                    color= col[cla],
+                    s=size,
+                    label= str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
+    #plt.axis('off')
+    #plt.xlabel('UMAP 2')
+    #plt.ylabel('UMAP 1')
+
+    #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
+ 

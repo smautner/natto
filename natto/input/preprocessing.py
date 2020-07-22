@@ -13,6 +13,8 @@ fun = lambda x,a,b,c: a+b/(1+x*c)
 from scipy.stats import norm
 from scipy import stats
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import StandardScaler
+
 class Data():
     """will have .a .b .d2 .dx"""
     def fit(self,adata, bdata,  
@@ -25,7 +27,7 @@ class Data():
             umap_n_neighbors = 15,
             pp='linear',
             scale=False,
-            umap_pca = False, 
+            pca = 30, 
             ft_combine = lambda x,y: x or y,
             debug_ftsel=False,
             mitochondria = False, 
@@ -50,8 +52,9 @@ class Data():
         #########
         # umap 
         ##########
-        self.dx = self.umapify(dimensions, umap_n_neighbors, PCA = umap_pca)
-        self.d2 = self.umapify(2, umap_n_neighbors, PCA=umap_pca)
+        self.mk_pca(pca)
+        self.dx = self.umapify(dimensions, umap_n_neighbors)
+        self.d2 = self.umapify(2, umap_n_neighbors)
         return self           
     
     def make_even(self):
@@ -59,9 +62,11 @@ class Data():
         if self.a.X.shape[0] > self.b.X.shape[0]:
             num=self.b.X.shape[0]
             target = self.a
-        else:
+        elif self.a.X.shape[0] < self.b.X.shape[0]:
             num= self.a.X.shape[0]
             target = self.b
+        else:
+            return 
         sc.pp.subsample(target,
                         fraction=None, 
                         n_obs=num, 
@@ -135,32 +140,44 @@ class Data():
         
     
 
-
-    
-    def umapify(self, dimensions, n_neighbors, PCA = 0):
-        
+    def mk_pca(self, PCA):
         a,b= self._toarray()
-
         if PCA:
             ab= np.vstack((a, b))
-            pca = sklearn.decomposition.PCA(n_components=30)
-            ab = pca.fit_transform(ab)
+            pca = sklearn.decomposition.PCA(n_components=PCA)
 
+            ab = StandardScaler().fit_transform(ab)
+            pca.fit(ab)
+            ab = pca.transform(ab)
+            '''
             if False:# kneedler
                 import kneed 
                 var = pca.explained_variance_ratio_
-                kneeder = kneed.KneeLocator(Range(30), var,S=5.0,  curve='convex', direction = 'decreasing')
+                kneeder = kneed.KneeLocator(Range(PCA), var,S=5.0,  curve='convex', direction = 'decreasing')
                 #kneeder.plot_knee()
                 v = kneeder.knee
                 print(f'selecting {v} pca vectors')
                 #a = ab[:len(a),:v+1]
                 #b = ab[len(a):,:v+1]
+            '''
+
             a = ab[:len(a)]
             b = ab[len(a):]
 
 
-        mymap = umap.UMAP(n_components=dimensions,n_neighbors=n_neighbors).fit(
+
+        self.pca = a,b 
+
+
+    def umapify(self, dimensions, n_neighbors, PCA = 0):
+  
+
+        a,b = self.pca
+        mymap = umap.UMAP(n_components=dimensions,
+                          n_neighbors=n_neighbors,
+                          random_state=1337).fit(
                 np.vstack((a, b)))
+
         return  mymap.transform(a), mymap.transform(b)
 
   
@@ -217,7 +234,7 @@ class Data():
         cellf, _ = sc.pp.filter_cells(ad, min_genes=min_genes, inplace=False)
         genef, _ = sc.pp.filter_genes(ad, min_counts=min_counts, inplace=False)
 
-        if self.mitochondria:
+        if False:# self.mitochondria:
             # BLABLA DO STUFF 
             mitochondria= ad.var['gene_ids'].index.str.match(f'^{self.mitochondria}.*')
             rowcnt = ad.X.sum(axis =1) 
@@ -319,17 +336,29 @@ class Data():
         mod.fit(x,y)
         return mod.predict(x)
     
-    def get_expected_values(self,x,y,x_all, smooth_leftmost_values=False):
+    def get_expected_values(self,x,y,x_all, leftmost_values='const_max'):
         #mod= sklearn.linear_model.LinearRegression()
         #mod= sklearn.linear_model.RANSACRegressor()
         mod= sklearn.linear_model.HuberRegressor()
         #mod.fit(x_all[x_all >= x[0]].reshape(-1,1),y_all[x_all >= x[0]]) # ...
         mod.fit(x,y)
         res = mod.predict(x_all.reshape(-1,1))
-        if not smooth_leftmost_values:
-            res[x_all < x[0]] = y[0] # produces a harsh step...
+
+
+        firstbin = y[0]
+        firstbin_esti = mod.predict([x[0]])
+
+        if leftmost_values == 'const_max':
+            res[x_all < x[0]] = max(firstbin, firstbin_esti)
+        elif leftmost_values == 'nointerference':
+            pass
+        elif leftmost_values == 'const_firstbin':
+            res[x_all < x[0]] = firstbin
+        elif leftmost_values == 'const_firstbin_esti':
+            res[x_all < x[0]] = firstbin_esti
         else:
-            res[x_all <  x[0] ] = mod.predict([x[0]])
+            assert False
+
         return res
 
     def get_var_genes_linear(self, matrix,minmean,maxmean,
@@ -398,6 +427,12 @@ class Data():
             plt.plot(X[good][srt], pre[srt],color='k', label='regression')
             plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std')
             plt.legend()
+
+
+
+            plt.title("dispersion of genes")
+            plt.xlabel('log mean')
+            plt.ylabel('dispurion')
             ax=plt.subplot(122)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
 
@@ -410,8 +445,13 @@ class Data():
                 argh[good] = np.array(accept)
                 agree = argh & self.prevres
                 plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='overlap')
+            
+
 
             plt.legend()
+            plt.title("normalized dispersion of genes")
+            plt.xlabel('log mean')
+            plt.ylabel('dispurion')
             plt.show()
 
             print(f"ft selected:{sum(accept)}")

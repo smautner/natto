@@ -433,6 +433,8 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):
 
 '''
 
+
+
 def tinyumap(X,Y,
         title="No title",
         acc : "y:str_description"={}, 
@@ -457,4 +459,15 @@ def tinyumap(X,Y,
     #plt.ylabel('UMAP 1')
 
     #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
- 
+
+class tinyUmap(): 
+    
+    def __init__(self):
+        plt.figure( figsize=(10, 10), dpi=300)
+        self.i =1 
+
+    def draw(self, *a, **b): 
+        plt.subplot(3,3,self.i)
+        self.i+=1
+        tinyumap(*a,**b)
+        

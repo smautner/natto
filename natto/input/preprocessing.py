@@ -169,7 +169,7 @@ class Data():
         self.pca = a,b 
 
 
-    def umapify(self, dimensions, n_neighbors, PCA = 0):
+    def umapify(self, dimensions, n_neighbors):
   
 
         a,b = self.pca
@@ -431,8 +431,8 @@ class Data():
 
 
             plt.title("dispersion of genes")
-            plt.xlabel('log mean')
-            plt.ylabel('dispurion')
+            plt.xlabel('log mean expression')
+            plt.ylabel('dispursion')
             ax=plt.subplot(122)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
 
@@ -450,8 +450,8 @@ class Data():
 
             plt.legend()
             plt.title("normalized dispersion of genes")
-            plt.xlabel('log mean')
-            plt.ylabel('dispurion')
+            plt.xlabel('log mean expression')
+            plt.ylabel('dispursion')
             plt.show()
 
             print(f"ft selected:{sum(accept)}")

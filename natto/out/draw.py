@@ -464,10 +464,14 @@ class tinyUmap():
     
     def __init__(self):
         plt.figure( figsize=(10, 10), dpi=300)
-        self.i =1 
+        self.i =0
+    
+
+    def next(self): 
+        self.i= self.i+1 
+        plt.subplot(3,3,self.i)
 
     def draw(self, *a, **b): 
-        plt.subplot(3,3,self.i)
-        self.i+=1
+        self.next()
         tinyumap(*a,**b)
         

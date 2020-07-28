@@ -33,6 +33,8 @@ class Data():
             mitochondria = False, 
             titles = ("no title set in data constructure","<-"), 
             make_even=False):
+
+        #assert adata.var["gene_ids"].index ==  bdata.var["gene_ids"].index 
         self.mitochondria = mitochondria
         self.a = adata
         self.b = bdata
@@ -425,7 +427,7 @@ class Data():
         if self.debug_ftsel:
             srt= np.argsort(X[good])
             plt.plot(X[good][srt], pre[srt],color='k', label='regression')
-            plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std')
+            plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std of bins')
             plt.legend()
 
 

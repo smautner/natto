@@ -114,9 +114,8 @@ def make_rari_compatible(ar):
     return ar 
             
 
+
 def rari_score(Y1,Y2,X1,X2): 
-
-
     # Y1 and Y2 are clculated on different data... 
     # account for that by ordering Y2 ; such that the closest cells correspond
     a, b, dist = hungarian(X1, X2, debug=False)
@@ -137,6 +136,10 @@ def rari_score(Y1,Y2,X1,X2):
     Y2 = make_rari_compatible(Y2)
     return rari(Y1,Y2,dist_x1,dist_x2) , rand(Y1,Y2)
 
+def printRARI(y1,y2,x1,x2):
+    rarr, rand = rari_score(y1,y2,x1,x2) 
+    print(f"RARI {rarr}  ARI {rand}")
+    return rarr, rand
 
 from lmz import Map, Zip, Range
     

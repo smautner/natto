@@ -32,6 +32,7 @@ class Data():
             debug_ftsel=False,
             mitochondria = False, 
             titles = ("no title set in data constructure","<-"), 
+            quiet =  False, 
             make_even=False):
 
         #assert adata.var["gene_ids"].index ==  bdata.var["gene_ids"].index 
@@ -41,6 +42,7 @@ class Data():
         self.titles = titles
         self.even = make_even  # will ssubsample to equal cells after cell outlayer rm
         self.debug_ftsel = debug_ftsel
+        self.quiet = quiet 
         
         self.preprocess(pp=pp, 
                         scale=scale,
@@ -109,13 +111,13 @@ class Data():
             genes = self.get_var_genes_linear( mat,minmean,maxmean,
                              cutoff = mindisp, Z= True, maxgenes=maxgenes, 
                              return_raw = False, minbin=minbin,binsize=binsize)
-            print(f"genes: {sum(genes)} / {len(genes)}")
+            if not self.quiet: print(f"genes: {sum(genes)} / {len(genes)}")
         else:
             #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
             genes = list(map(ft_combine,ag,bg))
             if self.debug_ftsel:
                 print("number of features combined:", sum(genes))
-            print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
+            if not self.quiet: print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
 
 
         
@@ -168,13 +170,14 @@ class Data():
 
 
 
-        self.pca = a,b 
+        self.pca = a,b, PCA
 
 
     def umapify(self, dimensions, n_neighbors):
-  
+        a,b, pcadim  = self.pca
+        if 0 < pcadim <= dimensions:
+            return a,b
 
-        a,b = self.pca
         mymap = umap.UMAP(n_components=dimensions,
                           n_neighbors=n_neighbors,
                           random_state=1337).fit(

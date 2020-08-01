@@ -42,9 +42,9 @@ def filter(adata, cells='mito'):
 
 def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
     adata =  sc.read_10x_mtx(
-    '../data/filtered_gene_bc_matrices/hg19/',  
+    '../data/3k/hg19/',  
     var_names='gene_symbols', cache=True)
-    adata.obs['labels']= loadlabels(load( "../data/pbmc.3k.labels"), load( "../data/filtered_gene_bc_matrices/hg19/barcodes.tsv"))
+    adata.obs['labels']= loadlabels(load( "../data/3k/pbmc.3k.labels"), load( "../data/3k/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
     adata = do_subsample(adata, subsample)
@@ -52,10 +52,10 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
 
 def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
     adata =  sc.read_10x_mtx(
-    '../data/filtered_matrices_mex/hg19/',  
+    '../data/6k/hg19/',  
     var_names='gene_symbols', cache=True)
 
-    adata.obs['labels']= loadlabels(load( "../data/pbmc.6k.labels"), load( "../data/filtered_matrices_mex/hg19/barcodes.tsv"))
+    adata.obs['labels']= loadlabels(load( "../data/6k/pbmc.6k.labels"), load( "../data/6k/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
     adata = do_subsample(adata, subsample)

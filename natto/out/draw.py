@@ -194,10 +194,10 @@ def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):
     plt.show()
 
 def venn(one,two: 'boolean array', labels :"string tupple"):
-    from matplotlib_venn import *
+    import  matplotlib_venn as vvv
     selover = [a and b for a,b in zip (one,two)]
     comb = sum(selover)
-    v = venn2(subsets = {'10': sum(one)-comb, '01': sum(two)-comb, '11': comb}, set_labels = labels)
+    v = vvv.venn2(subsets = {'10': sum(one)-comb, '01': sum(two)-comb, '11': comb}, set_labels = labels)
     plt.show()
 
 

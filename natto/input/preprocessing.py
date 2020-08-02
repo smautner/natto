@@ -3,7 +3,6 @@ import ubergauss as ug
 import scanpy as sc
 import numpy as np
 load = lambda f: open(f,'r').readlines()
-import natto.old.simple as sim
 import umap
 from scipy.sparse import csr_matrix as csr
 import sklearn 

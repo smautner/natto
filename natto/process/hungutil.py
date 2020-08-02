@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import natto.process.copkmeans as CKM 
 import scanpy as sc
 import umap
-from natto.old.simple import predictgmm
 from sklearn.neighbors import KNeighborsClassifier as KNC
 #####
 # first some utils
@@ -185,8 +184,7 @@ def recluster(data, Y, problemclusters, n_clust=2, rnlog=None, debug=False, show
     
     indices = [y in problemclusters for y in Y]
     data2 = data[indices]
-
-    yh = predictgmm(n_clust, data2)
+    yh = predict_gmm(data2, nc=n_clust, cov = 'tied')
     
     maxy = np.max(Y)
     Y[indices] = yh + maxy + 1

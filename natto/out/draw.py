@@ -6,7 +6,6 @@ import numpy as np
 from pandas import DataFrame
 from umap import UMAP
 import seaborn as sns
-from matplotlib_venn import *
 
 '''
 # make a list of colors 
@@ -195,6 +194,7 @@ def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):
     plt.show()
 
 def venn(one,two: 'boolean array', labels :"string tupple"):
+    from matplotlib_venn import *
     selover = [a and b for a,b in zip (one,two)]
     comb = sum(selover)
     v = venn2(subsets = {'10': sum(one)-comb, '01': sum(two)-comb, '11': comb}, set_labels = labels)

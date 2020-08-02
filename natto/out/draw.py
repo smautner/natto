@@ -1,4 +1,6 @@
 from itertools import permutations
+from matplotlib import cm 
+import pandas as pd
 from sklearn.cluster import AgglomerativeClustering as agg 
 import random
 import matplotlib.pyplot as plt
@@ -6,6 +8,7 @@ import numpy as np
 from pandas import DataFrame
 from umap import UMAP
 import seaborn as sns
+from sklearn.neighbors import NearestNeighbors
 
 '''
 # make a list of colors 
@@ -115,7 +118,6 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):
     plt.show()
 
 
-from matplotlib import cm 
 
 def cmp2_genes(data,X1,X2,gene, cmap = 'viridis'):
     Y1 = data.a[:,data.a.var['gene_ids'].index == gene].X.T.todense()
@@ -314,11 +316,10 @@ def distrgrid(distances,Y1,Y2,hungmatch):
     plt.show()
 
 
-import pandas as pd
-from pysankey import sankey as pysankey
 
 def sankey(canvasbackup ,y1map, y2map):
 
+    from pysankey import sankey as pysankey
     # this is the actual drawing
     flow= [(y1map.getitem[a],y2map.getitem[b],-canvasbackup[a][b])
                 for a in range(canvasbackup.shape[0])
@@ -342,7 +343,6 @@ def sankey(canvasbackup ,y1map, y2map):
         colorDict= col
     )
 
-from sklearn.neighbors import NearestNeighbors
 
 def dreibeidrei(bins,cnt=3): 
     for i,e in enumerate(bins):

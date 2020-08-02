@@ -108,7 +108,7 @@ setup(
         "numpy >= 1.16",
         "umap >= 0.3",
         "scipy >= 1.3",
-        "sklearn >= 0.21",
+        "scikit-learn >= 0.21",
         "seaborn >= 0.9",
         "networkx >= 2.3",
         "lmz"

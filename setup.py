@@ -106,7 +106,7 @@ setup(
     install_requires=[
         "scanpy >= 1.4",
         "numpy >= 1.16",
-        "umap >= 0.3",
+        "umap-learn >= 0.3",
         "scipy >= 1.3",
         "scikit-learn >= 0.21",
         "seaborn >= 0.9",

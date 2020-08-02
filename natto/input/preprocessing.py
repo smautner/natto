@@ -272,12 +272,14 @@ class Data():
         # this weeds out obvious lemons (gens and cells)
         self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a, min_genes, min_counts)
         self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b, min_genes, min_counts)
-     
         
         geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
-        self.a = self.a[self.cellfa, geneab]
-        self.b = self.b[self.cellfb, geneab]
+        self.a = self.a[self.cellfa,:]
+        self.b = self.b[self.cellfb,:]
         
+        self.a = self.a[:, geneab]
+        self.b = self.b[:, geneab]
+
     def normalize(self):
 
         if self.mitochondria:

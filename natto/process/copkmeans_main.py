@@ -1,11 +1,13 @@
 
 from collections import defaultdict
+
+import natto.input.hungarian
 from natto.process import hungutil as hu
 import numpy as np
 from natto.process.copkmeans import cop_kmeans as ckmeans
 def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps=6):
     
-    ro,co,dists = hu.hungarian(a,b)
+    ro,co,dists = natto.input.hungarian.hungarian(a, b)
     print (len(ro), len(co), dists.shape)
     for i in range(maxsteps):
         constraints = getconstraints(ro,co,dists,ca,cb, draw=draw, debug=debug) 

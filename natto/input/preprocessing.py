@@ -33,7 +33,7 @@ class Data():
             debug_ftsel=False,
             mitochondria = False, 
             titles = ("no title set in data constructure","<-"), 
-            quiet =  False, 
+            quiet =  False,
             make_even=False):
 
         #assert adata.var["gene_ids"].index ==  bdata.var["gene_ids"].index 
@@ -495,15 +495,5 @@ class Data():
             self.a, self.b = corr[:lena], corr[lena:]
         return    
 
-
-
-class Data_hunged(Data):
-
-    def dimension_reduction(pca, dimensions, umap_n_neighbors):
-        self.mk_pca(pca) 
-        self.dx = self.umapify(dimensions, umap_n_neighbors)
-        self.d2 = self.umapify(2, umap_n_neighbors)
-
-        
 
 

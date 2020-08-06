@@ -1,4 +1,6 @@
 from collections import defaultdict
+
+import natto.input.hungarian
 from natto.process import hungutil as hu
 import numpy as np
 from sklearn import  mixture
@@ -23,7 +25,7 @@ class priorizedgmm(mixture.GaussianMixture):
 
 
 def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps=10, gmmiter=3, numclust='max'):
-    ro,co,dists = hu.hungarian(a,b)
+    ro,co,dists = natto.input.hungarian.hungarian(a, b)
     for i in range(maxsteps):
         '''
         the plan is this: 

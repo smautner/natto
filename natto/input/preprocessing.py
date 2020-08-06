@@ -13,7 +13,7 @@ from scipy.stats import norm
 from scipy import stats
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.preprocessing import StandardScaler
-
+import natto.input.hungarian as h
 
 
 class Data():
@@ -58,14 +58,19 @@ class Data():
         # umap 
         ##########
         self.dimension_reduction(pca, dimensions, umap_n_neighbors)
-        return self           
-    
+        self.hung , self.hung_dist  = h.hungarian(*self.dx)
+
+        return self
+
+    def sort_cells(self):
+        self.pca[1] = self.pca[1][self.hung[1]]
+        self.dx[1] = self.dx[1][self.hung[1]]
+        self.d2[1] = self.d2[1][self.hung[1]]
+
     def dimension_reduction(pca, dimensions, umap_n_neighbors):
         self.mk_pca(pca)
         self.dx = self.umapify(dimensions, umap_n_neighbors)
         self.d2 = self.umapify(2, umap_n_neighbors)
-
-
 
     def make_even(self):
         assert self.a.X.shape[1] == self.b.X.shape[1]

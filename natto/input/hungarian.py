@@ -1,3 +1,9 @@
+from sklearn.metrics.pairwise import euclidean_distances as ed
+from scipy.optimize import linear_sum_assignment
+from lapsolver import solve_dense
+import matplotlib.pyplot as plt
+
+
 def hungarian(X1, X2, solver='scipy', debug = False):
     # get the matches:
     distances = ed(X1,X2)
@@ -12,4 +18,4 @@ def hungarian(X1, X2, solver='scipy', debug = False):
         print("hungarian: debug hist")
         plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
         plt.show()
-    return row_ind, col_ind, distances
+    return (row_ind, col_ind), distances

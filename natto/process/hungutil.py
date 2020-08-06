@@ -6,16 +6,16 @@ import math
 import pprint
 from itertools import combinations
 from collections import Counter
-from sklearn.metrics.pairwise import euclidean_distances as ed
 import numpy as np
 from collections import  defaultdict
+from sklearn.metrics.pairwise import euclidean_distances as ed
 from scipy.optimize import linear_sum_assignment
 from lapsolver import solve_dense
 
 from natto.input.hungarian import hungarian
 from natto.out import draw
+import natto.process.copkmeans as CKM
 import matplotlib.pyplot as plt
-import natto.process.copkmeans as CKM 
 import scanpy as sc
 import umap
 from sklearn.neighbors import KNeighborsClassifier as KNC

@@ -19,7 +19,7 @@ def precompute_leaves(chilist,lendat):
     
     
 
-def cluster(data, data2, matches, link='ward'):
+def cluster(data, data2, matches, link='ward', minalign = .7):
     
     model1 = Agg(distance_threshold =0.00001,n_clusters=None, linkage=link)
     model2 = Agg(distance_threshold =0.00001,n_clusters=None, linkage=link)
@@ -68,7 +68,7 @@ def cluster(data, data2, matches, link='ward'):
         cross = correspondence(r11,r22, return_bool=False) + correspondence(r12,r21, return_bool=False)
         align/=lenn
         cross/=lenn
-        if max(align,cross) < .7:
+        if max(align,cross) < minalign:
             # case 1
             res.append((r1,r2))
         else: 
@@ -128,4 +128,85 @@ def cluster(data, data2, matches, link='ward'):
         col2[b]=i
     
     return res1, res2, col1,col2
+    
+
+
+from sklearn.mixture import GaussianMixture as gmm 
+
+def bs(numpi, bools): 
+    return np.array([x for x,y in zip(numpi,bools) if y  ])
+
+
+def align(A,B,fra, frb, minsat):
+    a1,a2 = np.unique(A)
+    b1,b2 = np.unique(B)
+    
+    ia1 = bs(fra,A==a1)
+    ia2 = bs(fra,A==a2)
+    ib1 = bs(frb,B==b1)
+    ib2 = bs(frb,B==b2)
+
+    le = (len(A)+len(B)) /2
+
+
+    r = len(np.intersect1d(ia1,ib1)) + len(np.intersect1d(ia2,ib2))
+    r1 = len(np.intersect1d(ia1,ib2))+len(np.intersect1d(ia2,ib1))
+        
+    r/=le
+    r1/=le
+    if r >= minsat or r1 >= minsat: # one solution is ok
+        if r>r1: 
+            return B,True
+        else:
+            ind = B==b1
+            B[B==b2] = a1
+            B[ind] = a2
+            return B,True
+    else:
+        return 0,False
+
+
+def cluster_gmm(data, data2, matches, minalign = .7,dat=None ):
+
+    data2=data2[matches[1]] 
+    freeA = list(range(len(data)))
+    freeB = list(range(len(data)))
+    
+    y1=np.zeros(len(data), dtype= np.int64)
+    y2=np.zeros(len(data), dtype= np.int64)
+    zomg(freeA,freeB,data,data2,y1,y2, minalign,dat)
+
+    return y1,y2[np.argsort(matches[1])] 
+
+from natto.out import draw
+def zomg(fra, frb, X, X2, y1,y2,minalign, dat):
+    mod = gmm(n_components=2,  covariance_type='tied' , n_init = 40)
+
+    labelmin = max(y1.max(),y2.max())+1
+
+    try:
+        A = mod.fit_predict(X[fra]) + labelmin
+        B = mod.fit_predict(X2[frb]) + labelmin
+    except:
+        return 
+
+    B,ok = align(A,B, fra, frb,minalign)
+
+
+    if ok:
+        y1 [fra] = A 
+        y2 [frb] = B
+        print(labelmin) 
+        draw.cmp2_grad(y1,y2,*dat.d2,dat.titles,save=False)
+        zomg(bs(fra,A==labelmin), bs(frb,B==labelmin) ,X,X2,y1,y2,minalign,dat )
+        zomg(bs(fra,A==labelmin+1), bs(frb,B==labelmin+1) ,X,X2,y1,y2,minalign,dat)
+        
+        
+
+
+
+
+
+
+
     

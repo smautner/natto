@@ -14,6 +14,8 @@ from scipy import stats
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.preprocessing import StandardScaler
 
+
+
 class Data():
     """will have .a .b .d2 .dx"""
     def fit(self,adata, bdata,  
@@ -55,11 +57,16 @@ class Data():
         #########
         # umap 
         ##########
+        self.dimension_reduction(pca, dimensions, umap_n_neighbors)
+        return self           
+    
+    def dimension_reduction(pca, dimensions, umap_n_neighbors):
         self.mk_pca(pca)
         self.dx = self.umapify(dimensions, umap_n_neighbors)
         self.d2 = self.umapify(2, umap_n_neighbors)
-        return self           
-    
+
+
+
     def make_even(self):
         assert self.a.X.shape[1] == self.b.X.shape[1]
         if self.a.X.shape[0] > self.b.X.shape[0]:
@@ -170,6 +177,7 @@ class Data():
 
 
         self.pca = a,b, PCA
+        return a,b 
 
 
     def umapify(self, dimensions, n_neighbors):
@@ -486,3 +494,16 @@ class Data():
             corr = np.nan_to_num(corr)
             self.a, self.b = corr[:lena], corr[lena:]
         return    
+
+
+
+class Data_hunged(Data):
+
+    def dimension_reduction(pca, dimensions, umap_n_neighbors):
+        self.mk_pca(pca) 
+        self.dx = self.umapify(dimensions, umap_n_neighbors)
+        self.d2 = self.umapify(2, umap_n_neighbors)
+
+        
+
+

@@ -63,11 +63,13 @@ class Data():
         return self
 
     def sort_cells(self):
-        self.pca[1] = self.pca[1][self.hung[1]]
-        self.dx[1] = self.dx[1][self.hung[1]]
-        self.d2[1] = self.d2[1][self.hung[1]]
+        self.pca = self.pca[0], self.pca[1][self.hung[1]], self.pca[2]
+        self.dx = self.dx[0], self.dx[1][self.hung[1]]
+        self.d2 = self.d2[0], self.d2[1][self.hung[1]]
 
-    def dimension_reduction(pca, dimensions, umap_n_neighbors):
+
+
+    def dimension_reduction(self,pca, dimensions, umap_n_neighbors):
         self.mk_pca(pca)
         self.dx = self.umapify(dimensions, umap_n_neighbors)
         self.d2 = self.umapify(2, umap_n_neighbors)

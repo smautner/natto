@@ -106,12 +106,12 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):
     if same_limit:
         plt.xlim(xmin,xmax)
         plt.ylim(ymin,ymax)
-    umap(X1,Y1,show=False,title=title[0],size=4,markerscale=4, acc=labelappend[0])
+    umap(X1,Y1,show=False,title=title[0],size=False,markerscale=4, acc=labelappend[0])
     ax=plt.subplot(122)
     if same_limit:
         plt.xlim(xmin,xmax)
         plt.ylim(ymin,ymax)
-    umap(X2,Y2,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend[1])
+    umap(X2,Y2,show=False,title=title[1],size=False,markerscale=4 , acc=labelappend[1])
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)

@@ -154,6 +154,7 @@ def align(A,B,fra, frb, minsat):
         
     r/=le
     r1/=le
+    print (r,r1)
     if r >= minsat or r1 >= minsat: # one solution is ok
         if r>r1: 
             return B,True
@@ -168,7 +169,7 @@ def align(A,B,fra, frb, minsat):
 
 def cluster_gmm(data, data2, matches, minalign = .7,dat=None ):
 
-    data2=data2[matches[1]] 
+    #data2=data2[matches[1]] 
     freeA = list(range(len(data)))
     freeB = list(range(len(data)))
     
@@ -176,11 +177,31 @@ def cluster_gmm(data, data2, matches, minalign = .7,dat=None ):
     y2=np.zeros(len(data), dtype= np.int64)
     zomg(freeA,freeB,data,data2,y1,y2, minalign,dat)
 
-    return y1,y2[np.argsort(matches[1])] 
+    #return y1,y2[np.argsort(matches[1])] 
+    return y1,y2
 
 from natto.out import draw
+from natto.process.hungutil import spacemap
+
+
+def fix(y1,y2): 
+  s = spacemap(np.unique(y1))
+  y4= y2.copy()
+  y3= y1.copy()
+  for k,v in s.getint.items():
+      y3[k]=v
+      y4[k]=v
+  return y3,y4
+
+
 def zomg(fra, frb, X, X2, y1,y2,minalign, dat):
     mod = gmm(n_components=2,  covariance_type='tied' , n_init = 40)
+
+    t,f = fix(y1,y2)
+    t[fra] = -1
+    f[frb] = -1
+    draw.cmp2(t,f,*dat.d2,dat.titles,save=False)
+
 
     labelmin = max(y1.max(),y2.max())+1
 
@@ -194,14 +215,14 @@ def zomg(fra, frb, X, X2, y1,y2,minalign, dat):
 
 
     if ok:
+        print("accept")
         y1 [fra] = A 
         y2 [frb] = B
-        print(labelmin) 
-        draw.cmp2_grad(y1,y2,*dat.d2,dat.titles,save=False)
         zomg(bs(fra,A==labelmin), bs(frb,B==labelmin) ,X,X2,y1,y2,minalign,dat )
         zomg(bs(fra,A==labelmin+1), bs(frb,B==labelmin+1) ,X,X2,y1,y2,minalign,dat)
         
-        
+    else:
+        print("rej")
 
 
 

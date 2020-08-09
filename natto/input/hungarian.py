@@ -19,3 +19,9 @@ def hungarian(X1, X2, solver='scipy', debug = False):
         plt.hist(x, num_bins, facecolor='blue', alpha=0.5)
         plt.show()
     return (row_ind, col_ind), distances
+
+
+
+def hungsort(X1,X2): 
+    (a,b),_ = hungarian(X1,X2) 
+    return X2[b]

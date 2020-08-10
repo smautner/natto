@@ -16,11 +16,9 @@ def assign(x1,x2,c1,c2):
     z = np.argmin(r3, axis = 1)
     res = np.array( [zz if zz < c1.shape[0] else zz-c1.shape[0]  for zz in z] )
 
-    # collecting somestats
-    z2 = np.argmin(r, axis = 1) -  np.argmin(r2, axis = 1)
-    print("unmatching:", sum(z2==0))
 
-    return res
+    return res,  np.argmin(r, axis = 1) ==  np.argmin(r2, axis = 1)
+
     
 
 
@@ -34,8 +32,8 @@ def centers(y,X):
 def opti_kmeans(X1,X2,y): 
     c1, c2 = centers(y,X1), centers(y,X2)
     c2 = hung.hungsort(c1,c2)
-    y = assign(X1,X2,c1,c2)
-    return y
+    y,e = assign(X1,X2,c1,c2)
+    return y,e
 
 
 
@@ -76,15 +74,13 @@ def optimize(X1,X2,y, cov='tied'):
     m1, l1 = get_means_resp(X1,log_resp,cov)
     m2, l2 = get_means_resp(X2,log_resp,cov)
 
-    # now we should check if the labels are ok ... 
-    # i can just run the hung and see if its just 1 2 3 4.. 
-    # should rarely fail.. 
 
     (a,b),_ = h.hungarian(m1,m2) 
-    print(b)
-    
+    assert np.all(np.diff(b) > 0)
+
     log_resp = l1+l2
-    return log_resp.argmax(axis=1)
+    
+    return log_resp.argmax(axis=1), l1.argmax(axis=1)==l2.argmax(axis=1)
 
 
 
@@ -110,14 +106,14 @@ def optistep(X1,X2,y,method):
 def simulclust(X1,X2,y, method = 'tied', n_iter=100, debug = False):
     for asd in range(n_iter):
         yold = y.copy()
-        y =  optistep(X1,X2,y,method) 
+        y , e=  optistep(X1,X2,y,method) 
         chang = sum(y!=yold)
         if debug: 
             print(f"simuclust: score: {score}  changes in iter:  {chang}")
         if chang == 0:
             break
 
-    return y
+    return y,e
 
 
 

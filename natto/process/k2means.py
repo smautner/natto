@@ -17,7 +17,7 @@ def assign(x1,x2,c1,c2):
     res = np.array( [zz if zz < c1.shape[0] else zz-c1.shape[0]  for zz in z] )
 
 
-    return res,  np.argmin(r, axis = 1) ==  np.argmin(r2, axis = 1)
+    return res,  np.argmin(r, axis = 1) !=  np.argmin(r2, axis = 1)
 
     
 
@@ -29,9 +29,9 @@ def centers(y,X):
     return np.array(cents)
 
 
-def opti_kmeans(X1,X2,y): 
+def optimize_kmeans(X1,X2,y): 
     c1, c2 = centers(y,X1), centers(y,X2)
-    c2 = hung.hungsort(c1,c2)
+    c2 = h.hungsort(c1,c2)
     y,e = assign(X1,X2,c1,c2)
     return y,e
 
@@ -75,12 +75,12 @@ def optimize(X1,X2,y, cov='tied'):
     m2, l2 = get_means_resp(X2,log_resp,cov)
 
 
-    (a,b),_ = h.hungarian(m1,m2) 
-    assert np.all(np.diff(b) > 0)
+    #(a,b),_ = h.hungarian(m1,m2) 
+    #assert np.all(np.diff(b) > 0)
 
     log_resp = l1+l2
     
-    return log_resp.argmax(axis=1), l1.argmax(axis=1)==l2.argmax(axis=1)
+    return log_resp.argmax(axis=1), l1.argmax(axis=1)!=l2.argmax(axis=1)
 
 
 
@@ -93,8 +93,8 @@ def optimize(X1,X2,y, cov='tied'):
 ######################
 
 
-def init(X,clusts=10):
-    return gmm(n_components=clusts, n_init=30).fit_predict(X) 
+def init(X,clusts=10, cov = 'tied'):
+    return gmm(n_components=clusts, n_init=30, covariance_type=cov).fit_predict(X) 
 
 
 def optistep(X1,X2,y,method):

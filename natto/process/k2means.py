@@ -108,11 +108,13 @@ def simulclust(X1,X2,y, method = 'tied', n_iter=100, debug = False):
         yold = y.copy()
         y , e=  optistep(X1,X2,y,method) 
         chang = sum(y!=yold)
-        if debug: 
-            print(f"simuclust: score: {score}  changes in iter:  {chang}")
+        if debug > 1: 
+            print(f"changes in iter:  {chang}")
         if chang == 0:
+            if debug:print(f"model converged after {asd} steps")
             break
-
+    else:
+        assert False, "did not converge"
     return y,e
 
 

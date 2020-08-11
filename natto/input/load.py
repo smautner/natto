@@ -11,16 +11,16 @@ import numpy as np
 load = lambda f: [l for l in open(f,'r').read().split('\n') if len(l)>1]
 
 
-def do_subsample(adata, subsample):
+def do_subsample(adata, subsample, seed = None):
     if not subsample:
         return adata
 
     if subsample <1:
-        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=0, copy=False)
+        sc.pp.subsample(adata, fraction=subsample, n_obs=None, random_state=seed, copy=False)
     else:
         if adata.shape[0] < subsample:
             return adata
-        sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=0, copy=False)
+        sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=seed, copy=False)
     return adata
 
 def loadlabels(labels, ids):
@@ -40,17 +40,17 @@ def filter(adata, cells='mito'):
         
     return adata
 
-def load3k(cells: 'mito all seurat' ='mito', subsample=.15)-> 'anndata object':
+def load3k(cells: 'mito all seurat' ='mito', subsample=.15, seed = None)-> 'anndata object':
     adata =  sc.read_10x_mtx(
     '../data/3k/hg19/',  
     var_names='gene_symbols', cache=True)
     adata.obs['labels']= loadlabels(load( "../data/3k/pbmc.3k.labels"), load( "../data/3k/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
-    adata = do_subsample(adata, subsample)
+    adata = do_subsample(adata, subsample,seed)
     return adata
 
-def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
+def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None)-> 'anndata object':
     adata =  sc.read_10x_mtx(
     '../data/6k/hg19/',  
     var_names='gene_symbols', cache=True)
@@ -58,28 +58,28 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25)-> 'anndata object':
     adata.obs['labels']= loadlabels(load( "../data/6k/pbmc.6k.labels"), load( "../data/6k/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
-    adata = do_subsample(adata, subsample)
+    adata = do_subsample(adata, subsample, seed)
     return adata
 
 
 
-def loadpbmc(path, subsample=None):
+def loadpbmc(path, subsample=None, seed=None):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
-    adata = do_subsample(adata, subsample)
+    adata = do_subsample(adata, subsample,seed)
     return adata
 
-def load3k6k(subsample=False):
-    return load3k(subsample=subsample), load6k(subsample=subsample)
+def load3k6k(subsample=False,seed=None):
+    return load3k(subsample=subsample, seed=seed), load6k(subsample=subsample,seed=seed)
 
-def loadp7de(subsample=False,pathprefix='..'):
-    return loadpbmc('%s/data/p7d'%pathprefix ,subsample), loadpbmc('%s/data/p7e'%pathprefix,subsample)
+def loadp7de(subsample=False,pathprefix='..', seed=None):
+    return loadpbmc('%s/data/p7d'%pathprefix ,subsample,seed), loadpbmc('%s/data/p7e'%pathprefix,subsample, seed)
 
-def load4k8k(subsample=False,pathprefix='..'):
-    return loadpbmc('%s/data/4k'% pathprefix,subsample), loadpbmc('%s/data/8k'%pathprefix,subsample)
+def load4k8k(subsample=False,pathprefix='..',seed=None):
+    return loadpbmc('%s/data/4k'% pathprefix,subsample, seed=seed), loadpbmc('%s/data/8k'%pathprefix,subsample,seed=seed)
 
-def loadimmune(subsample=False, pathprefix='..'):
-    return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample),\
-           loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample)
+def loadimmune(subsample=False, pathprefix='..',seed=None):
+    return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample,seed=seed),\
+           loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample,seed=seed)
 
 
 ###

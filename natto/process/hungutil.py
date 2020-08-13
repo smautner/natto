@@ -476,7 +476,7 @@ def doubleleiden(X,X2, params={}, resolution=1):
     return predictleiden(X,params, resolution), predictleiden(X2,params, resolution)
 
 def predictleiden(X,params={}, resolution = 1):
-    adata = ad.AnnData(X)
+    adata = ad.AnnData(X.copy())
     sc.pp.scale(adata, max_value=10)
     sc.pp.neighbors(adata, **params)
     sc.tl.leiden(adata, resolution = resolution)

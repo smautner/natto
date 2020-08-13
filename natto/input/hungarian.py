@@ -1,16 +1,17 @@
 from sklearn.metrics.pairwise import euclidean_distances as ed
-from scipy.optimize import linear_sum_assignment
+#from scipy.optimize import linear_sum_assignment
 from lapsolver import solve_dense
 import matplotlib.pyplot as plt
 
 
-def hungarian(X1, X2, solver='scipy', debug = False):
+def hungarian(X1, X2, debug = False):
     # get the matches:
     distances = ed(X1,X2)
-    if solver != 'scipy':
-        row_ind, col_ind = linear_sum_assignment(distances)
-    else:
-        row_ind,col_ind = solve_dense(distances)
+
+
+    #if solver != 'scipy':
+    #    row_ind, col_ind = linear_sum_assignment(distances)
+    row_ind,col_ind = solve_dense(distances)
 
     if debug:
         x = distances[row_ind, col_ind]

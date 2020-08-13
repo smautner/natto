@@ -19,22 +19,22 @@ import natto.input.hungarian as h
 class Data():
     """will have .a .b .d2 .dx"""
     def fit(self,adata, bdata,  
-            maxgenes=750, 
-            maxmean=7,
-            mindisp=1.4,
-            minmean=0.0125, 
-            corrcoef=True,
-            dimensions=6,
-            umap_n_neighbors = 15,
+            maxgenes=800, 
+            maxmean=4,
+            mindisp=False,
+            minmean=0.015, 
+            corrcoef=False,
+            dimensions=10,
+            umap_n_neighbors = 10,
             pp='linear',
             scale=False,
-            pca = 30, 
+            pca = 20, 
             ft_combine = lambda x,y: x or y,
-            debug_ftsel=False,
+            debug_ftsel=True,
             mitochondria = False, 
             titles = ("no title set in data constructure","<-"), 
             quiet =  False,
-            make_even=False):
+            make_even=True):
 
         #assert adata.var["gene_ids"].index ==  bdata.var["gene_ids"].index 
         self.mitochondria = mitochondria
@@ -53,16 +53,17 @@ class Data():
                         ft_combine = ft_combine,
                         minmean=minmean,
                         maxgenes=maxgenes)
-        
         #########
         # umap 
         ##########
         self.dimension_reduction(pca, dimensions, umap_n_neighbors)
         self.hung , self.hung_dist  = h.hungarian(*self.dx)
-
         return self
 
+
+
     def sort_cells(self):
+        self.b.X = self.b.X[self.hung[1]] 
         self.pca = self.pca[0], self.pca[1][self.hung[1]], self.pca[2]
         self.dx = self.dx[0], self.dx[1][self.hung[1]]
         self.d2 = self.d2[0], self.d2[1][self.hung[1]]

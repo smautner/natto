@@ -211,7 +211,7 @@ def markers(m,y1,y2, num=7, diff = True):
     
 
 def mk_label_avghungdist(dx, y1,y2):
-    a,b, dist = hungarian(*dx)
+    (a,b), dist = hungarian(*dx)
     y1dist = dist[a,b]
     #y1dist -= y1dist.min()
     #y1dist /= y1dist.max()

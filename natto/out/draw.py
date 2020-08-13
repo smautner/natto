@@ -130,7 +130,8 @@ def cmp2_genes(data,X1,X2,gene, cmap = 'viridis'):
 
 def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
         save=None,
-        fix_colors=True, cmap ='autumn'):    
+        fix_colors=True, 
+        cmap ='autumn'):    
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
@@ -144,6 +145,7 @@ def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
+    plt.colorbar()
     plt.show()   
     
 def plot_blobclust(Y1,X1,X2,red=None, save=None):    

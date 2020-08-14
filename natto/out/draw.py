@@ -372,69 +372,6 @@ def get_centers_1d(li,cnt = 3):
     #print("asd",li.min(),li.max(), dist)
     return [(li.min()+(a*2+1)*dist) for a in range(cnt)]
     
-    
-'''
-def umap(X,Y, reducer = None,
-        title="No title",
-        acc : "y:str_description"={}, 
-        black = None, 
-        show=True,
-        markerscale=4,
-        getmarker = lambda color: {"marker":'o'},
-        size=None):
-    assert reducer != None  , "give me a reducer"
-        
-    plt.title(title, size=20)
-    Y=np.array(Y)
-    size=  max( int(4000/Y.shape[0]), 1) if not size else size
-    
-    if type(black) != type(None): 
-        embed = reducer.transform(black)
-        plt.scatter(embed[:, 0],
-                    embed[:, 1],
-                    c=[(0,0,0) for e in range(black.shape[0])], 
-                    s=size,
-                    label='del',marker='X')
-    
-    embed = reducer.transform(X)
-    for cla in np.unique(Y):
-        plt.scatter(embed[Y==cla, 0],
-                    embed[Y==cla, 1],
-                    color= col[cla],
-                    s=size,
-                    label= str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
-    #plt.axis('off')
-    plt.xlabel('UMAP 2')
-    plt.ylabel('UMAP 1')
-
-
-    plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
-    if show: plt.show()
-    return reducer
-
-def cmp2(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None, labelappend={}):    
-    
-
-
-    sns.set(font_scale=1.2,style='white')
-    if not red:
-        red = UMAP()
-        red.fit(np.vstack((X1,X2)))
-
-    plt.figure(figsize=(16,8))    
-
-    #plt.tight_layout()    
-    ax=plt.subplot(121)
-    umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4, acc=labelappend[0])
-    ax=plt.subplot(122)
-    umap(X2,Y2,red,show=False,title=title[1],size=4,markerscale=4 , acc=labelappend[1])
-    if save:
-        plt.tight_layout()
-        plt.savefig(save, dpi=300)
-    plt.show()
-
-'''
-
 
 
 def tinyumap(X,Y,

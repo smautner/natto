@@ -2,14 +2,13 @@ from collections import Counter
 import scanpy as sc
 from  sklearn.neighbors import KNeighborsClassifier as KNC
 import numpy as np
-from sklearn.metrics import pairwise_distances
-from sklearn.neighbors import NearestNeighbors as NN 
+from sklearn.neighbors import NearestNeighbors as NN
 from sklearn.metrics import adjusted_rand_score as rand
 # QUALITY MEASSUREMENTS
 import math
 from sklearn.metrics import pairwise_distances
 from rari import rari
-from natto.process.hungutil import spacemap
+from natto.process.util import spacemap
 from natto.input.hungarian import hungarian
 import pandas as pd
 

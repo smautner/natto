@@ -1,8 +1,6 @@
 from sklearn.metrics.pairwise import euclidean_distances as ed
-#from scipy.optimize import linear_sum_assignment
 from lapsolver import solve_dense
 import matplotlib.pyplot as plt
-
 
 def hungarian(X1, X2, debug = False):
     # get the matches:

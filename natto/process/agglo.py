@@ -181,7 +181,7 @@ def cluster_gmm(data, data2, matches, minalign = .7,dat=None ):
     return y1,y2
 
 from natto.out import draw
-from natto.process.hungutil import spacemap
+from natto.process.util import spacemap
 
 
 def fix(y1,y2): 

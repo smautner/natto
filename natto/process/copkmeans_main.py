@@ -2,7 +2,6 @@
 from collections import defaultdict
 
 import natto.input.hungarian
-from natto.process import hungutil as hu
 import numpy as np
 from natto.process.copkmeans import cop_kmeans as ckmeans
 def cluster(a,b,ca,cb, debug=False,normalize=True,draw=lambda x,y:None, maxsteps=6):

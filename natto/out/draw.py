@@ -413,4 +413,8 @@ class tinyUmap():
     def draw(self, *a, **b): 
         self.next()
         tinyumap(*a,**b)
-        
+
+def distance_debug(m):
+    (a,b),di = hh.hungarian(*m.dx, debug = True)
+    d = di[a,b]
+    cmp2_grad(d,d,*m.d2,m.titles, save = False, cmap='viridis')

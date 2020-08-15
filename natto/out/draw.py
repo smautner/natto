@@ -1,8 +1,5 @@
-from itertools import permutations
-from matplotlib import cm 
 import pandas as pd
 from sklearn.cluster import AgglomerativeClustering as agg 
-import random
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame
@@ -414,7 +411,9 @@ class tinyUmap():
         self.next()
         tinyumap(*a,**b)
 
+
+import natto.input.hungarian as h
 def distance_debug(m):
-    (a,b),di = hh.hungarian(*m.dx, debug = True)
+    (a,b),di = h.hungarian(*m.dx, debug = True)
     d = di[a,b]
     cmp2_grad(d,d,*m.d2,m.titles, save = False, cmap='viridis')

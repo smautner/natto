@@ -28,9 +28,15 @@ def leiden_2(X, X2, params={}, resolution=1):
     return leiden_1(X, params, resolution), leiden_1(X2, params, resolution)
 
 
-def leiden_1(X, params={}, resolution = 1):
+def leiden_1(X, params={}, resolution = .5):
     adata = ad.AnnData(X.copy())
     sc.pp.scale(adata, max_value=10)
     sc.pp.neighbors(adata, **params)
     sc.tl.leiden(adata, resolution = resolution)
     return np.array([int(x) for x in adata.obs['leiden']])
+
+def coclust(X1,X2,algo=lambda x: leiden_1(x,resolution=.5)):
+    X = np.concatenate((X1,X2))
+    y= algo(X)
+    l1 = X1.shape[0]
+    return y[:l1], y[l1:]

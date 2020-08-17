@@ -6,6 +6,7 @@ import copy
 import numpy as np
 import umap
 from natto.input.preprocessing import Data
+import basics as ba 
 
 class fromdata: 
     def fit(self, things):
@@ -42,7 +43,23 @@ def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()):
 #############
 # NOISE can be generated before or after selecting genes....
 ############
-
+def appnoize(m,level):
+    print("mixing..")
+    #re = copy.deepcopy(m)
+    re = m 
+    if level > 0: 
+        re.b.X = noisiate(re.b.X,level/100)
+        re.mk_pca(pca)
+        re.dx = re.umapify(6,10)
+        re.d2 = re.umapify(2,10)
+    else: 
+        re.mk_pca(pca)
+        us = umap.UMAP(n_components = 2, n_neighbors=10, random_state=24).fit(re.pca[0])
+        ul = umap.UMAP(n_components = 8, n_neighbors=10, random_state=24).fit(re.pca[0])
+        re.dx =    [ul.transform(re.pca[0])]*2
+        re.d2 =    [us.transform(re.pca[0])]*2
+    re.titles = (f"{title}", f"{title} {level}% noise")
+    return re
 
 def get_noise_data(adat, noiserange,title):
     bdat  = adat.copy()
@@ -62,24 +79,9 @@ def get_noise_data(adat, noiserange,title):
                                debug_ftsel=True,
                                scale=False,
                                make_even=True) 
-    def appnoize(m,level):
-        print("mixing..")
-        re = copy.deepcopy(m)
-        if level > 0: 
-            re.b.X = noisiate(re.b.X,level/100)
-            re.mk_pca(pca)
-            re.dx = re.umapify(6,10)
-            re.d2 = re.umapify(2,10)
-        else: 
-            re.mk_pca(pca)
-            us = umap.UMAP(n_components = 2, n_neighbors=10, random_state=24).fit(re.pca[0])
-            ul = umap.UMAP(n_components = 8, n_neighbors=10, random_state=24).fit(re.pca[0])
-            re.dx =    [ul.transform(re.pca[0])]*2
-            re.d2 =    [us.transform(re.pca[0])]*2
-        re.titles = (f"{title}", f"{title} {level}% noise")
-        return re
 
-    rdydata=[ appnoize(m,noise) for noise in noiserange]
+
+    rdydata=ba.mpmap(appnoize,[(m,noise) for noise in noiserange ]  )#   [ appnoize(m,noise) for noise in noiserange]
     return rdydata
 
 #############

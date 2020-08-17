@@ -466,7 +466,7 @@ class Data():
                 argh = mask .copy()
                 argh[mask ] = np.array(accept)
                 agree = argh & self.prevres
-                plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='overlap genes')
+                plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='selected genes overlap')
             
 
             plt.legend(bbox_to_anchor=(.6,-.2))

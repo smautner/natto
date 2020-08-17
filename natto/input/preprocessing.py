@@ -338,7 +338,7 @@ class Data():
         y_std = np.array([np.std(st) for st in boxes])
         x=x+(stepsize/2)
         # draw regression points 
-        if self.debug_ftsel:plt.scatter(x,y,label='Mean of bins')
+        if self.debug_ftsel:plt.scatter(x,y,label='Mean of bins', color = 'k')
 
 
         nonan=np.isfinite(y)
@@ -390,85 +390,86 @@ class Data():
         if maxgenes and not Z: 
             print ("maxgenes without Z transform is meaningless")
             
-        """not done yet """
         a=np.expm1(matrix)
         var     = np.var(a, axis=0)
         mean    = np.mean(a, axis=0)
-        disp2= var/mean
-        Y = np.log(disp2)
+        disp= var/mean
+
+
+        Y = np.log(disp)
         X = np.log1p(mean)
 
-        #print (mean, disp2,maxmean,minmean)
-        good = np.array( [not np.isnan(y) and me > minmean and me < maxmean for y,me in zip(disp2,X)] )
+        mask  = np.array( [not np.isnan(y) and me > minmean and me < maxmean for y,me in zip(disp,X)] )
         
         if self.debug_ftsel: 
-            plt.figure(figsize=(10,4)) 
+            plt.figure(figsize=(11,4)) 
             plt.suptitle(f"gene selection: {title}", size = 20, y=1.07)
             ax=plt.subplot(121)
-            plt.scatter(X[good], Y[good],alpha=.2, s=3, label='all')
+            plt.scatter(X[mask ], Y[mask],alpha=.2, s=3, label='all genes')
             
-        x_bin,y_bin,ystd_bin = self.transform(X[good].reshape(-1, 1),
-                        Y[good],
+        x_bin,y_bin,ystd_bin = self.transform(X[mask].reshape(-1, 1),
+                        Y[mask ],
                         stepsize=binsize, 
                         ran = maxmean,
                         minbin=minbin,
                         bin_avg = 'median') # median or mean
         
 
-        pre = self.get_expected_values(x_bin,y_bin,X[good])
+        y_predicted = self.get_expected_values(x_bin,y_bin,X[mask ])
         ###
         # make it quadratic
         ####
         #pre = self.generalize_quadradic(pre,X[good])
         
         if Z:
-            std = self.get_expected_values(x_bin,ystd_bin,X[good])
-            Y[good]-= pre 
-            Y[good]/=std
+            std_predicted = self.get_expected_values(x_bin,ystd_bin,X[mask ])
+            Y[mask ]-= y_predicted 
+            Y[mask ]/= std_predicted
             if not maxgenes:
-                accept = [d > cutoff for d in Y[good]]                
+                accept = [d > cutoff for d in Y[mask ]]                
                 if return_raw:
-                    bad=np.logical_not(good)
-                    
+                    # Y[mask] is already corrected, now we correct the complement and return raw 
+                    bad=np.logical_not(mask )
                     pre_bad = self.get_expected_values(x_bin,y_bin,X[bad])
                     std_bad = self.get_expected_values(x_bin,ystd_bin,X[bad])
                     Y[bad] -= pre_bad
                     Y[bad] /= std_bad
                     return Y
             else: 
-                srt = np.argsort(Y[good])
-                accept = np.full(Y[good].shape, False)
-                accept[ srt[-maxgenes:] ] = True
+                srt = np.argsort(Y[mask])
+                accept = np.full(Y[mask].shape, False)
+                accept[ srt[-maxgenes:]] = True
 
             
         else:
-            accept = [ (d-m)>cutoff for d,m in zip(Y[good],pre) ]
+            accept = [ (d-m)>cutoff for d,m in zip(Y[mask ],y_predicted) ]
         
         
         if self.debug_ftsel:
-            srt= np.argsort(X[good])
-            plt.plot(X[good][srt], pre[srt],color='k', label='regression')
-            plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std of bins')
-            plt.legend()
+            srt= np.argsort(X[mask ])
+            plt.plot(X[mask][srt], y_predicted[srt],color='k', label='regression')
+            plt.plot(X[mask][srt], std_predicted[srt],color='g', label='regression of std')
+            plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std of bins', color = 'g')
+            plt.legend(bbox_to_anchor=(.6,-.2))
             plt.title("dispersion of genes")
             plt.xlabel('log mean expression')
             plt.ylabel('dispursion')
 
             ax=plt.subplot(122)
-            plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
+            plt.scatter(X[mask ], Y[mask ],alpha=.2, s=3, label = 'all genes')
 
-            g=X[good]
-            d=Y[good]
-            plt.scatter(g[accept], d[accept],alpha=.3, s=3, color='r', label='selected')
+            g=X[mask ]
+            d=Y[mask ]
+            plt.scatter(g[accept], d[accept],alpha=.3, s=3, color='r', label='selected genes')
 
             if  "prevres" in self.__dict__:
-                argh = good.copy()
-                argh[good] = np.array(accept)
+                argh = mask .copy()
+                argh[mask ] = np.array(accept)
                 agree = argh & self.prevres
-                plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='overlap')
+                plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='overlap genes')
             
 
-            plt.legend()
+            plt.legend(bbox_to_anchor=(.6,-.2))
             plt.title("normalized dispersion of genes")
             plt.xlabel('log mean expression')
             plt.ylabel('dispursion')
@@ -476,9 +477,9 @@ class Data():
 
             print(f"ft selected:{sum(accept)}")
         
-        good[good] = np.array(accept)
+        mask [mask ] = np.array(accept)
         
-        return good 
+        return mask  
     
     def __init__(self):
         self.debug_ftsel = False

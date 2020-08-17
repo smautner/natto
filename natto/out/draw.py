@@ -22,7 +22,8 @@ col = { i-2:e for i,e in enumerate(colors)}
 col.update( {a+100:b for a,b in col.items()}  )
 '''
 
-col = plt.cm.get_cmap('tab20').colors + ((0,0,0),)
+col = plt.cm.get_cmap('tab20').colors 
+col = col+col+col+ ((0,0,0),)
 
 def umap(X,Y,
         title="No title",

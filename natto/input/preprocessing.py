@@ -219,12 +219,12 @@ class Data():
                                        cutoff= mindisp,
                                        Z=True,
                                        minbin=minbin, binsize = binsize,
-                                       maxgenes=maxgenes)
+                                       maxgenes=maxgenes, title = self.titles[0])
         self.prevres =  ag
         bg = self.get_var_genes_linear(b, minmean,maxmean,
                                        cutoff = mindisp, 
                                        maxgenes=maxgenes,
-                                       minbin=minbin, binsize = binsize,
+                                       minbin=minbin, binsize = binsize,title= self.titles[1], 
                                        Z=True)
         
         return ag,bg
@@ -385,7 +385,7 @@ class Data():
 
     def get_var_genes_linear(self, matrix,minmean,maxmean,
                              cutoff =.2, Z= True, maxgenes=None, 
-                             return_raw = False, minbin=1,binsize=.25):
+                             return_raw = False, minbin=1,binsize=.25, title = 'None'):
         
         if maxgenes and not Z: 
             print ("maxgenes without Z transform is meaningless")
@@ -403,6 +403,7 @@ class Data():
         
         if self.debug_ftsel: 
             plt.figure(figsize=(10,4)) 
+            plt.suptitle(f"gene selection: {title}", size = 20, y=1.07)
             ax=plt.subplot(121)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label='all')
             
@@ -449,12 +450,10 @@ class Data():
             plt.plot(X[good][srt], pre[srt],color='k', label='regression')
             plt.scatter(x_bin, ystd_bin, alpha= .4, label='Std of bins')
             plt.legend()
-
-
-
             plt.title("dispersion of genes")
             plt.xlabel('log mean expression')
             plt.ylabel('dispursion')
+
             ax=plt.subplot(122)
             plt.scatter(X[good], Y[good],alpha=.2, s=3, label = 'all')
 
@@ -468,7 +467,6 @@ class Data():
                 agree = argh & self.prevres
                 plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='overlap')
             
-
 
             plt.legend()
             plt.title("normalized dispersion of genes")

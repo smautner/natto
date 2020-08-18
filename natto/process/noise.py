@@ -1,5 +1,3 @@
-
-
 from scipy.sparse import csr_matrix
 import random
 import copy
@@ -43,8 +41,10 @@ def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()):
 #############
 # NOISE can be generated before or after selecting genes....
 ############
-def appnoize(m,level):
+def appnoize(args):
+    m,level, title, cluster  = args
     print("mixing..")
+    pca=20
     #re = copy.deepcopy(m)
     re = m 
     if level > 0: 
@@ -59,29 +59,32 @@ def appnoize(m,level):
         re.dx =    [ul.transform(re.pca[0])]*2
         re.d2 =    [us.transform(re.pca[0])]*2
     re.titles = (f"{title}", f"{title} {level}% noise")
+
+    re.labels  = cluster(*m.dx)
     return re
 
-def get_noise_data(adat, noiserange,title):
+def get_noise_data(adat, noiserange,title, poolsize = -1, cluster=None):
     bdat  = adat.copy()
-    pca =30
     m = Data().fit(adat, bdat,
-                               mindisp=1.0,
-                               maxgenes=False,
+                               mindisp=False,
+                               maxgenes=800,
                                ft_combine = lambda x,y: x or y,
-                               corrcoef=False,
                                minmean = 0.02,
                                mitochondria = "mt-",
                                maxmean= 4,
                                pp='linear',
-                               pca = pca,
-                               dimensions=8,
+                               pca = 20,
+                               dimensions=10,
                                umap_n_neighbors=10, # used in example
-                               debug_ftsel=True,
-                               scale=False,
+                               debug_ftsel=False,
                                make_even=True) 
 
-
-    rdydata=ba.mpmap(appnoize,[(m,noise) for noise in noiserange ]  )#   [ appnoize(m,noise) for noise in noiserange]
+    if poolsize != 1:
+        rdydata=ba.mpmap(appnoize,[(m,noise, title, cluster) for noise in noiserange ],
+                poolsize=poolsize,
+                chunksize =1 )  
+    else:
+        rdydata= [ appnoize((m,noise,title, cluster)) for noise in noiserange]
     return rdydata
 
 #############

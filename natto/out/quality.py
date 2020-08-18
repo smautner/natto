@@ -118,7 +118,7 @@ def make_rari_compatible(ar):
 def rari_score(Y1,Y2,X1,X2): 
     # Y1 and Y2 are clculated on different data... 
     # account for that by ordering Y2 ; such that the closest cells correspond
-    a, b, dist = hungarian(X1, X2, debug=False)
+    (a, b), dist = hungarian(X1, X2, debug=False)
     aTb = dict(zip(a,b))
     k=list(aTb.keys())
     k.sort()

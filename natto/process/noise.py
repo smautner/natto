@@ -43,19 +43,20 @@ def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()):
 ############
 def appnoize(args):
     m,level, title, cluster  = args
-    print("mixing..")
+    print(f"appnoize{level}")
     pca=20
     #re = copy.deepcopy(m)
     re = m 
     if level > 0: 
         re.b.X = noisiate(re.b.X,level/100)
         re.mk_pca(pca)
-        re.dx = re.umapify(6,10)
-        re.d2 = re.umapify(2,10)
+        re.dx = re.umapify(10,10)
+        if title != "magic":
+            re.d2 = re.umapify(2,10)
     else: 
         re.mk_pca(pca)
         us = umap.UMAP(n_components = 2, n_neighbors=10, random_state=24).fit(re.pca[0])
-        ul = umap.UMAP(n_components = 8, n_neighbors=10, random_state=24).fit(re.pca[0])
+        ul = umap.UMAP(n_components = 10, n_neighbors=10, random_state=24).fit(re.pca[0])
         re.dx =    [ul.transform(re.pca[0])]*2
         re.d2 =    [us.transform(re.pca[0])]*2
     re.titles = (f"{title}", f"{title} {level}% noise")
@@ -65,6 +66,7 @@ def appnoize(args):
 
 def get_noise_data(adat, noiserange,title, poolsize = -1, cluster=None):
     bdat  = adat.copy()
+    if title=='magic':print("get noise data..")
     m = Data().fit(adat, bdat,
                                mindisp=False,
                                maxgenes=800,
@@ -79,12 +81,14 @@ def get_noise_data(adat, noiserange,title, poolsize = -1, cluster=None):
                                debug_ftsel=False,
                                make_even=True) 
 
+    if title=='magic':print("starting appnoizing ")
     if poolsize != 1:
         rdydata=ba.mpmap(appnoize,[(m,noise, title, cluster) for noise in noiserange ],
                 poolsize=poolsize,
                 chunksize =1 )  
     else:
         rdydata= [ appnoize((m,noise,title, cluster)) for noise in noiserange]
+    if title=='magic':print("done")
     return rdydata
 
 #############
@@ -119,3 +123,33 @@ def get_noise_data_slow(loader, noiserange,title):
     rdydata=[fit(noise,loader, (f"{title}", f"{title} {noise}% noise") ) for noise in noiserange]
     return rdydata
 
+
+#########
+#  MP friendly version
+####### 
+
+
+
+def get_noise_single(adat, level):
+    # SETUP
+    bdat  = adat.copy()
+    m = Data().fit(adat, bdat,
+                               mindisp=False,
+                               maxgenes=800,
+                               ft_combine = lambda x,y: x or y,
+                               minmean = 0.02,
+                               mitochondria = "mt-",
+                               maxmean= 4,
+                               pp='linear',
+                               pca = 20,
+                               dimensions=10,
+                               umap_n_neighbors=10, # used in example
+                               debug_ftsel=False,
+                               make_even=True) 
+    if level == 0:
+        return m     
+
+    m.b.X = noisiate(m.b.X,level/100)
+    m.mk_pca(20)
+    m.dx = m.umapify(10,10)
+    return m 

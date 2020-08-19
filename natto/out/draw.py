@@ -379,7 +379,7 @@ def tinyumap(X,Y,
         getmarker = lambda color: {"marker":'o'},
         size=None):
         
-    plt.title(title, size=7)
+    plt.title(title, size=10)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     embed = X

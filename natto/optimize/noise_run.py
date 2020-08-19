@@ -29,9 +29,6 @@ pool=10
 rr= ba.mpmap( n.get_noise_run , [(loader,pool, cluster ) for r in range(10)] , poolsize = 10, chunksize=1)
 '''
 
-print(rr)
-#
-
 def process(level, c):
     l =np.array(level)
     return l.mean(axis = 0 )[c]
@@ -47,8 +44,6 @@ def processstd(level, c):
 
 print ([process(level, 0) for level in rr])
 print ([process(level, 1) for level in rr])
-print ([processVar(level, 0) for level in rr])
-print ([processVar(level, 1) for level in rr])
 print ([processstd(level, 0) for level in rr])
 print ([processstd(level, 1) for level in rr])
 

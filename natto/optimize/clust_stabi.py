@@ -1,4 +1,9 @@
 
+
+"""
+we repeatedly run the distance thing on 3k  to optimize the parameters of preprocessing
+"""
+
 from lmz import *
 #import matplotlib.pyplot as plt
 import warnings

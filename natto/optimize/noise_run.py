@@ -2,22 +2,23 @@ import basics as ba
 from natto.input import load 
 from natto.optimize import noise  as n 
 import numpy as np 
-
-#loader = lambda: load.load3k6k(subsample=500)  # lambda: load.loadarti("../data/art", 'si3', subsample= 1000)[0]
-
 from functools import partial
-loader = partial(load.load3k, subsample=1500)
-
 import natto.process as p 
 from basics.sgexec import sgeexecuter as sge
 
-cluster = partial(p.gmm_2, cov='full', nc = 8)
 
+
+
+
+cluster = partial(p.leiden_2,resolution=.3)
+cluster = partial(p.gmm_2, cov='full', nc = 15)
+loader = partial(load.load3k, subsample=1500)
+loader = partial(load.loadgruen_single, path = '../data/punk/human3',  subsample=1500)
 
 
 s=sge()
 for level in range(0,110,10):
-    s.add_job( n.get_noise_run_moar , [(loader, cluster, level) for r in range(100)] )
+    s.add_job( n.get_noise_run_moar , [(loader, cluster, level) for r in range(50)] )
 rr= s.execute()
 
 
@@ -50,6 +51,4 @@ print ([processVar(level, 0) for level in rr])
 print ([processVar(level, 1) for level in rr])
 print ([processstd(level, 0) for level in rr])
 print ([processstd(level, 1) for level in rr])
-
-
 

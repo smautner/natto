@@ -128,8 +128,6 @@ def get_noise_data_slow(loader, noiserange,title):
 #  MP friendly version
 ####### 
 
-
-
 def get_noise_single(adat, level):
     # SETUP
     bdat  = adat.copy()
@@ -143,7 +141,6 @@ def get_noise_single(adat, level):
                                pp='linear',
                                pca = 20,
                                dimensions=10,
-                               umap_n_neighbors=10, # used in example
                                debug_ftsel=False,
                                make_even=True) 
     if level == 0:

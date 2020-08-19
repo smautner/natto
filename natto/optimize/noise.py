@@ -23,7 +23,12 @@ def get_noise_run(args):
 
 def get_noise_run_moar(args):
     loader, cluster, level = args
-
+    if level == 0:
+        # this should be 1 and 1, 
+        # its not always,
+        # i tracked it down to randomization in the projection
+        # a few weeks ago
+        return (1,1) 
 
     # loaddata
     adat = loader()

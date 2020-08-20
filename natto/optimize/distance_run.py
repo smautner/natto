@@ -8,7 +8,7 @@ from basics.sgexec import sgeexecuter as sge
 k3 = partial(load.load3k6k, subsample=1500,seed=None)
 p7 = partial(load.loadp7de, subsample=1500, seed=None)
 immune = partial(load.loadimmune, subsample=1500, seed=None)
-numclusters=list(range(5,100,5))
+numclusters=list(range(4,30,3))
 loaders = [k3,p7,immune]
 
 s = sge()

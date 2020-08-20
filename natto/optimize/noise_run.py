@@ -7,8 +7,9 @@ import natto.process as p
 from basics.sgexec import sgeexecuter as sge
 
 
-cluster = partial(p.gmm_2, cov='full', nc = 15)
+
 cluster = partial(p.leiden_2,resolution=.5)
+cluster = partial(p.gmm_2, cov='tied', nc = 15)
 loader = partial(load.loadgruen_single, path = '../data/punk/human3',  subsample=1500)
 loader = partial(load.load3k, subsample=1500)
 
@@ -17,6 +18,8 @@ s=sge()
 for level in range(0,110,10):
     s.add_job( n.get_noise_run_moar , [(loader, cluster, level) for r in range(50)] )
 rr= s.execute()
+
+
 
 
 '''
@@ -36,9 +39,27 @@ def processstd(level, c):
     l =np.array(level)
     return l.std(axis = 0 )[c]
 
+print ([process(level, 0) for level in rr])
+#print ([process(level, 1) for level in rr])
+print ([processstd(level, 0) for level in rr])
+#print ([processstd(level, 1) for level in rr])
+
+
+
+
+
+loader = partial(load.loadgruen_single, path = '../data/punk/human3',  subsample=1500)
+
+s=sge()
+for level in range(0,110,10):
+    s.add_job( n.get_noise_run_moar , [(loader, cluster, level) for r in range(50)] )
+rr= s.execute()
+
 
 print ([process(level, 0) for level in rr])
-print ([process(level, 1) for level in rr])
+#print ([process(level, 1) for level in rr])
 print ([processstd(level, 0) for level in rr])
-print ([processstd(level, 1) for level in rr])
+#print ([processstd(level, 1) for level in rr])
+
+
 

@@ -7,9 +7,6 @@ import natto.process as p
 from basics.sgexec import sgeexecuter as sge
 
 
-
-
-
 cluster = partial(p.gmm_2, cov='full', nc = 15)
 cluster = partial(p.leiden_2,resolution=.5)
 loader = partial(load.loadgruen_single, path = '../data/punk/human3',  subsample=1500)
@@ -20,8 +17,6 @@ s=sge()
 for level in range(0,110,10):
     s.add_job( n.get_noise_run_moar , [(loader, cluster, level) for r in range(50)] )
 rr= s.execute()
-
-
 
 
 '''

@@ -10,10 +10,10 @@ from basics.sgexec import sgeexecuter as sge
 
 
 
-cluster = partial(p.leiden_2,resolution=.3)
 cluster = partial(p.gmm_2, cov='full', nc = 15)
-loader = partial(load.load3k, subsample=1500)
+cluster = partial(p.leiden_2,resolution=.5)
 loader = partial(load.loadgruen_single, path = '../data/punk/human3',  subsample=1500)
+loader = partial(load.load3k, subsample=1500)
 
 
 s=sge()

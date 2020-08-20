@@ -12,10 +12,12 @@ pip3 install git+https://github.com/smautner/natto.git
 ## install problems:
 ```
 
-# scanpy seems to be bugged
+# scanpy seems to  be bugged 
 pip3 install --upgrade  scanpy==1.4.4.post1
 remove anndata
 pip3 install --upgrade  anndata==0.6.22.post1
+# -> this may be false, i think i need to build a cache for each dataset first,
+# multiple proicesses trying to build a cache at the same time fails...
 
 
 # installing lapsolver on VERY problematic machines

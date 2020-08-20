@@ -8,14 +8,16 @@ from basics.sgexec import sgeexecuter as sge
 k3 = partial(load.load3k6k, subsample=1500,seed=None)
 p7 = partial(load.loadp7de, subsample=1500, seed=None)
 immune = partial(load.loadimmune, subsample=1500, seed=None)
+
 s = sge()
-
-
-numclusters=[8,16,24]
+numclusters=[8,16,25]
 for loader in [k3, p7, immune]:
     for nc in numclusters:
-        s.add_job( d.rundist , [(loader, nc) for r in range(5)])
+        s.add_job( d.rundist , [(loader, nc) for r in range(50)])
 rr= s.execute()
+
+
+
 
 print(rr)
 

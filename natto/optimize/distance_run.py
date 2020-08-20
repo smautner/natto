@@ -8,18 +8,15 @@ from basics.sgexec import sgeexecuter as sge
 k3 = partial(load.load3k6k, subsample=1500,seed=None)
 p7 = partial(load.loadp7de, subsample=1500, seed=None)
 immune = partial(load.loadimmune, subsample=1500, seed=None)
+numclusters=list(range(5,100,5))
+loaders = [k3,p7,immune]
 
 s = sge()
-numclusters=[8,16,25]
-for loader in [k3, p7, immune]:
+for loader in loaders:
     for nc in numclusters:
         s.add_job( d.rundist , [(loader, nc) for r in range(50)])
 rr= s.execute()
 
-
-
-
-print(rr)
 
 
 def p(level, c):
@@ -31,10 +28,16 @@ def ps(level, c):
     return l.std(axis = 0 )[c]
 
 ctr=0
-for l in ['3k','p7','immune']:
-    for c in numclusters:
+res = np.zeros((2*len(loaders),len(numclusters))) 
+for i,l in enumerate( ['3k','p7','immune'] ):
+    for j,c in enumerate(numclusters):
         cda = rr[ctr]
-        print (f"{l}, nc: {c}, rari {p(cda,0)}+-{ps(cda,0)}  ari {p(cda,1)}+={ps(cda,1)}")
+        v,st = p(cda,0),ps(cda,0)
+        o=i*2
+        res[o,j] = v
+        res[o+1,j] = st
         ctr+=1
+
+print (res)
 
 

@@ -289,7 +289,7 @@ class Data():
         self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a, min_genes, min_counts)
         self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b, min_genes, min_counts)
         
-        geneab = Map(lambda x, y: x or y, gene_fa, gene_fb)
+        geneab = Map(lambda x, y: x and y, gene_fa, gene_fb)
         self.a = self.a[self.cellfa,:]
         self.b = self.b[self.cellfb,:]
         

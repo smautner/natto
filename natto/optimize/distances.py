@@ -7,7 +7,9 @@ def rundist(arg):
 
     m =  Data().fit(*loader(),
                        debug_ftsel=False,
+                       maxgenes=800,
                        quiet=True,
+                       pca = 20,
                        titles=("3", "6"),
                        make_even=True)
     labels = p.gmm_2(*m.dx,nc=nc,cov='full')
@@ -24,4 +26,7 @@ def rundist_2loaders(arg):
                     titles=("3", "6"),
                     make_even=True)
     labels = p.gmm_2(*m.dx,nc=nc,cov='full')
-    return Q.rari_score(*labels, *m.dx)
+    labels2 = p.gmm_2(*m.dx,nc=10,cov='full')
+    a,b =  Q.rari_score(*labels, *m.dx)
+    c,d =  Q.rari_score(*labels2, *m.dx)
+    return a,c

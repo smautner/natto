@@ -374,12 +374,13 @@ def get_centers_1d(li,cnt = 3):
 
 def tinyumap(X,Y,
         title="No title",
+        title_size=10,
         acc : "y:str_description"={}, 
         markerscale=4,
         getmarker = lambda color: {"marker":'o'},
         size=None):
         
-    plt.title(title, size=10)
+    plt.title(title, size=title_size)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     embed = X
@@ -399,14 +400,15 @@ def tinyumap(X,Y,
 
 class tinyUmap(): 
     
-    def __init__(self):
-        plt.figure( figsize=(10, 10), dpi=300)
+    def __init__(self, dim=(3,3), figs=(10,20)):
+        plt.figure( figsize=figs, dpi=300)
         self.i =0
+        self.dim = dim
     
 
     def next(self): 
         self.i= self.i+1 
-        plt.subplot(3,3,self.i)
+        plt.subplot(*self.dim,self.i)
 
     def draw(self, *a, **b): 
         self.next()

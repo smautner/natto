@@ -377,7 +377,10 @@ def tinyumap(X,Y,
         title_size=10,
         acc : "y:str_description"={}, 
         markerscale=4,
-        getmarker = lambda color: {"marker":'o'},
+        getmarker = lambda cla: {"marker":'o'},
+        col=col,
+        label=None,
+        alpha = None, 
         size=None):
         
     plt.title(title, size=title_size)
@@ -391,11 +394,12 @@ def tinyumap(X,Y,
                     embed[Y==cla, 1],
                     color= col[cla],
                     s=size,
-                    label= str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
+                    edgecolors = 'none',
+                    alpha = alpha, 
+                    label=label, **getmarker(cla)) #str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
     #plt.axis('off')
     #plt.xlabel('UMAP 2')
     #plt.ylabel('UMAP 1')
-
     #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
 
 class tinyUmap(): 

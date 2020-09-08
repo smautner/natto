@@ -63,7 +63,7 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None)-> 'anndat
 
 
 
-def loadpbmc(path, subsample=None, seed=None):
+def loadpbmc(path=None, subsample=None, seed=None):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
     adata = do_subsample(adata, subsample,seed)
     return adata

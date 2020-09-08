@@ -164,7 +164,7 @@ class Data():
             ab= np.vstack((a, b))
             pca = sklearn.decomposition.PCA(n_components=PCA)
 
-            #ab = StandardScaler().fit_transform(ab)
+            ab = StandardScaler().fit_transform(ab)
             pca.fit(ab)
             ab = pca.transform(ab)
             '''

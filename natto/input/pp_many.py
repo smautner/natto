@@ -43,8 +43,7 @@ class Data():
         self.debug_ftsel = debug_ftsel
         self.quiet = quiet
 
-        self.preprocess(pp=pp,
-                        mindisp=mindisp,
+        self.preprocess( mindisp=mindisp,
                         maxmean=maxmean,
                         ft_combine=ft_combine,
                         minmean=minmean,
@@ -63,6 +62,12 @@ class Data():
         self.dx = self.umapify(dimensions, umap_n_neighbors)
         self.d2 = self.umapify(2, umap_n_neighbors)
 
+
+
+    def printcounts(self, where):
+        counts  = [  e.X.shape[0] for e in self.data  ]
+        print('printcounts:', where, counts)
+
     def make_even(self):
 
         # assert all equal 
@@ -70,7 +75,10 @@ class Data():
         assert all ([size == other.X.shape[1] for other in self.data])
 
         # find smallest
-        smallest = min([  e.X.shape[0] for e in self.data  ])
+        counts  = [  e.X.shape[0] for e in self.data  ]
+        smallest = min(counts)
+
+        
 
         for a in self.data:
             if a.X.shape[0] > smallest:
@@ -114,8 +122,7 @@ class Data():
         #    print("number of features combined:", sum(genes))
         #if not self.quiet: print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
         genes  = np.any(np.array(genelists), axis  = 0)  ##???? lets see if this works
-        self.a = self.a[:, genes].copy()
-        self.b = self.b[:, genes].copy()
+        self.data = [ d[:,genes].copy() for d in self.data  ]
 
 
     def mk_pca(self, PCA):
@@ -192,7 +199,7 @@ class Data():
         [sc.pp.filter_cells(d, min_genes=min_genes, inplace=True) for d in self.data]
 
         # filter genes
-        genef  = [ sc.pp.filter_genes(ad, min_counts=min_counts, inplace=False)[0] for d in self.data]
+        genef  = [ sc.pp.filter_genes(d, min_counts=min_counts, inplace=False)[0] for d in self.data]
         geneab = np.any(np.array(genef),axis = 0)
 
         for i,d in enumerate(self.data):

@@ -374,12 +374,16 @@ def get_centers_1d(li,cnt = 3):
 
 def tinyumap(X,Y,
         title="No title",
+        title_size=10,
         acc : "y:str_description"={}, 
         markerscale=4,
-        getmarker = lambda color: {"marker":'o'},
+        getmarker = lambda cla: {"marker":'o'},
+        col=col,
+        label=None,
+        alpha = None, 
         size=None):
         
-    plt.title(title, size=10)
+    plt.title(title, size=title_size)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     embed = X
@@ -390,23 +394,25 @@ def tinyumap(X,Y,
                     embed[Y==cla, 1],
                     color= col[cla],
                     s=size,
-                    label= str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
+                    edgecolors = 'none',
+                    alpha = alpha, 
+                    label=label, **getmarker(cla)) #str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
     #plt.axis('off')
     #plt.xlabel('UMAP 2')
     #plt.ylabel('UMAP 1')
-
     #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
 
 class tinyUmap(): 
     
-    def __init__(self):
-        plt.figure( figsize=(10, 10), dpi=300)
+    def __init__(self, dim=(3,3), figs=(10,20)):
+        plt.figure( figsize=figs, dpi=300)
         self.i =0
+        self.dim = dim
     
 
     def next(self): 
         self.i= self.i+1 
-        plt.subplot(3,3,self.i)
+        plt.subplot(*self.dim,self.i)
 
     def draw(self, *a, **b): 
         self.next()

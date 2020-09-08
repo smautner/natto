@@ -167,6 +167,14 @@ def loaddca_h1h2(subsample):
 
 datanames = ["default","even",'si1','si2','c7','c6','c5','facl0.05','facl2']
 
+def loadgalaxy(s=True,subsample=False):
+    for i in range(1,10): # 1..9 ,,, 10 is below
+        yield loadarti('../data/galaxy',f"fac{'s' if s else 'l'}0_{i}.",subsample=subsample)
+    yield loadarti('../data/galaxy',f"fac{'s' if s else 'l'}1_0.",subsample=subsample)
+
+
+
+
 def loadarti(path, dataname,subsample=False):
 
     batch = open(path+"/%sbatch.art.csv" % dataname, "r").readlines()[1:]

@@ -16,7 +16,7 @@ def gmm_1(X, nc=None, cov ='tied'):
     return ug.get_model(X, **d).predict(X)
 
 
-def gmm_2_dynamic(X1,X2,nc=(3,20),pool=1):
+def gmm_2_dynamic(X1,X2,nc=(4,20),pool=1):
     
     def getmodels(X):
         train = ug.functools.partial(ug.traingmm,X=X,n_init=30)
@@ -28,7 +28,8 @@ def gmm_2_dynamic(X1,X2,nc=(3,20),pool=1):
 
     models = list(zip(getmodels(X1), getmodels(X2)))
     AIC = [m.aic(X1) + m2.aic(X2) for m,m2 in models ]
-    return models[ug.maxdiag(AIC)]
+    print(AIC)
+    return models[ug.diag_maxdist(AIC)]
 
 
 

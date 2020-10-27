@@ -29,7 +29,11 @@ def gmm_2_dynamic(X1,X2,nc=(4,20),pool=1):
     models = list(zip(getmodels(X1), getmodels(X2)))
     AIC = [m.aic(X1) + m2.aic(X2) for m,m2 in models ]
     print(AIC)
-    return models[ug.diag_maxdist(AIC)]
+    mod_id = ug.diag_maxdist(AIC)
+    a,b =  models[mod_id]
+    print(f"dynamic clustering wants: {nc[0]+mod_id} clusters")
+    
+    return a.predict(X1), b.predict(X2)
 
 
 

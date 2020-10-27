@@ -36,6 +36,41 @@ def rundist_2loaders(arg):
     return a,c
 
 
+def normal(arg):
+    l1,l2,nc = arg
+    m =  Data().fit(l1(),l2(),
+                    debug_ftsel=False,
+                    quiet=True,
+                    pca = 20,
+                    titles=("3", "6"),
+                    make_even=True)
+    #labels = p.gmm_2(*m.dx,nc=nc,cov='full')
+    #a,b =  Q.rari_score(*labels, *m.dx)
+    return [Q.rari_score(*p.gmm_2(*m.dx,nc=NC,cov='full'), *m.dx)[0] for NC in nc]
+
+def rundist(arg):
+    loader,nc = arg
+    m =  Data().fit(*loader(),
+                       debug_ftsel=False,
+                       maxgenes=800,
+                       quiet=True,
+                       pca = 20,
+                       titles=("3", "6"),
+                       make_even=True)
+
+
+def samplenum(arg):
+    loader,samp = arg
+    m =  Data().fit(*loader(seed=None, subsample=samp),
+                    debug_ftsel=False,
+                    quiet=True,
+                    pca = 20,
+                    titles=("3", "6"),
+                    make_even=True)
+    #labels = p.gmm_2(*m.dx,nc=nc,cov='full')
+    #a,b =  Q.rari_score(*labels, *m.dx)
+    return Q.rari_score(*p.gmm_2(*m.dx,nc=15,cov='full'), *m.dx)[0], Q.rari_score(*p.gmm_2(*m.dx,nc=15,cov='tied'), *m.dx)[0]
+
 
 
 #######################

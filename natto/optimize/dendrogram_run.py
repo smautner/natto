@@ -25,20 +25,35 @@ def dendro(mat, title, fname):
 
 dnames = "human1 human2 human3 human4 fluidigmc1 smartseq2 celseq2 celseq".split()
 dnames = "human1 human2 human3 human4 smartseq2 celseq2 celseq".split()
-loaders =  [ partial( load.loadgruen_single, f"../data/punk/{data}",subsample=1500) for data in dnames]
+loaders =  [ partial( load.loadgruen_single, f"../data/punk/{data}",subsample=500) for data in dnames]
+
+
+
+NC = [15]
+NUMREPS = 50
+
+
 
 s = exe.sgeexecuter()
-NC = 16
-NUMREPS = 3
-
 for i in Range(dnames):
     for j in range(i+1, len(dnames)):
-        s.add_job( d.rundist_1nn_2loaders , [(loaders[i],loaders[j], NC) for r in range(NUMREPS)])
+        #s.add_job( d.rundist_1nn_2loaders , [(loaders[i],loaders[j], NC) for r in range(NUMREPS)])
+        s.add_job( d.normal , [(loaders[i],loaders[j], NC) for r in range(NUMREPS)])
+
 rr= s.execute()
+s.save("dendro")
+'''
+
+
+s = exe.sgeexecuter(load='dendro')
+rr= s.collect()
+
+'''
+
+
+'''
 #import LOADOLDSHIT
 #rr = [exe.collectresults(jid, NUMREPS,True) for jid in LOADOLDSHIT.load()]
-
-
 
 def lol(block, s=0): 
     np.array(block).mean(axis=0)[s]
@@ -60,8 +75,6 @@ asd = dendro(mtx, f"aasd", f"dendro_baseline.png")
 print (mtx2.tolist())
 asd = dendro(mtx2, f"aasd asd", f"dendro_baseline2.png")
 
-
-'''
 for z in range(NUMREPS):
     mtx = np.zeros((len(dnames),len(dnames)))
     rr_index=0
@@ -81,8 +94,11 @@ for z in range(NUMREPS):
 
 
 
-def lol(block): 
-    return 1 - np.array(block).mean(axis=0)[0]
+def lol(block, i =0): 
+    return 1 - np.array(block).mean(axis=0)[i]
+
+def lolstd(block, i =0): 
+    return np.array(block).std(axis=0)[i]
 
 '''
 rr_index=0
@@ -93,17 +109,23 @@ for i in Range(dnames):
         mtx[j,i]=  lol(rr[rr_index])
         rr_index+=1
 dendro(mtx, f"dendrogram run:SUPER", f"dendro_super_16.png")
-
-
-rr_index=0
-mtx = np.zeros((len(dnames),len(dnames)))
-for i in Range(dnames):
-    for j in range(i+1, len(dnames)):
-        mtx[i,j]=  lol(rr[rr_index])
-        mtx[j,i]=  lol(rr[rr_index])
-        rr_index+=1
-dendro(mtx, f"dendrogram run:SUPER", f"dendro_super_10.png")
 '''
+
+
+
+for ix, nc in enumerate(NC): 
+    rr_index=0
+    mtx = np.zeros((len(dnames),len(dnames)))
+    for i in Range(dnames):
+        for j in range(i+1, len(dnames)):
+            mtx[i,j]=  lol(rr[rr_index], i=ix)
+            mtx[j,i]=  lol(rr[rr_index], i=ix)
+            d=mtx[i,j]
+            s = lolstd(rr[rr_index])
+            print (f"{dnames[i]}-{dnames[j]} : {d}+-{s}")
+            rr_index+=1
+    #dendro(mtx, f"dendrogram run:SUPER{nc}", f"dendro_super_multinc_{nc}.png")
+    print(mtx.tolist())
 
 
 

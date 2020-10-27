@@ -16,6 +16,23 @@ def gmm_1(X, nc=None, cov ='full'):
     return ug.get_model(X, **d).predict(X)
 
 
+def gmm_2_dynamic(X1,X2,nc=(4,20),pool=1):
+    
+    def getmodels(X):
+        train = ug.functools.partial(ug.traingmm,X=X,n_init=30)
+        if pool > 1 :
+            models = ug.mpmap( train , range(*nc), poolsize= pool)
+        else:
+            models =[ train(x) for x in range(*nc)]
+        return models 
+
+    models = list(zip(getmodels(X1), getmodels(X2)))
+    AIC = [m.aic(X1) + m2.aic(X2) for m,m2 in models ]
+    print(AIC)
+    return models[ug.diag_maxdist(AIC)]
+
+
+
 def louvain_1(X, params={}):
     adata = ad.AnnData(X.copy())
     sc.pp.scale(adata, max_value=10)

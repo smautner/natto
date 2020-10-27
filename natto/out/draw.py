@@ -88,7 +88,7 @@ def umap_gradient(X,Y,
         
         
         
-def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):    
+def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}], noshow=False):
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
@@ -113,7 +113,8 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
-    plt.show()
+    if not noshow:
+        plt.show()
 
 
 
@@ -128,8 +129,8 @@ def cmp2_genes(data,X1,X2,gene, cmap = 'viridis'):
 
 def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
         save=None,
-        fix_colors=True, 
-        cmap ='autumn'):    
+        fix_colors=True,size=4,
+        cmap ='autumn',noshow=False):
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
@@ -137,14 +138,15 @@ def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
     
     #plt.tight_layout()    
     ax=plt.subplot(121)
-    umap_gradient(X1,Y1,show=False,title=title[0],size=4,markerscale=4, cmap = cmap)
+    umap_gradient(X1,Y1,show=False,title=title[0],size=size,markerscale=4, cmap = cmap)
     ax=plt.subplot(122)
-    umap_gradient(X2,Y2,show=False,title=title[1],size=4,markerscale=4, cmap = cmap)
+    umap_gradient(X2,Y2,show=False,title=title[1],size=size,markerscale=4, cmap = cmap)
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
     plt.colorbar()
-    plt.show()   
+    if not noshow:
+        plt.show()
     
 def plot_blobclust(Y1,X1,X2,red=None, save=None):    
     sns.set(font_scale=1.2,style='white')

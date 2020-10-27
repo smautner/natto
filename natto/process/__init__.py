@@ -4,11 +4,11 @@ import scanpy as sc
 import ubergauss as ug
 
 
-def gmm_2(X1, X2, nc=None, cov ='tied'):
+def gmm_2(X1, X2, nc=None, cov ='full'):
     return gmm_1(X1, nc, cov), gmm_1(X2, nc, cov)
 
 
-def gmm_1(X, nc=None, cov ='tied'):
+def gmm_1(X, nc=None, cov ='full'):
     if nc:
         d= {"nclust_min":nc, "nclust_max":nc, "n_init": 40, "covariance_type":cov}
     else:

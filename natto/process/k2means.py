@@ -103,7 +103,7 @@ def optistep(X1,X2,y,method):
     else:
         return optimize(X1,X2,y, cov=method)
 
-def simulclust(X1,X2,y, method = 'tied', n_iter=100, debug = False):
+def simulclust(X1,X2,y, method = 'full', n_iter=100, debug = False):
     for asd in range(n_iter):
         yold = y.copy()
         y , e=  optistep(X1,X2,y,method) 

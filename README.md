@@ -42,15 +42,11 @@ adata_1, adata_2 = na.l.loadimmune(subsample=250)
 data = na.prepare(adata_1,adata_2)
 
 
-# distance
+# similarity measure
 print("similarity:",na.similarity(data))
 
 
-# EM algorithm
+# EM algorithm  and plotting
 na.tunnelclust(data)
-
-
-#na.drawpair(data, tunnellabels = True)
-
-
+na.drawpair(data, tunnellabels = True)
 ```

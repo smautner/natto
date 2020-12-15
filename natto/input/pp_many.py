@@ -52,10 +52,22 @@ class Data():
         # umap
         ##########
         self.dimension_reduction(pca, dimensions, umap_n_neighbors)
+
+        self.sort_cells()
         return self
 
+    
     def sort_cells(self):
-        assert False, "not implemented"
+        
+        #assert False, "not implemented"
+
+        for i in range(len(self.data)-1):
+            hung, _ = h.hungarian(self.dx[i],self.dx[i+1])
+            self.data[i+1].X = self.data[i+1].X[hung[1]]
+            self.dx[i+1] = self.dx[i+1][hung[1]]
+            self.d2[i+1] = self.d2[i+1][hung[1]]
+            #self.pca[i+1] = self.pca[i+1][hung[1]]
+
 
     def dimension_reduction(self, pca, dimensions, umap_n_neighbors):
         self.mk_pca(pca)

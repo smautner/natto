@@ -189,10 +189,6 @@ class Data():
 
 
 
-
-
-
-
     def basic_filter(self, min_counts=3, min_genes=200):
 
         # filter cells
@@ -201,7 +197,6 @@ class Data():
         # filter genes
         genef  = [ sc.pp.filter_genes(d, min_counts=min_counts, inplace=False)[0] for d in self.data]
         geneab = np.any(np.array(genef),axis = 0)
-
         for i,d in enumerate(self.data):
             self.data[i] = d[:,geneab]
 

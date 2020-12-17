@@ -139,6 +139,7 @@ def get_noise_single(adat, level):
                                mitochondria = "mt-",
                                maxmean= 4,
                                pp='linear',
+                               scale=False,
                                pca = 20,
                                dimensions=10,
                                debug_ftsel=False,

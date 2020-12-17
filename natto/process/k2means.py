@@ -1,4 +1,5 @@
 
+from lmz import *
 from natto.input import hungarian as h 
 from sklearn.mixture import _gaussian_mixture as _gm
 import numpy as np
@@ -45,7 +46,7 @@ def optimize_kmeans(X1,X2,y):
 
 
 ###################
-#  OPTIMIZE GMM 
+#  OPTIMIZE GMM FOR 2 DATA SETS 
 ##################
 
 def hot1(y): 
@@ -56,31 +57,53 @@ def hot1(y):
     return r 
 
 
-
-
 def get_means_resp(X,log_resp, cov):
-
     _, means_, covariances_ = _gm._estimate_gaussian_parameters(X, np.exp(log_resp), 1e-6, cov)
     precisions_cholesky_    = _gm._compute_precision_cholesky( covariances_, cov)
     log_resp                = _gm._estimate_log_gaussian_prob( X, means_, precisions_cholesky_,cov)
-
     return means_, log_resp
 
 
 def optimize(X1,X2,y, cov='tied'): 
-
     log_resp = hot1(y)  # init 
-
     m1, l1 = get_means_resp(X1,log_resp,cov)
     m2, l2 = get_means_resp(X2,log_resp,cov)
-
-
     #(a,b),_ = h.hungarian(m1,m2) 
     #assert np.all(np.diff(b) > 0)
-
     log_resp = l1+l2
-    
     return log_resp.argmax(axis=1), l1.argmax(axis=1)!=l2.argmax(axis=1)
+
+
+
+###################
+#  OPTIMIZE GMM FOR MANY DATA SETS 
+##################
+
+
+def optimize_MANY(XXX,y, cov='tied'): 
+    log_resp = hot1(y)  # init 
+    mmm, lll =  Transpose([get_means_resp(x,log_resp,cov) for x in XXX])
+    #log_resp = l1+l2 
+    # l contains for each cluster( horizontal ) a probability for each cell( vertical )
+    log_resp = np.array(lll).sum(axis=0)
+
+    erer = [ l.argmax(axis=1)  for l in lll]
+    erer = [ np.all( np.array(a) == a[0]  )   for a in zip(*erer)] # are all entries the same?
+    return log_resp.argmax(axis=1),erer
+
+def multitunnelclust(XXX,y, method = 'full', n_iter=100, debug = False):
+    for asd in range(n_iter):
+        yold = y.copy()
+        y , e=  optimize_MANY(XXX,y,cov=method)
+        chang = sum(y!=yold)
+        if debug > 1: 
+            print(f"changes in iter:  {chang}")
+        if chang == 0:
+            if debug:print(f"model converged after {asd} steps")
+            break
+    else:
+        assert False, "did not converge"
+    return y,e
 
 
 
@@ -92,7 +115,6 @@ def optimize(X1,X2,y, cov='tied'):
 #  MAIN FUNCTION IS HERE;; SIMUCLUST 
 ######################
 
-
 def init(X,clusts=10, cov = 'tied'):
     return gmm(n_components=clusts, n_init=30, covariance_type=cov).fit_predict(X) 
 
@@ -103,7 +125,7 @@ def optistep(X1,X2,y,method):
     else:
         return optimize(X1,X2,y, cov=method)
 
-def simulclust(X1,X2,y, method = 'tied', n_iter=100, debug = False):
+def simulclust(X1,X2,y, method = 'full', n_iter=100, debug = False):
     for asd in range(n_iter):
         yold = y.copy()
         y , e=  optistep(X1,X2,y,method) 

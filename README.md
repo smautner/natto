@@ -25,3 +25,28 @@ pip3 install --upgrade  anndata==0.6.22.post1
 2. give cmake the  paths to c++ and cc somewhere in the config
 3. remove crashing lines from setup.py
 ```
+
+
+
+## running natto 
+```python 
+
+import natto as na
+
+# input is a pair of scanpy-anndata objects
+# 'natto.input.load' constructs anndata objects from multiple formats
+adata_1, adata_2 = na.l.loadimmune(subsample=250)
+
+
+# preprocessing and clustering
+data = na.prepare(adata_1,adata_2)
+
+
+# similarity measure
+print("similarity:",na.similarity(data))
+
+
+# EM algorithm  and plotting
+na.tunnelclust(data)
+na.drawpair(data, tunnellabels = True)
+```

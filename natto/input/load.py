@@ -63,7 +63,7 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None)-> 'anndat
 
 
 
-def loadpbmc(path, subsample=None, seed=None):
+def loadpbmc(path=None, subsample=None, seed=None):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
     adata = do_subsample(adata, subsample,seed)
     return adata
@@ -166,6 +166,14 @@ def loaddca_h1h2(subsample):
 #########
 
 datanames = ["default","even",'si1','si2','c7','c6','c5','facl0.05','facl2']
+
+def loadgalaxy(s=True,subsample=False):
+    for i in range(1,10): # 1..9 ,,, 10 is below
+        yield loadarti('../data/galaxy',f"fac{'s' if s else 'l'}0_{i}.",subsample=subsample)
+    yield loadarti('../data/galaxy',f"fac{'s' if s else 'l'}1_0.",subsample=subsample)
+
+
+
 
 def loadarti(path, dataname,subsample=False):
 

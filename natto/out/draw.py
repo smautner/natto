@@ -88,7 +88,7 @@ def umap_gradient(X,Y,
         
         
         
-def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):    
+def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}], noshow=False):
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
@@ -113,7 +113,8 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}]):
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
-    plt.show()
+    if not noshow:
+        plt.show()
 
 
 
@@ -128,8 +129,8 @@ def cmp2_genes(data,X1,X2,gene, cmap = 'viridis'):
 
 def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
         save=None,
-        fix_colors=True, 
-        cmap ='autumn'):    
+        fix_colors=True,size=4,
+        cmap ='autumn',noshow=False):
 
     sns.set(font_scale=1.2,style='white')
     plt.figure(figsize=(16,8))    
@@ -137,14 +138,15 @@ def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
     
     #plt.tight_layout()    
     ax=plt.subplot(121)
-    umap_gradient(X1,Y1,show=False,title=title[0],size=4,markerscale=4, cmap = cmap)
+    umap_gradient(X1,Y1,show=False,title=title[0],size=size,markerscale=4, cmap = cmap)
     ax=plt.subplot(122)
-    umap_gradient(X2,Y2,show=False,title=title[1],size=4,markerscale=4, cmap = cmap)
+    umap_gradient(X2,Y2,show=False,title=title[1],size=size,markerscale=4, cmap = cmap)
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
     plt.colorbar()
-    plt.show()   
+    if not noshow:
+        plt.show()
     
 def plot_blobclust(Y1,X1,X2,red=None, save=None):    
     sns.set(font_scale=1.2,style='white')
@@ -374,12 +376,16 @@ def get_centers_1d(li,cnt = 3):
 
 def tinyumap(X,Y,
         title="No title",
+        title_size=10,
         acc : "y:str_description"={}, 
         markerscale=4,
-        getmarker = lambda color: {"marker":'o'},
+        getmarker = lambda cla: {"marker":'o'},
+        col=col,
+        label=None,
+        alpha = None, 
         size=None):
         
-    plt.title(title, size=10)
+    plt.title(title, size=title_size)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     embed = X
@@ -390,23 +396,26 @@ def tinyumap(X,Y,
                     embed[Y==cla, 1],
                     color= col[cla],
                     s=size,
-                    label= str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
+                    edgecolors = 'none',
+                    alpha = alpha, 
+                    label=label, **getmarker(cla)) #str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
     #plt.axis('off')
     #plt.xlabel('UMAP 2')
     #plt.ylabel('UMAP 1')
-
     #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
 
 class tinyUmap(): 
     
-    def __init__(self):
-        plt.figure( figsize=(3, 10), dpi=100)
+
+    def __init__(self, dim=(3,3), figs=(10,20)):
+        plt.figure( figsize=figs, dpi=300)
         self.i =0
+        self.dim = dim
     
 
     def next(self): 
         self.i= self.i+1 
-        plt.subplot(3,1,self.i)
+        plt.subplot(*self.dim,self.i)
 
     def draw(self, *a, **b): 
         self.next()

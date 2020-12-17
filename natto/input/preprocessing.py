@@ -57,10 +57,11 @@ class Data():
         # umap 
         ##########
         self.dimension_reduction(pca, dimensions, umap_n_neighbors)
-        self.hung , self.hung_dist  = h.hungarian(*self.dx)
+        self.hungarian()
         return self
 
-
+    def hungarian(self):
+        self.hung, self.hung_dist = h.hungarian(*self.dx)
 
     def sort_cells(self):
         self.b.X = self.b.X[self.hung[1]] 
@@ -93,9 +94,9 @@ class Data():
         
     def preprocess(self,pp='linear',
                    scale = False,
-                   corrcoef = True,
+                   corrcoef = False,
                    ft_combine= lambda x,y: x or y,minbin=1, binsize=.25,
-                   mindisp=.25, maxmean=3,minmean=0.015,maxgenes=750):
+                   mindisp=1.25, maxmean=3,minmean=0.015,maxgenes=750):
         
         if mindisp>0 and maxgenes>0:
             print ("processing data preprocess, needs explicit instructions on how to select features, defaulting to maxgenes")

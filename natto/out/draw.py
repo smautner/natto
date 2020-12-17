@@ -400,13 +400,13 @@ def tinyumap(X,Y,
 class tinyUmap(): 
     
     def __init__(self):
-        plt.figure( figsize=(10, 10), dpi=300)
+        plt.figure( figsize=(3, 10), dpi=100)
         self.i =0
     
 
     def next(self): 
         self.i= self.i+1 
-        plt.subplot(3,3,self.i)
+        plt.subplot(3,1,self.i)
 
     def draw(self, *a, **b): 
         self.next()

@@ -2,7 +2,9 @@ import anndata as ad
 import numpy as np
 import scanpy as sc
 import ubergauss as ug
-
+from lmz import *
+import random
+from sklearn.cluster import SpectralClustering, KMeans, DBSCAN, MeanShift, AffinityPropagation, Birch
 
 def gmm_2(X1, X2, nc=None, cov ='full'):
     return gmm_1(X1, nc, cov), gmm_1(X2, nc, cov)
@@ -43,6 +45,56 @@ def louvain_1(X, params={}):
     sc.pp.neighbors(adata, **params)
     sc.tl.louvain(adata)
     return np.array([int(x) for x in adata.obs['louvain']])
+
+
+
+
+
+
+def random_assign(X, nc=15):
+    numcells = X.shape[0]
+    return np.array(random.choices(Range(nc),k=numcells))
+
+def random_2(a,b,nc = 15):
+    return random_assign(a,nc), random_assign(b,nc)
+
+
+
+
+
+def spec_1(X,nc=15): 
+     return SpectralClustering(n_clusters=nc).fit_predict(X)
+
+def spec_2(a,b, nc =15): 
+    return spec_1(a,nc), spec_1(b,nc)
+
+def kmeans_1(a, nc): 
+    return KMeans(n_clusters=nc).fit_predict(a)
+def kmeans_2(a,b,nc=15):
+    return kmeans_1(a,nc), kmeans_1(b,nc)
+
+def birch_1(a, nc): 
+    return Birch(n_clusters=nc).fit_predict(a)
+def birch_2(a,b,nc=15):
+    return birch_1(a,nc), birch_1(b,nc)
+
+def afprop_1(a, kwargs): 
+    return AffinityPropagation(**kwargs).fit_predict(a)
+def afprop_2(a,b, **kwargs):
+    return afprop_1(a,kwargs), afprop_1(b,kwargs)
+
+def dbscan_1(a, kwargs): 
+    return DBSCAN(**kwargs).fit_predict(a)
+def dbscan_2(a,b,**kwargs):
+    return dbscan_1(a, kwargs), dbscan_1(b,kwargs)
+
+def meansh_1(a, kwargs): 
+    return MeanShift(**kwargs).fit_predict(a)
+def meansh_2(a,b,**kwargs):
+    return meansh_1(a,kwargs), meansh_1(b,kwargs)
+
+
+
 
 
 def leiden_2(X, X2, params={}, resolution=1):

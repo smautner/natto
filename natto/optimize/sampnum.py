@@ -12,8 +12,6 @@ loaders = [load.loadp7de, load.loadimmune]
 reps = 25
 
 
-
-
 s = sge()
 for loader in loaders:
     for nc in numcells:

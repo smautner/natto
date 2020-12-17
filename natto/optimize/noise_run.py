@@ -6,6 +6,7 @@ from functools import partial
 import natto.process as p 
 from basics.sgexec import sgeexecuter as sge
 
+
 def process(level, c):
     l =np.array(level)
     return l.mean(axis = 0 )[c]
@@ -18,9 +19,10 @@ def processstd(level, c):
     l =np.array(level)
     return l.std(axis = 0 )[c]
 
-cluster = partial(p.leiden_2,resolution=.5)
+debug = True
 
-cluster = partial(p.gmm_2, cov='full', nc = 8)
+cluster = partial(p.leiden_2,resolution=.5)
+cluster = partial(p.gmm_2, cov='full', nc = 15)
 
 l_3k = partial(load.load3k, subsample=1500)
 l_6k = partial(load.load6k, subsample=1500)
@@ -32,16 +34,17 @@ l_h3 = partial(load.loadgruen_single, path = '../data/punk/human3',  subsample=1
 
 def run(loader, rname):
     s=sge()
-    for level in range(0,110,10):
-        s.add_job( n.get_noise_run_moar , [(loader, cluster, level) for r in range(50)] )
+    for level in range(0,110,40 if debug else 10):
+        s.add_job( n.get_noise_run_moar , [(loader, cluster, level) for r in range(2 if debug else 50 )] )
     rr= s.execute()
+    s.save(f"{rname}.sav")
 
     res= [process(level, 0) for level in rr]
     std=[processstd(level, 0) for level in rr]
     print(f"a={res}\nb={std}\n{rname}=[a,b,'RARI']")
 
-
 myloaders=[l_3k, l_6k, l_h1,l_h3,l_p7e, l_p7d]
 lnames = ['3k','6k','h1','h3','p7e','p7d']
+
 for loader,lname in zip(myloaders, lnames):
-    run(loader, f'{lname}_g8')
+    run(loader, f'{lname}_g15')

@@ -5,19 +5,32 @@ from functools import partial
 from basics.sgexec import sgeexecuter as sge
 
 
+
+
+
+debug = True
+
+
+
 k3 = partial(load.load3k6k, subsample=1500,seed=None)
 p7 = partial(load.loadp7de, subsample=1500, seed=None)
 immune = partial(load.loadimmune, subsample=1500, seed=None)
-numclusters=list(range(4,30,3))
+numclusters=list(range(4,30,10 if debug else [5,10]))
 loaders = [k3,p7,immune]
 
 s = sge()
 for loader in loaders:
     for nc in numclusters:
-        s.add_job( d.rundist , [(loader, nc) for r in range(50)])
+        s.add_job( d.rundist , [(loader, nc) for r in range(2 if debug else 50)])
 rr= s.execute()
+s.save("dist.sav")
 
 
+
+#rr= sge('dist.sav').collect()
+#print(rr)
+
+print(f"len rr: {len(rr)}")
 
 def p(level, c):
     l =np.array(level)

@@ -6,17 +6,17 @@ from sklearn.neighbors import NearestNeighbors as NN
 
 
 def rundist(arg):
-    loader,nc = arg
-
+    loader,nc,scale = arg
     m =  Data().fit(*loader(),
                        debug_ftsel=False,
+                       scale = scale,
                        maxgenes=800,
                        quiet=True,
                        pca = 20,
                        titles=("3", "6"),
                        make_even=True)
-    labels = p.gmm_2(*m.dx,nc=nc,cov='full')
-    return Q.rari_score(*labels, *m.dx)
+    clust = lambda ncc : Q.rari_score(*p.gmm_2(*m.dx,nc=ncc,cov='full'), *m.dx)[0]
+    return [clust(ncc) for ncc in nc] 
 
 
 
@@ -37,27 +37,19 @@ def rundist_2loaders(arg):
 
 
 def normal(arg):
-    l1,l2,nc = arg
+    l1,l2,pca, scale = arg
     m =  Data().fit(l1(),l2(),
                     debug_ftsel=False,
                     quiet=True,
-                    pca = 20,
+                    scale = scale,
+                    pca = pca,
+                    dimensions=20,
                     titles=("3", "6"),
                     make_even=True)
     #labels = p.gmm_2(*m.dx,nc=nc,cov='full')
     #a,b =  Q.rari_score(*labels, *m.dx)
+    nc = [15]
     return [Q.rari_score(*p.gmm_2(*m.dx,nc=NC,cov='full'), *m.dx)[0] for NC in nc]
-
-def rundist(arg):
-    loader,nc = arg
-    m =  Data().fit(*loader(),
-                       debug_ftsel=False,
-                       maxgenes=800,
-                       quiet=True,
-                       pca = 20,
-                       titles=("3", "6"),
-                       make_even=True)
-
 
 def samplenum(arg):
     loader,samp = arg
@@ -90,12 +82,13 @@ def sim(a,b):
 
 
 def rundist_1nn_2loaders(arg):
-    l1,l2,nc = arg
+    l1,l2,pca,scale = arg
 
     m =  Data().fit(l1(),l2(),
                     debug_ftsel=False,
                     quiet=True,
-                    pca = 20,
+                    scale=scale, 
+                    pca = pca,
                     titles=("3", "6"),
                     make_even=True)
 

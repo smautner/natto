@@ -7,3 +7,12 @@ class spacemap():
         self.getitem = { i:k for i,k in enumerate(items)}
         self.getint = { k:i for i,k in enumerate(items)}
 
+
+import numpy as np
+def cleanlabels(asd):
+    # asd is a list of label-lists
+
+    items = np.unique(np.vstack(asd))
+    s= spacemap(items)
+
+    return [[s.getint[e] for e in li  ] for li in asd]

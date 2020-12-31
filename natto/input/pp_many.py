@@ -32,6 +32,7 @@ class Data():
             debug_ftsel=True,
             mitochondria=False,
             titles=False,
+            scale=True,
             quiet=False,
             make_even=True):
 
@@ -51,8 +52,7 @@ class Data():
         #########
         # umap
         ##########
-        self.dimension_reduction(pca, dimensions, umap_n_neighbors)
-
+        self.dimension_reduction(pca, dimensions, umap_n_neighbors, scale=scale)
         self.sort_cells()
         return self
 
@@ -69,8 +69,8 @@ class Data():
             #self.pca[i+1] = self.pca[i+1][hung[1]]
 
 
-    def dimension_reduction(self, pca, dimensions, umap_n_neighbors):
-        self.mk_pca(pca)
+    def dimension_reduction(self, pca, dimensions, umap_n_neighbors, scale= True):
+        self.mk_pca(pca, scale= scale)
         self.dx = self.umapify(dimensions, umap_n_neighbors)
         self.d2 = self.umapify(2, umap_n_neighbors)
 
@@ -137,17 +137,26 @@ class Data():
         self.data = [ d[:,genes].copy() for d in self.data  ]
 
 
-    def mk_pca(self, PCA):
+    def mk_pca(self, PCA, scale = True):
 
-        stuff = np.vstack(self._toarray())
-        if PCA:
-            pca = sklearn.decomposition.PCA(n_components=PCA)
+        read_mat = self._toarray()
+
+        if not PCA: 
+            self.pca = read_mat, PCA
+            return read_mat
+
+        # we do PCA, but first we scale
+        if scale == True:
             scaler= StandardScaler()
-            ab = scaler.fit_transform(stuff)
-            pca.fit(ab)
+            scaled = [ scaler.fit_transform(m) for m in read_mat]
+        else:
+            scaled= read_mat
 
 
-            blocks = [ pca.transform(scaler.transform(e.X)) for e in self.data    ]
+        pca = sklearn.decomposition.PCA(n_components=PCA)
+        pca.fit(np.vstack(scaled))
+        blocks = [ pca.transform(e) for e in scaled  ]
+
 
         self.pca = blocks, PCA
         return blocks

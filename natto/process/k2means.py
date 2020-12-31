@@ -87,14 +87,15 @@ def optimize_MANY(XXX,y, cov='tied'):
     # l contains for each cluster( horizontal ) a probability for each cell( vertical )
     log_resp = np.array(lll).sum(axis=0)
 
-    erer = [ l.argmax(axis=1)  for l in lll]
-    erer = [ np.all( np.array(a) == a[0]  )   for a in zip(*erer)] # are all entries the same?
-    return log_resp.argmax(axis=1),erer
+    all_the_labels = [ l.argmax(axis=1)  for l in lll]
+    all_the_probas = [ l.max(axis=1)  for l in lll]
+    erer = [ np.logical_not(np.all( np.array(a) == a[0]  ))   for a in zip(*all_the_labels)] # are all entries the same?
+    return log_resp.argmax(axis=1),erer, all_the_labels, all_the_probas
 
 def multitunnelclust(XXX,y, method = 'full', n_iter=100, debug = False):
     for asd in range(n_iter):
         yold = y.copy()
-        y , e=  optimize_MANY(XXX,y,cov=method)
+        y , e, all_labels, all_probas =  optimize_MANY(XXX,y,cov=method)
         chang = sum(y!=yold)
         if debug > 1: 
             print(f"changes in iter:  {chang}")
@@ -103,7 +104,7 @@ def multitunnelclust(XXX,y, method = 'full', n_iter=100, debug = False):
             break
     else:
         assert False, "did not converge"
-    return y,e
+    return y,e, all_labels, all_probas
 
 
 

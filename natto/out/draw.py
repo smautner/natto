@@ -407,7 +407,9 @@ def tinyumap(X,Y,
 class tinyUmap(): 
     
 
-    def __init__(self, dim=(3,3), figs=(10,20)):
+    def __init__(self, dim=(3,3), size= 2):
+        figs = (size*dim[1], size*dim[0])
+
         plt.figure( figsize=figs, dpi=300)
         self.i =0
         self.dim = dim

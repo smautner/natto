@@ -90,7 +90,7 @@ def optimize_MANY(XXX,y, cov='tied'):
     all_the_labels = [ l.argmax(axis=1)  for l in lll]
     all_the_probas = [ l.max(axis=1)  for l in lll]
     erer = [ np.logical_not(np.all( np.array(a) == a[0]  ))   for a in zip(*all_the_labels)] # are all entries the same?
-    return log_resp.argmax(axis=1),erer, all_the_labels, all_the_probas
+    return log_resp.argmax(axis=1),erer, all_the_labels, lll
 
 def multitunnelclust(XXX,y, method = 'full', n_iter=100, debug = False):
     for asd in range(n_iter):

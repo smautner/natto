@@ -383,6 +383,7 @@ def tinyumap(X,Y,
         col=col,
         label=None,
         alpha = None, 
+        legend = False, 
         size=None):
         
     plt.title(title, size=title_size)
@@ -398,14 +399,14 @@ def tinyumap(X,Y,
                     s=size,
                     edgecolors = 'none',
                     alpha = alpha, 
-                    label=label, **getmarker(cla)) #str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
+                    label=str(cla), **getmarker(cla)) #str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
     #plt.axis('off')
     #plt.xlabel('UMAP 2')
     #plt.ylabel('UMAP 1')
-    #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
+    if legend: 
+        plt.legend(markerscale=2,ncol=2,bbox_to_anchor=(1, -.12) )
 
 class tinyUmap(): 
-    
 
     def __init__(self, dim=(3,3), size= 2):
         figs = (size*dim[1], size*dim[0])
@@ -422,6 +423,32 @@ class tinyUmap():
     def draw(self, *a, **b): 
         self.next()
         tinyumap(*a,**b)
+
+
+
+def auto_tiny(X,Y,wrap = 'auto',grad= False ): 
+    
+    # how should we wrap:
+    if wrap == 'auto':
+        d = tinyUmap(dim = (1,len(X)))  # default is a row
+    else: 
+        print ('not implemented, the idea is to put $wrap many in a row')
+        # this means initializiung tinyUmap with another dim
+
+    if not grad: 
+        for x,y in zip(X,Y): 
+            d.draw(x,y, title=None) 
+        plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
+
+    if grad: 
+        for x,y in zip(X,Y): 
+            d.next()
+            plt.scatter(x[:,0], x[:,1], c=y, s=1)
+
+    plt.show()
+
+
+
 
 
 import natto.input.hungarian as h

@@ -1,24 +1,17 @@
 '''
-Metric? improve  rari on 3k, 
-
-HWAT? CLUSTERING!:  pca to X and then gmm directly?  cov-> full/not? 
-
-WHAT? preproc params.. 
+tries various peprocessing parameters the idea is to optimize the score on the 3k data
 '''
-
-import numpy as np
-
-
-
 from clust_stabi import get_data_mp
 
+import numpy as np
 import basics as ba 
+from basics.sgexec import sgeexecuter
+
 def rep_mp(repeats, *x):
         r = ba.mpmap(get_data_mp,[x]*repeats, chunksize = 1, poolsize = 10)
         print (np.array(r).mean(axis=0))
         print (np.array(r).var(axis=0))
 
-from basics.sgexec import sgeexecuter
 def rep(repeats, *x):
         res = []
         for i in range(repeats):

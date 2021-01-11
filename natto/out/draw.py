@@ -456,3 +456,20 @@ def distance_debug(m):
     (a,b),di = h.hungarian(*m.dx, debug = True)
     d = di[a,b]
     cmp2_grad(d,d,*m.d2,m.titles, save = False, cmap='viridis')
+
+
+
+from scipy.cluster import hierarchy
+from scipy.spatial.distance import squareform
+def dendro(mat, title, fname='none'):
+    links = squareform(mat)
+    Z = hierarchy.linkage(links, 'single')
+    plt.figure()
+    hierarchy.dendrogram(Z) # there is a labels = [] parameter here :) 
+    plt.xticks(rotation=45)
+    plt.title(title)
+    if fname != 'none': 
+        plt.savefig(fname, dpi=300)
+        plt.close()
+    return Z
+

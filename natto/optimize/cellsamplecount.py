@@ -1,11 +1,12 @@
 from natto.input import load
-from natto.optimize import distances  as d
+from natto.optimize import util  as d
+
 import numpy as np 
 from functools import partial
 from basics.sgexec import sgeexecuter as sge
 
 
-
+"""increasing sample count"""
 
 numcells=list(range(500,1600,100))
 loaders = [load.loadp7de, load.loadimmune]

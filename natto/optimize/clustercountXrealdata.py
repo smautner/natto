@@ -1,11 +1,13 @@
 from natto.input import load
-from natto.optimize import distances  as d
+from natto.optimize import util  as d
+
 import numpy as np 
 from functools import partial
 from basics.sgexec import sgeexecuter as sge
 
 
 
+"""collects data for       k3/p7/immune X cluster_count"""
 
 
 debug = True

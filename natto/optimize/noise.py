@@ -1,57 +1,64 @@
-from scipy.sparse import csr_matrix 
-from natto.process import noise
-from natto.out import quality as Q
-import matplotlib
-matplotlib.use('Agg')
+from natto.input import load
+from natto.optimize import util as n
+import natto.process as p 
+
+import numpy as np
+from functools import partial
+from basics.sgexec import sgeexecuter as sge
 
 
 
-
-def get_noise_run(args):
-    loader, pool, cluster= args
-    adat = loader()
-    noiserange=  range(0,110,10)
-    if type(adat.X) != csr_matrix:
-        adat.X = csr_matrix(adat.X)
-
-    # i could use mp in get_noise_data i think 
-    rdydata= noise.get_noise_data(adat, noiserange, title="magic", poolsize=pool, cluster=cluster)
-    r = [ Q.rari_score(*m.labels, *m.dx) for m in rdydata]
-    return r 
+"""makes a noise curves:  1 cluster algo X many data sets """
 
 
+def process(level, c):
+    l =np.array(level)
+    return l.mean(axis = 0 )[c]
 
-def get_noise_run_moar(args):
-    loader, cluster, level = args
-    if level == 0:
-        # this should be 1 and 1, 
-        # its not always,
-        # i tracked it down to randomization in the projection
-        # a few weeks ago
-        return (1,1) 
+def processVar(level, c):
+    l =np.array(level)
+    return l.var(axis = 0 )[c]
 
-    # loaddata
-    adat = loader()
-    if type(adat.X) != csr_matrix:
-        adat.X = csr_matrix(adat.X)
+def processstd(level, c):
+    l =np.array(level)
+    return l.std(axis = 0 )[c]
 
+debug = True
 
-    #noise and preproc
-    
-    # i could use mp in get_noise_data i think 
-    m =  noise.get_noise_single(adat, level)
-
-
-    labels = cluster(*m.dx)
-    r = Q.rari_score(*labels, *m.dx)
-    return r 
+cluster = partial(p.leiden_2,resolution=.5)
+cluster = partial(p.gmm_2, cov='full', nc = 15)
+cluster = partial(p.gmm_2_dynamic, nc=(4,15))
+cluster = partial(p.random_2, nc = 15) 
+cluster = partial(p.spec_2, nc = 15) 
+cluster = partial(p.kmeans_2, nc = 15) 
+cluster = partial(p.birch_2, nc = 15) 
+cluster = partial(p.afprop_2, damping=.5) 
 
 
 
+l_3k = partial(load.load3k, subsample=1500)
+l_6k = partial(load.load6k, subsample=1500)
+#l_stim = partial (load.loadpbmc,path='../data/immune_stim/9',subsample=1500,seed=None)
+l_p7e = partial(load.loadpbmc, path='../data/p7e',subsample=1500,seed=None)
+l_p7d = partial(load.loadpbmc, path='../data/p7d',subsample=1500,seed=None)
+l_h1 = partial(load.loadgruen_single, path = '../data/punk/human1',  subsample=1500)
+l_h3 = partial(load.loadgruen_single, path = '../data/punk/human3',  subsample=1500)
 
+def run(loader, rname):
+    s=sge()
+    for level in range(0,110,40 if debug else 10):
+        s.add_job(n.get_noise_run_moar, [(loader, cluster, level) for r in range(2 if debug else 50)])
+    rr= s.execute()
+    s.save(f"{rname}.sav")
 
+    res= [process(level, 0) for level in rr]
+    std=[processstd(level, 0) for level in rr]
+    print(f"a={res}\nb={std}\n{rname}=[a,b,'RARI']")
+    # this should be ARI:
+    res2= [process(level, 1) for level in rr]
+    std2= [processstd(level, 1) for level in rr]
 
-
-
-
-
+myloaders=[l_3k, l_6k, l_h1,l_h3,l_p7e, l_p7d]
+lnames = ['3k','6k','h1','h3','p7e','p7d']
+for loader,lname in zip(myloaders, lnames):
+    run(loader, f'{lname}_g15')

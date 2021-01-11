@@ -1,14 +1,17 @@
+from natto.optimize import util  as d
 from natto.input import load
-from natto.optimize import distances  as d
+
+'''gets data for a dendroram'''
+
 import numpy as np 
 from functools import partial
 from lmz import *
 import basics.sgexec as exe
-from scipy.cluster import hierarchy
-from scipy.spatial.distance import squareform
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from scipy.cluster import hierarchy
+from scipy.spatial.distance import squareform
 
 def dendro(mat, title, fname):
     links = squareform(mat)

@@ -3,16 +3,19 @@
 """
 we repeatedly run the distance thing on 3k  to optimize the parameters of preprocessing
 """
+from natto.input import load
+from natto.input.preprocessing import Data
+from natto.process import hungutil as h
+from natto.out import quality as q
+
+
 
 from lmz import *
 #import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
-from natto.input import load
-from natto.input.preprocessing import Data
-from natto.process import hungutil as h
-from natto.out import quality as q
+
 import sklearn
 from sklearn.preprocessing import StandardScaler
 import numpy as np

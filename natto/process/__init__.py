@@ -12,7 +12,7 @@ def gmm_2(X1, X2, nc=None, cov ='full'):
 
 def gmm_1(X, nc=None, cov ='full'):
     if nc:
-        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 40, "covariance_type":cov}
+        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 40, "covariance_type":cov} # using init 20 introduces variability
     else:
         d= {"nclust_min":4, "nclust_max":20, "n_init": 20, 'covariance_type':cov}
     return ug.get_model(X, **d).predict(X)

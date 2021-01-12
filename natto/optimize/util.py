@@ -1,4 +1,5 @@
 from natto.input.preprocessing import Data
+import time
 from natto.out import quality as Q
 import natto.process as p
 from sklearn.neighbors import NearestNeighbors as NN
@@ -56,6 +57,7 @@ def normal(arg):
 
 def samplenum(arg):
     loader,samp = arg
+    t = time.time()
     m =  Data().fit(*loader(seed=None, subsample=samp),
                     debug_ftsel=False,
                     quiet=True,
@@ -64,7 +66,12 @@ def samplenum(arg):
                     make_even=True)
     #labels = p.gmm_2(*m.dx,nc=nc,cov='full')
     #a,b =  Q.rari_score(*labels, *m.dx)
-    return Q.rari_score(*p.gmm_2(*m.dx,nc=15,cov='full'), *m.dx)[0], Q.rari_score(*p.gmm_2(*m.dx,nc=15,cov='tied'), *m.dx)[0]
+    t1 =  time.time() - t
+    a = Q.rari_score(*p.gmm_2(*m.dx,nc=15,cov='full'), *m.dx)[0]
+    t2 =  time.time() - t
+    b = Q.rari_score(*p.gmm_2(*m.dx,nc=15,cov='tied'), *m.dx)[0]
+    return a,b, t1,t2
+
 
 
 

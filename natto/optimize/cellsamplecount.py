@@ -8,18 +8,20 @@ from basics.sgexec import sgeexecuter as sge
 
 """increasing sample count"""
 
-numcells=list(range(500,1600,100))
+debug = False
+
+numcells=list(range(500,1100 if debug else 2100,500))
 loaders = [load.loadp7de, load.loadimmune]
-reps = 25
-
-
-s = sge()
+reps = 2 if debug else 5
+#s = sge()
+rr= []
 for loader in loaders:
     for nc in numcells:
-        s.add_job( d.samplenum, [(loader, nc) for r in range(reps)])
-rr= s.execute()
-
-s.save("sampnum")
+        #s.add_job( d.samplenum, [(loader, nc) for r in range(reps)])
+        rr.append([d.samplenum((loader, nc)) for r in range(reps)])
+        print ('.',end='')
+#rr= s.execute()
+#s.save("sampnum")
 
 
 
@@ -32,33 +34,27 @@ def ps(level, c):
     return l.std(axis = 0 )[c]
 
 
-ctr=0
-for i,l in enumerate( ['p7','immune'] ):
-    print ("dataset:", l)
-    dist, stds = [],[]
-    for j,c in enumerate(numcells):
-        cda = rr[ctr]
-        v,st = p(cda,0),ps(cda,0)
-        ctr+=1
-        dist.append(v)
-        stds.append(st)
-    print ('dist: ',dist)
-    print ("std: ",stds)
 
 
+def getcurve(idx):
+    ctr=0
+    for i,l in enumerate( ['p7','immune'] ):
+        print ("dataset:", l)
+        dist, stds = [],[]
+        for j,c in enumerate(numcells):
+            cda = rr[ctr]
+            v,st = p(cda,idx),ps(cda,idx)
+            ctr+=1
+            dist.append(v)
+            stds.append(st)
+        print ('dist: ',dist)
+        print ("std: ",stds)
 
-print('this should be tied cov:')
-ctr=0
-for i,l in enumerate( ['p7','immune'] ):
-    print ("dataset:", l)
-    dist, stds = [],[]
-    for j,c in enumerate(numcells):
-        cda = rr[ctr]
-        v,st = p(cda,1),ps(cda,1)
-        ctr+=1
-        dist.append(v)
-        stds.append(st)
-    print (dist)
-    print (stds)
-
-
+print("     A")
+getcurve(0)
+print("     B")
+getcurve(1)
+print("     T1")
+getcurve(2)
+print("     T2")
+getcurve(3)

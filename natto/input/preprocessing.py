@@ -1,11 +1,10 @@
-from lmz import * 
-import ubergauss as ug
+from lmz import *
 import scanpy as sc
 import numpy as np
 load = lambda f: open(f,'r').readlines()
 import umap
 from scipy.sparse import csr_matrix as csr
-import sklearn 
+import sklearn
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 fun = lambda x,a,b,c: a+b/(1+x*c)
@@ -18,176 +17,87 @@ import natto.input.hungarian as h
 
 class Data():
     """will have .a .b .d2 .dx"""
-    def fit(self,adata, bdata,  
-            maxgenes=800, 
+    def fit(self,adata, bdata,
+            maxgenes=800,
             maxmean=4,
             mindisp=False,
-            minmean=0.015, 
+            minmean=0.015,
             corrcoef=False,
             dimensions=10,
             umap_n_neighbors = 10,
             pp='linear',
             scale=False,
-            pca = 20, 
+            pca = 20,
             ft_combine = lambda x,y: x or y,
             debug_ftsel=True,
-            mitochondria = False, 
-            titles = ("no title set in data constructure","<-"), 
+            mitochondria = False,
+            titles = ("no title set in data constructure","<-"),
             quiet =  False,
             make_even=True):
 
-        #assert adata.var["gene_ids"].index ==  bdata.var["gene_ids"].index 
+        #assert adata.var["gene_ids"].index ==  bdata.var["gene_ids"].index
         self.mitochondria = mitochondria
         self.a = adata
         self.b = bdata
         self.titles = titles
         self.even = make_even  # will ssubsample to equal cells after cell outlayer rm
         self.debug_ftsel = debug_ftsel
-        self.quiet = quiet 
-        
-        self.preprocess(pp=pp, 
-                        scale=scale,
-                        corrcoef=corrcoef,
+        self.quiet = quiet
+
+        self.preprocess(pp=pp,
                         mindisp=mindisp,
                         maxmean=maxmean,
                         ft_combine = ft_combine,
                         minmean=minmean,
                         maxgenes=maxgenes)
         #########
-        # umap 
+        # umap
         ##########
+        self.transform_data(scale, corrcoef)
         self.dimension_reduction(pca, dimensions, umap_n_neighbors)
         self.hungarian()
         return self
 
-    def hungarian(self):
-        self.hung, self.hung_dist = h.hungarian(*self.dx)
 
-    def sort_cells(self):
-        self.b.X = self.b.X[self.hung[1]] 
-        self.pca = self.pca[0], self.pca[1][self.hung[1]], self.pca[2]
-        self.dx = self.dx[0], self.dx[1][self.hung[1]]
-        self.d2 = self.d2[0], self.d2[1][self.hung[1]]
-
-
-
-    def dimension_reduction(self,pca, dimensions, umap_n_neighbors):
-        self.mk_pca(pca)
-        self.dx = self.umapify(dimensions, umap_n_neighbors)
-        self.d2 = self.umapify(2, umap_n_neighbors)
-
-    def make_even(self):
-        assert self.a.X.shape[1] == self.b.X.shape[1]
-        if self.a.X.shape[0] > self.b.X.shape[0]:
-            num=self.b.X.shape[0]
-            target = self.a
-        elif self.a.X.shape[0] < self.b.X.shape[0]:
-            num= self.a.X.shape[0]
-            target = self.b
+    def transform_data(self, scale, corcoef):
+        if scale:
+            adata_to_scaled_x = lambda ada: self.__toarray(sc.pp.scale(ada, copy=True,max_value=10))
+            a= adata_to_scaled_x(a)
+            b= adata_to_scaled_x(b)
         else:
-            return 
-        sc.pp.subsample(target,
-                        fraction=None, 
-                        n_obs=num, 
-                        random_state=0, 
-                        copy=False)
-        
-    def preprocess(self,pp='linear',
-                   scale = False,
-                   corrcoef = False,
-                   ft_combine= lambda x,y: x or y,minbin=1, binsize=.25,
-                   mindisp=1.25, maxmean=3,minmean=0.015,maxgenes=750):
-        
-        if mindisp>0 and maxgenes>0:
-            print ("processing data preprocess, needs explicit instructions on how to select features, defaulting to maxgenes")
-        ###
-        # prep
-        ###
-        self.norm_data()
-
-        
-        ######
-        # SELECT GENES
-        ########
-        if pp == 'linear':
-            ag,bg =self.preprocess_linear( mindisp=mindisp,
-                                   maxmean=maxmean,
-                                   minmean=minmean,
-                                  maxgenes=maxgenes, 
-                                    minbin=minbin,
-                                    binsize=binsize)
-        elif pp == 'bins':
-            ag,bg = self.preprocess_bins( maxgenes)
-
-
-        if pp == 'mergelinear':
             a,b= self._toarray()
-            mat = np.vstack((a,b))
-            genes = self.get_var_genes_linear( mat,minmean,maxmean,
-                             cutoff = mindisp, Z= True, maxgenes=maxgenes, 
-                             return_raw = False, minbin=minbin,binsize=binsize)
-            if not self.quiet: print(f"genes: {sum(genes)} / {len(genes)}")
-        else:
-            #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
-            genes = list(map(ft_combine,ag,bg))
-            if self.debug_ftsel:
-                print("number of features combined:", sum(genes))
-            if not self.quiet: print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
+        if corcoef:
+            print("you are using corrcoef, plz read the code to see what you are doing")
+            a,b = self.corrcoef(a,b)
 
+        self.transformed_data = a,b,scale
 
-        
-        self.a = self.a[:, genes].copy()
-        self.b = self.b[:, genes].copy()
-        if self.mitochondria:
-            pass
-            '''
-            self.basic_filter() 
-            self.a.X, self.b.X = self._toarray()
-            print(np.sum(self.a.X.sum(axis=0) == 0))  # this is true, HOW? 
-            print(np.sum(self.a.X.sum(axis=1) == 0))
-            print(np.sum(self.b.X.sum(axis=0) == 0)) 
-            print(np.sum(self.b.X.sum(axis=1) == 0))
-            sc.pp.regress_out(self.a, ['total_counts', 'pct_counts_mt'])
-            sc.pp.regress_out(self.b, ['total_counts', 'pct_counts_mt'])
-            '''
-
-        ######
-        # finalizing 
-        #####
-        self.corrcoef(corrcoef,scale)
-        
-        
-    
+    def corrcoef(self, ax,bx):
+            lena = ax.shape[0]
+            corr = np.corrcoef(np.vstack((ax, bx)))
+            corr = np.nan_to_num(corr)
+            return  corr[:lena], corr[lena:]
 
     def mk_pca(self, PCA):
-        a,b= self._toarray()
+        a,b, alreadyscaled = self.transformed_data
+
         if PCA:
             ab= np.vstack((a, b))
             pca = sklearn.decomposition.PCA(n_components=PCA)
-
-            ab = StandardScaler().fit_transform(ab)
+            if not alreadyscaled:
+                ab = StandardScaler().fit_transform(ab)
             pca.fit(ab)
             ab = pca.transform(ab)
-            '''
-            if False:# kneedler
-                import kneed 
-                var = pca.explained_variance_ratio_
-                kneeder = kneed.KneeLocator(Range(PCA), var,S=5.0,  curve='convex', direction = 'decreasing')
-                #kneeder.plot_knee()
-                v = kneeder.knee
-                print(f'selecting {v} pca vectors')
-                #a = ab[:len(a),:v+1]
-                #b = ab[len(a):,:v+1]
-            '''
-
             a = ab[:len(a)]
             b = ab[len(a):]
 
-
-
         self.pca = a,b, PCA
-        return a,b 
+        return a,b
 
+    def dimension_reduction(self, pca, dimensions, umap_n_neighbors):
+        self.mk_pca(pca)
+        self.dx = self.umapify(dimensions, umap_n_neighbors)
+        self.d2 = self.umapify(2, umap_n_neighbors)
 
     def umapify(self, dimensions, n_neighbors):
         a,b, pcadim  = self.pca
@@ -201,7 +111,98 @@ class Data():
 
         return  mymap.transform(a), mymap.transform(b)
 
-  
+
+    def hungarian(self):
+        self.hung, self.hung_dist = h.hungarian(*self.dx)
+
+    def sort_cells(self):
+        self.b.X = self.b.X[self.hung[1]]
+        self.pca = self.pca[0], self.pca[1][self.hung[1]], self.pca[2]
+        self.dx = self.dx[0], self.dx[1][self.hung[1]]
+        self.d2 = self.d2[0], self.d2[1][self.hung[1]]
+
+
+
+
+    ###########################
+    # PREPROCESSING:
+    ############################
+
+    def make_even(self):
+        assert self.a.X.shape[1] == self.b.X.shape[1]
+        if self.a.X.shape[0] > self.b.X.shape[0]:
+            num=self.b.X.shape[0]
+            target = self.a
+        elif self.a.X.shape[0] < self.b.X.shape[0]:
+            num= self.a.X.shape[0]
+            target = self.b
+        else:
+            return
+        sc.pp.subsample(target,
+                        fraction=None,
+                        n_obs=num,
+                        random_state=0,
+                        copy=False)
+
+    def preprocess(self,pp='linear',
+                   ft_combine= lambda x,y: x or y,minbin=1, binsize=.25,
+                   mindisp=1.25, maxmean=3,minmean=0.015,maxgenes=750):
+
+        if mindisp>0 and maxgenes>0:
+            print ("processing data preprocess, needs explicit instructions on how to select features, defaulting to maxgenes")
+        ###
+        # prep
+        ###
+        self.norm_data()
+
+
+        ######
+        # SELECT GENES
+        ########
+        if pp == 'linear':
+            ag,bg =self.preprocess_linear( mindisp=mindisp,
+                                   maxmean=maxmean,
+                                   minmean=minmean,
+                                  maxgenes=maxgenes,
+                                    minbin=minbin,
+                                    binsize=binsize)
+        elif pp == 'bins':
+            ag,bg = self.preprocess_bins( maxgenes)
+
+
+        if pp == 'mergelinear':
+            a,b= self._toarray()
+            mat = np.vstack((a,b))
+            genes = self.get_var_genes_linear( mat,minmean,maxmean,
+                             cutoff = mindisp, Z= True, maxgenes=maxgenes,
+                             return_raw = False, minbin=minbin,binsize=binsize)
+            if not self.quiet: print(f"genes: {sum(genes)} / {len(genes)}")
+        else:
+            #genes = [ft_combine(a,b) for a,b in zip(ag,bg)]
+            genes = list(map(ft_combine,ag,bg))
+            if self.debug_ftsel:
+                print("number of features combined:", sum(genes))
+            if not self.quiet: print(f"genes: {sum(genes)} fromA {sum(ag)} fromB {sum(bg)}")
+
+
+
+        self.a = self.a[:, genes].copy()
+        self.b = self.b[:, genes].copy()
+        if self.mitochondria:
+            pass
+            '''
+            self.basic_filter()
+            self.a.X, self.b.X = self._toarray()
+            print(np.sum(self.a.X.sum(axis=0) == 0))  # this is true, HOW?
+            print(np.sum(self.a.X.sum(axis=1) == 0))
+            print(np.sum(self.b.X.sum(axis=0) == 0))
+            print(np.sum(self.b.X.sum(axis=1) == 0))
+            sc.pp.regress_out(self.a, ['total_counts', 'pct_counts_mt'])
+            sc.pp.regress_out(self.b, ['total_counts', 'pct_counts_mt'])
+            '''
+
+
+
 
 
 
@@ -223,21 +224,21 @@ class Data():
                                        maxgenes=maxgenes, title = self.titles[0])
         self.prevres =  ag
         bg = self.get_var_genes_linear(b, minmean,maxmean,
-                                       cutoff = mindisp, 
+                                       cutoff = mindisp,
                                        maxgenes=maxgenes,
-                                       minbin=minbin, binsize = binsize,title= self.titles[1], 
+                                       minbin=minbin, binsize = binsize,title= self.titles[1],
                                        Z=True)
-        
+
         return ag,bg
 
-        
-        
+
+
     def preprocess_bins(self, maxgenes):
         Map(lambda x: sc.pp.highly_variable_genes(x, n_top_genes=maxgenes),[self.a,self.b])
         #genes = [f or g for f, g in zip(self.a.var.highly_variable, self.b.var.highly_variable)]
         return self.a.var.highly_variable, self.b.var.highly_variable
 
-    
+
 
 
     ####
@@ -256,24 +257,24 @@ class Data():
         genef, _ = sc.pp.filter_genes(ad, min_counts=min_counts, inplace=False)
 
         if False:# self.mitochondria:
-            # BLABLA DO STUFF 
+            # BLABLA DO STUFF
             mitochondria= ad.var['gene_ids'].index.str.match(f'^{self.mitochondria}.*')
-            rowcnt = ad.X.sum(axis =1) 
+            rowcnt = ad.X.sum(axis =1)
             row_mitocnt  = ad.X[:,mitochondria].sum(axis=1)
-        
+
             mitoarray = (row_mitocnt/rowcnt) < .05
             print(f"filtering mito {sum( (row_mitocnt/rowcnt) > .05  )}  genes{sum(mitochondria)} ")
             cellf = np.logical_and(cellf,mitoarray.getA1())
-            
-            
+
+
 
         return cellf, genef
 
 
-    def _toarray(self): 
+    def _toarray(self):
         return self.__toarray(self.a), self.__toarray(self.b)
 
-    def __toarray(self,thing):       
+    def __toarray(self,thing):
         if isinstance(thing, np.ndarray):
             return thing
         elif isinstance(thing, csr):
@@ -283,27 +284,27 @@ class Data():
         elif isinstance(thing.X, csr):
             return  thing.X.toarray()
         print("type problem in to array ")
-    
+
     def basic_filter(self, min_counts=3, min_genes=200):
         #self.a.X, self.b.X = self._toarray()
         # this weeds out obvious lemons (gens and cells)
         self.cellfa, gene_fa  = self._filter_cells_and_genes(self.a, min_genes, min_counts)
         self.cellfb, gene_fb  = self._filter_cells_and_genes(self.b, min_genes, min_counts)
-        
+
         geneab = Map(lambda x, y: x and y, gene_fa, gene_fb)
         self.a = self.a[self.cellfa,:]
         self.b = self.b[self.cellfb,:]
-        
+
         self.a = self.a[:, geneab]
         self.b = self.b[:, geneab]
 
     def normalize(self):
 
         if self.mitochondria:
-            self.a.var['mt'] = self.a.var_names.str.startswith(self.mitochondria)  
+            self.a.var['mt'] = self.a.var_names.str.startswith(self.mitochondria)
             sc.pp.calculate_qc_metrics(self.a, qc_vars=['mt'], percent_top=None, inplace=True)
 
-            self.b.var['mt'] = self.b.var_names.str.startswith(self.mitochondria)  
+            self.b.var['mt'] = self.b.var_names.str.startswith(self.mitochondria)
             sc.pp.calculate_qc_metrics(self.b, qc_vars=['mt'], percent_top=None, inplace=True)
             #print (f"doing mito: {sum(self.a.obs.pct_counts_mt < 5)}")
             #print (list(self.a.obs.pct_counts_mt))
@@ -314,17 +315,17 @@ class Data():
         sc.pp.normalize_total(self.b, 1e4)
         sc.pp.log1p(self.a)
         sc.pp.log1p(self.b)
-    
- 
+
+
     def norm_data(self):
         self.basic_filter()
-        self.normalize()   
-        if self.even: 
+        self.normalize()
+        if self.even:
             self.make_even()
-    
+
 
     ####
-    # ft select 
+    # ft select
     ###
     def transform(self,means,var, stepsize=.5, ran=3, minbin=0, bin_avg = 'mean'):
         x = np.arange(minbin*stepsize,ran,stepsize)
@@ -338,7 +339,7 @@ class Data():
             assert False
         y_std = np.array([np.std(st) for st in boxes])
         x=x+(stepsize/2)
-        # draw regression points 
+        # draw regression points
         if self.debug_ftsel:plt.scatter(x,y,label='Mean of bins', color = 'k')
 
 
@@ -348,17 +349,17 @@ class Data():
         y_std = y_std[nonan]
 
         x = x.reshape(-1,1)
-        return x,y,y_std       
-    
-    
+        return x,y,y_std
+
+
     def generalize_quadradic(self,y,x):
-        
+
         poly_reg=PolynomialFeatures(degree=2)
         x=poly_reg.fit_transform(x.reshape(-1,1))
         mod= sklearn.linear_model.LinearRegression()
         mod.fit(x,y)
         return mod.predict(x)
-    
+
     def get_expected_values(self,x,y,x_all, leftmost_values='const_max'):
         #mod= sklearn.linear_model.LinearRegression()
         #mod= sklearn.linear_model.RANSACRegressor()
@@ -385,12 +386,12 @@ class Data():
         return res
 
     def get_var_genes_linear(self, matrix,minmean,maxmean,
-                             cutoff =.2, Z= True, maxgenes=None, 
+                             cutoff =.2, Z= True, maxgenes=None,
                              return_raw = False, minbin=1,binsize=.25, title = 'None'):
-        
-        if maxgenes and not Z: 
+
+        if maxgenes and not Z:
             print ("maxgenes without Z transform is meaningless")
-            
+
         a=np.expm1(matrix)
         var     = np.var(a, axis=0)
         mean    = np.mean(a, axis=0)
@@ -401,51 +402,51 @@ class Data():
         X = np.log1p(mean)
 
         mask  = np.array( [not np.isnan(y) and me > minmean and me < maxmean for y,me in zip(disp,X)] )
-        
-        if self.debug_ftsel: 
-            plt.figure(figsize=(11,4)) 
+
+        if self.debug_ftsel:
+            plt.figure(figsize=(11,4))
             plt.suptitle(f"gene selection: {title}", size = 20, y=1.07)
             ax=plt.subplot(121)
             plt.scatter(X[mask ], Y[mask],alpha=.2, s=3, label='all genes')
-            
+
         x_bin,y_bin,ystd_bin = self.transform(X[mask].reshape(-1, 1),
                         Y[mask ],
-                        stepsize=binsize, 
+                        stepsize=binsize,
                         ran = maxmean,
                         minbin=minbin,
                         bin_avg = 'median') # median or mean
-        
+
 
         y_predicted = self.get_expected_values(x_bin,y_bin,X[mask ])
         ###
         # make it quadratic
         ####
         #pre = self.generalize_quadradic(pre,X[good])
-        
+
         if Z:
             std_predicted = self.get_expected_values(x_bin,ystd_bin,X[mask ])
-            Y[mask ]-= y_predicted 
+            Y[mask ]-= y_predicted
             Y[mask ]/= std_predicted
             if not maxgenes:
-                accept = [d > cutoff for d in Y[mask ]]                
+                accept = [d > cutoff for d in Y[mask ]]
                 if return_raw:
-                    # Y[mask] is already corrected, now we correct the complement and return raw 
+                    # Y[mask] is already corrected, now we correct the complement and return raw
                     bad=np.logical_not(mask )
                     pre_bad = self.get_expected_values(x_bin,y_bin,X[bad])
                     std_bad = self.get_expected_values(x_bin,ystd_bin,X[bad])
                     Y[bad] -= pre_bad
                     Y[bad] /= std_bad
                     return Y
-            else: 
+            else:
                 srt = np.argsort(Y[mask])
                 accept = np.full(Y[mask].shape, False)
                 accept[ srt[-maxgenes:]] = True
 
-            
+
         else:
             accept = [ (d-m)>cutoff for d,m in zip(Y[mask ],y_predicted) ]
-        
-        
+
+
         if self.debug_ftsel:
             srt= np.argsort(X[mask ])
             plt.plot(X[mask][srt], y_predicted[srt],color='k', label='regression')
@@ -468,7 +469,7 @@ class Data():
                 argh[mask ] = np.array(accept)
                 agree = argh & self.prevres
                 plt.scatter(X[agree], Y[agree],alpha=.8, s=3, color='k', label='selected genes overlap')
-            
+
 
             plt.legend(bbox_to_anchor=(.6,-.2))
             plt.title("normalized dispersion of genes")
@@ -477,31 +478,10 @@ class Data():
             plt.show()
 
             print(f"ft selected:{sum(accept)}")
-        
+
         mask [mask ] = np.array(accept)
-        
-        return mask  
-    
+
+        return mask
+
     def __init__(self):
         self.debug_ftsel = False
-
-    def scale(self):
-        sc.pp.scale(self.a, max_value=10)
-        sc.pp.scale(self.b, max_value=10)
-
-    def corrcoef(self, corrcoef, scale):
-        ########
-        # corrcoef
-        ########
-        if scale:
-            self.scale()      
-        if corrcoef:
-            ax, bx = self._toarray()
-            lena = self.a.shape[0]
-            corr = np.corrcoef(np.vstack((ax, bx)))
-            corr = np.nan_to_num(corr)
-            self.a, self.b = corr[:lena], corr[lena:]
-        return    
-
-
-

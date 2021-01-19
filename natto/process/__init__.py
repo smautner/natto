@@ -4,7 +4,7 @@ import scanpy as sc
 import ubergauss as ug
 from lmz import *
 import random
-from sklearn.cluster import SpectralClustering, KMeans, DBSCAN, MeanShift, AffinityPropagation, Birch
+from sklearn.cluster import SpectralClustering, KMeans, DBSCAN, MeanShift, AffinityPropagation, Birch, OPTICS
 
 def gmm_2(X1, X2, nc=None, cov ='full'):
     return gmm_1(X1, nc, cov), gmm_1(X2, nc, cov)
@@ -73,10 +73,10 @@ def kmeans_1(a, nc):
 def kmeans_2(a,b,nc=15):
     return kmeans_1(a,nc), kmeans_1(b,nc)
 
-def birch_1(a, nc): 
-    return Birch(n_clusters=nc).fit_predict(a)
-def birch_2(a,b,nc=15):
-    return birch_1(a,nc), birch_1(b,nc)
+def birch_1(a, kwargs): 
+    return Birch(**kwargs).fit_predict(a)
+def birch_2(a,b,**kwargs):
+    return birch_1(a,kwargs), birch_1(b,kwargs)
 
 def afprop_1(a, kwargs): 
     return AffinityPropagation(**kwargs).fit_predict(a)
@@ -93,8 +93,10 @@ def meansh_1(a, kwargs):
 def meansh_2(a,b,**kwargs):
     return meansh_1(a,kwargs), meansh_1(b,kwargs)
 
-
-
+def optics_1(a, kwargs): 
+    return OPTICS(**kwargs).fit_predict(a)
+def optics_2(a,b,**kwargs):
+    return optics_1(a, kwargs), optics_1(b,kwargs)
 
 
 def leiden_2(X, X2, params={}, resolution=1):

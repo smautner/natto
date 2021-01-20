@@ -1,10 +1,10 @@
-from sklearn.metrics.pairwise import euclidean_distances as ed
+from sklearn.metrics import pairwise_distances
 from lapsolver import solve_dense
 import matplotlib.pyplot as plt
 
-def hungarian(X1, X2, debug = False):
+def hungarian(X1, X2, debug = False,metric='euclidean'):
     # get the matches:
-    distances = ed(X1,X2)
+    distances = pairwise_distances(X1,X2, metric=metric)
 
 
     #if solver != 'scipy':

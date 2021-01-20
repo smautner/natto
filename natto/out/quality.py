@@ -115,10 +115,10 @@ def make_rari_compatible(ar):
             
 
 
-def rari_score(Y1,Y2,X1,X2): 
+def rari_score(Y1,Y2,X1,X2,metric='euclidean'): 
     # Y1 and Y2 are clculated on different data... 
     # account for that by ordering Y2 ; such that the closest cells correspond
-    (a, b), dist = hungarian(X1, X2, debug=False)
+    (a, b), dist = hungarian(X1, X2, debug=False, metric = metric)
     aTb = dict(zip(a,b))
     k=list(aTb.keys())
     k.sort()
@@ -128,8 +128,8 @@ def rari_score(Y1,Y2,X1,X2):
 
 
     # distances:
-    dist_x1 = pairwise_distances(X1, metric='euclidean')
-    dist_x2 = pairwise_distances(X2, metric='euclidean')
+    dist_x1 = pairwise_distances(X1, metric=metric)
+    dist_x2 = pairwise_distances(X2, metric=metric)
 
     #
     Y1 = make_rari_compatible(Y1)

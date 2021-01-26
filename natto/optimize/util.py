@@ -1,4 +1,5 @@
 from natto.input.preprocessing import Data
+from scipy.sparse import csr_matrix
 import time
 from natto.out import quality as Q
 import natto.process as p
@@ -106,28 +107,17 @@ def rundist_1nn_2loaders(arg):
 
 
 def get_noise_run_moar(args):
-    loader, cluster, level = args
+    loader, cluster, level, metrics = args
     if level == 0:
-        # this should be 1 and 1,
-        # its not always,
-        # i tracked it down to randomization in the projection
-        # a few weeks ago
-        return (1,1)
+        return [1]*len(cluster)*len(metrics) # should be as long a a normal return 
 
-    # loaddata
     adat = loader()
     if type(adat.X) != csr_matrix:
         adat.X = csr_matrix(adat.X)
 
-
-    #noise and preproc
-
-    # i could use mp in get_noise_data i think
+    # todo: also loop over cluster algos
     m =  noise.get_noise_single(adat, level)
-
-
-    labels = cluster(*m.dx)
-    r = Q.rari_score(*labels, *m.dx)
+    r = [Q.rari_score(*c(*m.dx) , *m.dx, metric = metric) for c in cluster for metric in metrics]
     return r
 
 

@@ -128,13 +128,16 @@ def rari_score(Y1,Y2,X1,X2,metric='euclidean'):
 
 
     # distances:
-    dist_x1 = pairwise_distances(X1, metric=metric)
-    dist_x2 = pairwise_distances(X2, metric=metric)
+    dist_x1 = pairwise_distances(X1) # clustering happened in euclidean space?
+    dist_x2 = pairwise_distances(X2)
 
     #
     Y1 = make_rari_compatible(Y1)
     Y2 = make_rari_compatible(Y2)
-    return rari(Y1,Y2,dist_x1,dist_x2) , rand(Y1,Y2)
+    return rari(Y1,Y2,dist_x1,dist_x2)  
+
+def rand_score(Y1,Y2):
+     return rand(Y1,Y2)
 
 def printRARI(y1,y2,x1,x2):
     rarr, rand = rari_score(y1,y2,x1,x2) 

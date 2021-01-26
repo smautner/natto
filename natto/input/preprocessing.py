@@ -31,6 +31,8 @@ class Data():
             ft_combine = lambda x,y: x or y,
             debug_ftsel=True,
             mitochondria = False,
+            binsize=.25,
+            minbin = 1,
             titles = ("no title set in data constructure","<-"),
             quiet =  False,
             make_even=True):
@@ -49,6 +51,7 @@ class Data():
                         maxmean=maxmean,
                         ft_combine = ft_combine,
                         minmean=minmean,
+                        binsize=binsize, minbin=minbin,
                         maxgenes=maxgenes)
         #########
         # umap

@@ -13,7 +13,7 @@ class fromdata:
         return random.choice(self.things) 
 
 def noisiate(mtx,noise_percentage,noisemodel= fromdata()): 
-    
+    print("noisiate called, noise:",noise_percentage )
     # column wise allply noise 
     noisy = mtx.copy().transpose() 
     for row in range(noisy.shape[0]):
@@ -26,6 +26,7 @@ def noisiate(mtx,noise_percentage,noisemodel= fromdata()):
         rval[loc] = values
         # somehow integrate this in noisy... 
         noisy[row] = csr_matrix(rval) # do it like this to prevent explicit 0s everywhere
+
     return noisy.transpose()
   
 def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()): 

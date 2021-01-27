@@ -132,12 +132,13 @@ def get_noise_data_slow(loader, noiserange,title):
 def get_noise_single(adat, level):
     # SETUP
     bdat  = adat.copy()
+    '''
     m = Data().fit(adat, bdat,
                                mindisp=False,
                                maxgenes=800,
                                ft_combine = lambda x,y: x or y,
-                               minmean = 0.02,
-                               mitochondria = "mt-",
+                               #minmean = 0.02,
+                               #mitochondria = "mt-",
                                maxmean= 4,
                                pp='linear',
                                scale=False,
@@ -145,10 +146,15 @@ def get_noise_single(adat, level):
                                dimensions=10,
                                debug_ftsel=False,
                                make_even=True) 
+    '''
+
+    m = Data().fit(adat, bdat)
+
     if level == 0:
         return m     
 
     m.b.X = noisiate(m.b.X,level/100)
+    m.transform_data(False,False)
     m.mk_pca(20)
     m.dx = m.umapify(10,10)
     return m 

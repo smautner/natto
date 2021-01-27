@@ -24,8 +24,8 @@ def processstd(level, c):
     l =np.array(level)
     return l.std(axis = 0 )[c]
 
-debug = True
-repeats = 5
+debug = False
+repeats = 40
 
 # select clustering method 
 cluster = partial(p.leiden_2,resolution=.5)
@@ -51,13 +51,14 @@ def run(loader, rname):
     s=sge()
     metrics= ['euclidean']
     metrics= ['euclidean','sqeuclidean','canberra','l1']
-    metrics= ['euclidean','sqeuclidean']
-    clusternames = ['gmm','spec']
+    clusternames = ['gmm', 'spec']
     for level in range(0,110,40 if debug else 10):
-        s.add_job(util.get_noise_run_moar, [(loader, [clustera, clusterb], level, metrics) for r in range(2 if debug else repeats)])
+        s.add_job(util.get_noise_run_moar,
+                [(loader, [clustera, clusterb], level, metrics)
+                    for r in range(2 if debug else repeats)])
 
-    #rr= s.execute()
-    rr=s.load(f"{rname}.sav")
+    rr= s.execute()
+    #rr=s.load(f"{rname}.sav")
 
     s.save(f"{rname}.sav")
     

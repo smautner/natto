@@ -31,7 +31,7 @@ class Data():
             ft_combine=lambda x, y: x or y,
             debug_ftsel=True,
             mitochondria=False,
-            titles=False,
+            titles="abcdefghijklmnop",
             scale=True,
             quiet=False,
             make_even=True):
@@ -136,8 +136,14 @@ class Data():
         genes  = np.any(np.array(genelists), axis  = 0)  ##???? lets see if this works
         self.data = [ d[:,genes].copy() for d in self.data  ]
 
+    def scale(self):
+        [sc.pp.scale(adat, max_value =10) for adat in self.data]
 
     def mk_pca(self, PCA, scale = True):
+
+
+        if scale:
+            self.scale()
 
         read_mat = self._toarray()
 
@@ -145,8 +151,8 @@ class Data():
             self.pca = read_mat, PCA
             return read_mat
 
-        # we do PCA, but first we scale
-        if scale == True:
+        # we do PCA
+        if scale == False: # if scale is false we scale all together to make pca vaible
             scaler= StandardScaler()
             scaled = [ scaler.fit_transform(m) for m in read_mat]
         else:
@@ -182,11 +188,11 @@ class Data():
                           maxgenes=None, minbin=1, binsize=.25):
 
         blocks = self._toarray()
-
         return [self.get_var_genes_linear(b, minmean, maxmean,
                                        cutoff=mindisp,
                                        maxgenes=maxgenes,
-                                       minbin=minbin, binsize=binsize, title=self.titles[i],
+                                       minbin=minbin,
+                                       binsize=binsize, title=self.titles[i],
                                        Z=True)  for i,b in enumerate(blocks)]
 
 

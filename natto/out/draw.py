@@ -474,12 +474,14 @@ def dendro(mat, title, fname='none'):
     return Z
 
 
-def plot_noise(lines, title, saveas= False):
+def plot_noise(lines, title,show_std=False, saveas= False):
     plt.figure( figsize=(5, 5), dpi=300)
 
     for y,std,label in lines:
-        plt.errorbar(range(0,110,10), y, yerr=std, label=f'{label}')
-        #plt.errorbar(range(0,110,10), y, yerr=std, label=f'{label} (±σ)')
+        if show_std:
+            plt.errorbar(range(0,110,10), y, yerr=std, label=f'{label}')
+        else:
+            plt.plot(range(0,110,10), y, label=f'{label}')
 
     plt.grid()
     plt.xlabel('noise percentage', size=14)
@@ -488,8 +490,8 @@ def plot_noise(lines, title, saveas= False):
     #plt.title(title, size= 20)
     plt.tight_layout()
     if saveas:
-        plt.savefig(f"~/natto_pics/{name}.png")
-        plt.savefig(f"~/natto_pics/{name}.pdf")
+        plt.savefig(f"{saveas}.png")
+        plt.savefig(f"{saveas}.pdf")
     plt.show()
 
 

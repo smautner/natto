@@ -65,8 +65,8 @@ class Data():
     def transform_data(self, scale, corcoef):
         if scale:
             adata_to_scaled_x = lambda ada: self.__toarray(sc.pp.scale(ada, copy=True,max_value=10))
-            a= adata_to_scaled_x(a)
-            b= adata_to_scaled_x(b)
+            a= adata_to_scaled_x(self.a)
+            b= adata_to_scaled_x(self.b)
         else:
             a,b= self._toarray()
         if corcoef:

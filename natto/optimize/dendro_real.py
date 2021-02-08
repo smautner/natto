@@ -83,4 +83,28 @@ plt.plot( pts[:,1])
 
 # %%
 
-what happens if i use coclustering for the dist 
+trash_results ='''[[0.61747901 0.62203223 0.64039477 0.7056479  0.6442787  0.67223992] 
+[0.64174117 0.60243936 0.57053833 0.63765863 0.58666886 0.57881819]  
+[0.58956466 0.61180228 0.63098447 0.5658358  0.5520149  0.58803452]  
+[0.63342867 0.61952885 0.59060091 0.62122232 0.60385168 0.6320553 ]  
+[0.57402528 0.59613174 0.63044296 0.56261741 0.54436771 0.68763476]  
+[0.59870067 0.58021905 0.60931588 0.625537   0.58815912 0.67873879]  
+[0.5963387  0.55208511 0.61367034 0.5225367  0.58184223 0.65969361]]'''
+trash = []
+from lmz import *
+for line in trash_results.split('\n'):
+    line = line.strip()
+    line=line.replace('[','')
+    line=line.replace(']','')
+    trash.append(np.array(Map(float,[thing for thing in line.split(' ') if thing])))
+print(trash)
+
+for startname, reddist, mydist in zip(dnames,trash, mtx):
+    mydis = np.sort(mydist)[1:]
+    print(mydis, reddist)
+    plt.plot(mydis, reddist)
+    plt.title(startname)
+    plt.xlabel('rari')
+    plt.ylabel('accuracy when paired with neighbor')
+    plt.show()
+# %%

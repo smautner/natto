@@ -1,4 +1,5 @@
 import scanpy as sc
+from scipy.sparse import csr_matrix
 import pandas as pd
 from lmz import *
 import anndata as ad
@@ -209,3 +210,26 @@ def loadarti_truth(path, p1, p2, dataname):
     
     return gr1[p1], gr2[p2]
     
+
+
+#######################3
+# LOADING 100 DATASETS
+######################
+def get100names(path = '../data/100/data'):
+    return Map(lambda x: x.strip(), open(path+"/lol2.txt","r").readlines())
+
+def get100(item, path = '../data/100/data'):
+    mtx_path = f"{path}/{item}.counts.gz"
+    things = pd.read_csv(mtx_path, sep='\t').T
+    adata = ad.AnnData(things)
+    adata.X=csr_matrix(adata.X)
+    return adata
+    #truthpath = path+".cell_assignments.csv.gz"
+    #truth  = pd.read_csv(truthpath, sep='\t')
+    #adata.obs['true']  = list(truth['assigned_cluster'])
+    #adata.obs['true']  = list(truth['celltype'])
+    
+    
+
+
+

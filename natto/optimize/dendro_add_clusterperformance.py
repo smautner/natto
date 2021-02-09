@@ -7,7 +7,7 @@ from natto.input import preprocessing, pp_many
 from sklearn.metrics import pairwise_distances, adjusted_rand_score
 import ubergauss as ug 
 import gc
-
+import natto
 dnames = "human1 human2 human3 human4 smartseq2 celseq2 celseq".split()
 debug = False
 
@@ -36,8 +36,8 @@ if __name__ == "__main__":
     mtx = np.array(mtx)
     morder = np.argsort(mtx[task])
     result = []
+    self = dnames[morder[0]]
     for did in morder[1:]: 
-        self = dnames[morder[0]]
         other = dnames[did]
         result.append( get_score(self, other))
         gc.collect()
@@ -51,4 +51,4 @@ def res(indices,reps):
     print (dnames)
     for i in range(indices):
         indexrepeats =  np.array([ba.loadfile(f"res/{i}_{r}") for r in range(reps) ]) 
-        print ( indexrepeats.mean(axis=0))
+        print ( indexrepeats.mean(axis=0).tolist())

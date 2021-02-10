@@ -218,7 +218,7 @@ def loadarti_truth(path, p1, p2, dataname):
 def get100names(path = '../data/100/data'):
     return Map(lambda x: x.strip(), open(path+"/lol2.txt","r").readlines())
 
-def get100(item, path = '../data/100/data'):
+def get100gz(item, path = '../data/100/data'):
     mtx_path = f"{path}/{item}.counts.gz"
     things = pd.read_csv(mtx_path, sep='\t').T
     adata = ad.AnnData(things)
@@ -228,7 +228,26 @@ def get100(item, path = '../data/100/data'):
     #truth  = pd.read_csv(truthpath, sep='\t')
     #adata.obs['true']  = list(truth['assigned_cluster'])
     #adata.obs['true']  = list(truth['celltype'])
+
+def load100(item, path='../data/100/data', seed= None, subsample=None):
+    adata =  ad.read_h5ad(f"{path}/{item}.h5")
+    if subsample:
+        sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=seed, copy=False)
+    return adata
+
+
+
+
+def load100addtruth(item, path='../data/100/data'):
+    fname = f"{path}/{item}.cluster.txt"
+    lol = open(fname,'r').readlines()   
+    barcode_cid = {bc:cl for line in lol for bc,cl in line.strip().split()}
     
+    fname = f"{path}/{item}.h5"
+    adata = ad.read_h5ad(fname)
+    adata.obs['truth'] = [barcode_cid[a]  for a in adata.obs.index]
+    adata.write(fname, compression='gzip')
+
     
 
 

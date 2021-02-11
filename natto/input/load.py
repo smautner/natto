@@ -229,8 +229,10 @@ def get100gz(item, path = '../data/100/data'):
     #adata.obs['true']  = list(truth['assigned_cluster'])
     #adata.obs['true']  = list(truth['celltype'])
 
-def load100(item, path='../data/100/data', seed= None, subsample=None):
+def load100(item, path='../data/100/data', seed= None, subsample=None, remove_unlabeled = False):
     adata =  ad.read_h5ad(f"{path}/{item}.h5")
+    if remove_unlabeled:
+        adata = adata[adata.obs['true']!=-1]
     if subsample:
         sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=seed, copy=False)
     return adata
@@ -241,11 +243,16 @@ def load100(item, path='../data/100/data', seed= None, subsample=None):
 def load100addtruth(item, path='../data/100/data'):
     fname = f"{path}/{item}.cluster.txt"
     lol = open(fname,'r').readlines()   
-    barcode_cid = {bc:cl for line in lol for bc,cl in line.strip().split()}
+
+
+    barcode_cid={}
+    for line in lol:
+        bc,cl =  line.strip().split()
+        barcode_cid[bc]= int(cl)
     
     fname = f"{path}/{item}.h5"
     adata = ad.read_h5ad(fname)
-    adata.obs['truth'] = [barcode_cid[a]  for a in adata.obs.index]
+    adata.obs['true'] = [barcode_cid.get(a,-1)  for a in adata.obs.index]
     adata.write(fname, compression='gzip')
 
     

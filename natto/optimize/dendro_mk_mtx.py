@@ -1,6 +1,7 @@
 #!/home/mautner/.myconda/miniconda3/bin/python
 import sys
 import basics as ba
+import gc
 import numpy as np
 
 
@@ -32,19 +33,25 @@ def similarity(stra, strb):
                 titles= ("a",'b'),
                 make_even=True
             )
-
     l=process.gmm_2(*d.dx,nc=15, cov='full')
     return rari_score(*l, *d.dx)
+
+def similarity2(a,b):
+    res= similarity(a,b)
+    gc.collect()
+    return res
 
 if __name__ == "__main__":
     task = int(sys.argv[1])
     home = dnames[task] 
-    result = [similarity(home, other) for other in dnames]
+    result = [similarity2(home, other) for other in dnames]
     print (result)
     ba.dumpfile(result,"res/"+sys.argv[1]+"_"+sys.argv[2])
 
 
 def res(indices,r): 
+    re = [] 
     for i in range(indices):
         indexrepeats =  np.array([ba.loadfile(f"res/{i}_{rep}") for rep in range(r) ]) 
-        print ( indexrepeats.mean(axis= 0))
+        re.append( list(indexrepeats.mean(axis= 0))) 
+    print(re) 

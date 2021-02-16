@@ -20,10 +20,12 @@ pip3 install --upgrade  anndata==0.6.22.post1
 # multiple proicesses trying to build a cache at the same time fails...
 
 
-# installing lapsolver on VERY problematic machines
-1. clone lapsolver
-2. give cmake the  paths to c++ and cc somewhere in the config
-3. remove crashing lines from setup.py
+# building lapsolver 
+1. clone it 
+https://github.com/cheind/py-lapsolver.git 
+export CMAKE_MAKE_PROGRAM=$(which make)
+export CMAKE_C_COMPILER=$(which gcc)
+export CMAKE_CXX_COMPILER=$(which g++)
 ```
 
 

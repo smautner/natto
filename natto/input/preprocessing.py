@@ -313,7 +313,7 @@ class Data():
             #print (list(self.a.obs.pct_counts_mt))
             self.a = self.a[self.a.obs.pct_counts_mt < 5, :]
             self.b = self.b[self.b.obs.pct_counts_mt < 5, :]
-
+        print("normalize_total throws error but the job gets done anyway")
         sc.pp.normalize_total(self.a, 1e4)
         sc.pp.normalize_total(self.b, 1e4)
         sc.pp.log1p(self.a)
@@ -398,8 +398,8 @@ class Data():
         a=np.expm1(matrix)
         var     = np.var(a, axis=0)
         mean    = np.mean(a, axis=0)
+        print("disp= var/mean might produce a warning but we will catch that later")
         disp= var/mean
-
 
         Y = np.log(disp)
         X = np.log1p(mean)

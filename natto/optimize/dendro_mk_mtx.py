@@ -17,15 +17,16 @@ from natto.input.preprocessing import Data
 from natto.out.quality import rari_score
 from natto.input import load 
 from natto import process
-debug = False
+debug = True
 if debug: 
     print(f"dnames:{len(dnames)}")
 
 def similarity(stra, strb): 
     scale = False, 
     subsample = 200 if debug else 1000 
-    d = Data().fit(load.load100(stra, subsample= subsample),
-                 load.load100(strb, subsample= subsample), 
+    path='../data'
+    d = Data().fit(load.load100(stra,path=path, subsample= subsample),
+                 load.load100(strb, path=path, subsample= subsample), 
                 debug_ftsel = False,
                 scale= scale, 
                 quiet = True, 
@@ -44,9 +45,13 @@ def similarity2(a,b):
 if __name__ == "__main__":
     task = int(sys.argv[1])
     home = dnames[task] 
-    result = [similarity2(home, other) for other in dnames]
+    if  debug:
+       result =  similarity2(home, dnames[1])
+    else:
+        result = [similarity2(home, other) for other in dnames]
     print (result)
-    ba.dumpfile(result,"res/"+sys.argv[1]+"_"+sys.argv[2])
+    if not debug:
+        ba.dumpfile(result,"res/"+sys.argv[1]+"_"+sys.argv[2])
 
 
 def res(indices,r): 

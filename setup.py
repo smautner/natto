@@ -111,6 +111,7 @@ setup(
         "scikit-learn >= 0.21",
         "seaborn >= 0.9",
         "networkx >= 2.3",
+        "dill",
         "ubergauss",
         "lmz",
         "lapsolver",

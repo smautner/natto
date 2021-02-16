@@ -1,7 +1,7 @@
 
 ## install
 ```
-install python3-pip and cmake
+install python3-pip and cmake g++ gcc
 
 pip3 install git+https://github.com/nredell/rari                                 
 

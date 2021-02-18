@@ -41,19 +41,18 @@ def similarity2(a,b, r):
     return res
 
 if __name__ == "__main__":
-    task = int(sys.argv[1])
-    rep = int(sys.argv[2])
+    print('argv',sys.argv)
+    #task = int(sys.argv[1])
+    #t2 =   int(sys.argv[2])
+    #rep = int(sys.argv[3])
+    task,t2,rep = map(int, sys.argv[1].strip().split(' '))
     #dnames = load.get100names(path='../data')
 
     home = dnames[task] 
-    if  debug:
-        result =  similarity2(home, dnames[1],rep)
-    else:
-        result = [similarity2(home, other, rep) for other in dnames]
+    other = dnames[t2]
+    result =  similarity2(home, other,rep)
     print (result)
-    if not debug:
-        ba.dumpfile(result,"res/"+sys.argv[1]+"_"+sys.argv[2])
-
+    ba.dumpfile(result,"res/"+sys.argv[1].replace(" ",'_'))
 
 def res(indices,r): 
     re = [] 
@@ -61,3 +60,7 @@ def res(indices,r):
         indexrepeats =  np.array([ba.loadfile(f"res/{i}_{rep}") for rep in range(r) ]) 
         re.append( list(indexrepeats.mean(axis= 0))) 
     print(re) 
+
+
+# for i in (seq 0 8); for j in (seq $i 8) ; for rep in (seq 0 20); echo $i $j $rep ;end;end;end | parallel -j 8 --bar ./dendro_mk_mtx.py
+

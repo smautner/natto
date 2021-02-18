@@ -220,6 +220,7 @@ def get100names(path = '../data/100/data'):
 
 def get100gz(item, path = '../data/100/data'):
     mtx_path = f"{path}/{item}.counts.gz"
+    print("load path: ", mtx_path)
     things = pd.read_csv(mtx_path, sep='\t').T
     adata = ad.AnnData(things)
     adata.X=csr_matrix(adata.X)
@@ -240,7 +241,7 @@ def load100(item, path='../data/100/data', seed= None, subsample=None, remove_un
 
 
 
-def load100addtruth(item, path='../data/100/data'):
+def load100addtruthAndWrite(adata,item, path='../data/100/data'):
     fname = f"{path}/{item}.cluster.txt"
     lol = open(fname,'r').readlines()   
 
@@ -250,8 +251,8 @@ def load100addtruth(item, path='../data/100/data'):
         bc,cl =  line.strip().split()
         barcode_cid[bc]= int(cl)
     
-    fname = f"{path}/{item}.h5"
-    adata = ad.read_h5ad(fname)
+    #fname = f"{path}/{item}.h5"
+    #adata = ad.read_h5ad(fname)
     adata.obs['true'] = [barcode_cid.get(a,-1)  for a in adata.obs.index]
     adata.write(fname, compression='gzip')
 

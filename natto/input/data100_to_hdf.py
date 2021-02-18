@@ -1,4 +1,4 @@
-#!/home/mautner/.myconda/miniconda3/bin/python
+#!/home/ubuntu/.myconda/miniconda3/bin/python
 import os 
 import sys
 import basics as ba
@@ -7,17 +7,24 @@ import numpy as np
 from natto.input import load
 
 if __name__ == "__main__":
-    names =  load.get100names()
-    task = int(sys.argv[1])
+    # which file do we take care of?
+    #names =  load.get100names(path='../data')
+    #task = int(sys.argv[1])
+    #myname = names[task]
+    myname = sys.argv[1] 
+    myname = myname[:-10]
+    print (myname)
 
-    myname = names[task]
-    fname = f"../data/100/data/{myname}.h5"
-    doit =  os.path.exists(fname)
+    
+    fname = f"../data/{myname}.h5"
+    doit =  not os.path.exists(fname)
 
-    if doit:
-        # z= load.get100(myname) LOAD GZIP STUFF
-        # ad.write(fname, compression='gzip')
-        load.load100addtruth(myname)
+    if doit: # no h5 file
+        print(fname)
+        #z= load.get100gz(myname, path='../data') # LOAD GZIP STUFF
+        print("LOADING FINE")
+        ## ad.write(fname, compression='gzip')
+        #load.load100addtruthAndWrite(z,myname,path='../data')
 
 
     #ba.dumpfile(result,"res/"+sys.argv[1]+"_"+sys.argv[2])

@@ -91,8 +91,11 @@ def normalize_dist(d):
 
     return d
 
+# we want:
+# 1. distance box plot.. i think the code is there already 
+# boxes(data) should work 
 
-#################
-# we want to do the ordering stuff like before
-############
+# 2. we want for every line... (avg distance) the clustering boxplots
+# so the best way to do this is to arange an array for use in boxes()
+
 

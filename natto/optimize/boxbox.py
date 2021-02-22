@@ -3,6 +3,9 @@
 import numpy as np
 data  = np.random.randint(0, 100, size=(10, 10, 100))
 
+
+
+
 d=10
 
 # make a boxplot from the data
@@ -51,3 +54,48 @@ for i in range(d):
             med2[i,j]= med2[i,j]*(2/(median[i,i]+median[j,j]))
 
 print(med2)
+
+
+
+######
+#  loading my res files:
+######
+import basics as ba
+import os
+def read_data(path='./res',ax0=9,ax1=9,Rep=20, mirror=False):
+    alldata = np.zeros((ax0,ax1,Rep))
+    for x in range(ax0):
+        for y in range(ax1):
+            for r in range(Rep):
+                filename= f'{path}/{x}_{y}_{r}'
+                if os.path.exists(filename):
+                    data = ba.loadfile(filename)
+                    alldata[x,y,r]= data
+                    if mirror and x!=y:
+                        alldata[y,x,r] = data
+    return alldata
+
+
+dist = read_data("",9,9,20,mirror=True)
+dist = np.median(dist, axis =2 )
+combi_perf = read_data("",9,9,20,mirror=True)
+combi = np.median(combi_perf, axis =2 )
+
+def normalize_dist(d):
+    # input diag matrix 
+    for i in range(d.shape[0]):
+        for j in range(d.shape[1]):
+            if i!=j:
+                d1 = d[i,i]  +  d[j,j] 
+                d[i,j] =  d[i,j]*(2/d1)  # or the other way araound
+
+    return d
+
+# we want:
+# 1. distance box plot.. i think the code is there already 
+# boxes(data) should work 
+
+# 2. we want for every line... (avg distance) the clustering boxplots
+# so the best way to do this is to arange an array for use in boxes()
+
+

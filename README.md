@@ -1,32 +1,17 @@
 
 ## install
 ```
-install python3-pip and cmake g++ gcc
-
+# lapsolver needs cmake and this seems to work:
+conda install cmake pip make gxx_linux-64 gcc_linux-64 fish
+export CMAKE_MAKE_PROGRAM=$(which make)
+export CC=$(which x86_64-conda_cos6-linux-gnu-gcc)
+export CXX=$(which x86_64-conda_cos6-linux-gnu-g++)
+# rari is not on pypi:
 pip3 install git+https://github.com/nredell/rari                                 
 
 pip3 install git+https://github.com/smautner/natto.git                          
 ```
 
-
-## install problems:
-```
-
-# scanpy seems to  be bugged 
-pip3 install --upgrade  scanpy==1.4.4.post1
-remove anndata
-pip3 install --upgrade  anndata==0.6.22.post1
-# -> this may be false, i think i need to build a cache for each dataset first,
-# multiple proicesses trying to build a cache at the same time fails...
-
-
-# building lapsolver 
-1. clone it 
-https://github.com/cheind/py-lapsolver.git 
-export CMAKE_MAKE_PROGRAM=$(which make)
-export CMAKE_C_COMPILER=$(which gcc)
-export CMAKE_CXX_COMPILER=$(which g++)
-```
 
 
 

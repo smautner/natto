@@ -3,8 +3,9 @@ import os
 import sys
 import basics as ba
 import numpy as np
-
 from natto.input import load
+
+
 
 if __name__ == "__main__":
     # which file do we take care of?
@@ -12,19 +13,17 @@ if __name__ == "__main__":
     #task = int(sys.argv[1])
     #myname = names[task]
     myname = sys.argv[1] 
-    myname = myname[:-10]
+    #myname = myname[:-10]
     print (myname)
 
     
-    fname = f"../data/{myname}.h5"
-    doit =  not os.path.exists(fname)
+    #fname = f"../data/{myname}.h5"
+    #doit =  not os.path.exists(fname)
 
-    if doit: # no h5 file
-        print(fname)
-        #z= load.get100gz(myname, path='../data') # LOAD GZIP STUFF
-        print("LOADING FINE")
-        ## ad.write(fname, compression='gzip')
-        #load.load100addtruthAndWrite(z,myname,path='../data')
+    z= load.get100gz(myname, path='../data') # LOAD GZIP STUFF
+    print("LOADING FINE")
+    #ad.write(fname, compression='gzip')
+    load.load100addtruthAndWrite(z,myname,path='../data')
 
 
     #ba.dumpfile(result,"res/"+sys.argv[1]+"_"+sys.argv[2])

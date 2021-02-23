@@ -251,9 +251,9 @@ def load100addtruthAndWrite(adata,item, path='../data/100/data'):
         bc,cl =  line.strip().split()
         barcode_cid[bc]= int(cl)
     
-    #fname = f"{path}/{item}.h5"
     #adata = ad.read_h5ad(fname)
     adata.obs['true'] = [barcode_cid.get(a,-1)  for a in adata.obs.index]
+    fname = f"{path}/{item}.h5"
     adata.write(fname, compression='gzip')
 
     

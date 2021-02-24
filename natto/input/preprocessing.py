@@ -33,6 +33,7 @@ class Data():
             mitochondria = False,
             binsize=.25,
             minbin = 1,
+            do2dumap=True,
             titles = ("no title set in data constructure","<-"),
             quiet =  False,
             make_even=True):
@@ -57,7 +58,7 @@ class Data():
         # umap
         ##########
         self.transform_data(scale, corrcoef)
-        self.dimension_reduction(pca, dimensions, umap_n_neighbors)
+        self.dimension_reduction(pca, dimensions, umap_n_neighbors, do2dumap)
         self.hungarian()
         return self
 
@@ -97,10 +98,11 @@ class Data():
         self.pca = a,b, PCA
         return a,b
 
-    def dimension_reduction(self, pca, dimensions, umap_n_neighbors):
+    def dimension_reduction(self, pca, dimensions, umap_n_neighbors, do2dumap):
         self.mk_pca(pca)
         self.dx = self.umapify(dimensions, umap_n_neighbors)
-        self.d2 = self.umapify(2, umap_n_neighbors)
+        if do2dumap:
+            self.d2 = self.umapify(2, umap_n_neighbors)
 
     def umapify(self, dimensions, n_neighbors):
         a,b, pcadim  = self.pca

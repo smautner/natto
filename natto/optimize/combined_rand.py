@@ -15,7 +15,10 @@ sampnum = 200 if debug else 1000
 def get_score(n1, n2, loader, trve, seed):
     sampnum = 200 if debug else 1000
     d1 = loader(n1,seed)
+    if n1==n2:
+        seed += 1982369162
     d2 = loader(n2,seed)
+
     pp = preprocessing.Data().fit(d1,d2,
                     debug_ftsel=False,
                     scale=True, 

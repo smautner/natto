@@ -8,9 +8,6 @@ if os.path.exists(writeto):
     print("file exists")
     exit()
 
-
-
-
 import basics as ba
 import gc
 import numpy as np
@@ -28,8 +25,6 @@ from natto.input import load
 from natto import process
 
 
-
-
 dnames = load.get100names(path='../data')
 debug = False
 if debug: 
@@ -37,7 +32,7 @@ if debug:
 
 def similarity(stra, strb, rep): 
     scale = False, 
-    subsample = 200 if debug else 1000 
+    subsample = 200 if debug else 2500 
     path='../data'
     d = Data().fit(load.load100(stra,path=path, subsample= subsample, seed = rep),
                  load.load100(strb, path=path, subsample= subsample, seed= rep), 
@@ -51,7 +46,6 @@ def similarity(stra, strb, rep):
     print("clustering..",end='')
     l=process.gmm_2(*d.dx,nc=15, cov='full')
     r=rari_score(*l, *d.dx)
-    print(r)
     return r
 
 
@@ -59,7 +53,10 @@ if __name__ == "__main__":
     task,t2,rep = map(int, sys.argv[1].strip().split(' '))
     home = dnames[task] 
     other = dnames[t2]
+    if debug: print("fanmes", home, other)
     result =  similarity(home, other,rep)
+        
+    print(result)
     ba.dumpfile(result,writeto)
 
 '''

@@ -86,7 +86,7 @@ def normalize_dist(d,d2,rev=False):
     for i in range(d.shape[0]):
         for j in range(d.shape[1]):
             if i!=j:
-                for z in range(d2.shape[2]):
+                for z in range(d.shape[2]):
                     d1 = d2[i,i]  +  d2[j,j] 
                     m = d1/2
                     if rev:
@@ -160,3 +160,37 @@ draw_cloud(sim_diag_m2,combi_perf15,row)
 
 
 # %%
+
+z = eval(open("/home/ikea/100x.lst",'r').read())
+z=np.array(z)
+z[z==-1]=np.nan
+z = np.nanmean(z,axis=2)
+
+# %%
+
+
+
+from natto.input import load
+names = load.get100names("/home/ikea/data/data")
+
+labs = [n[:5] for n in names]
+items = np.unique(labs)
+s= spacemap(items)
+nulabels = [s.getint[e] for e in labs  ] 
+
+
+
+# %%
+import umap 
+
+fit = umap.UMAP(n_neighbors=3)
+u = fit.fit_transform(z)
+
+
+for 
+plt.scatter(u[:,0], u[:,1],label=lab)
+
+plt.legend()
+plt.show()
+
+

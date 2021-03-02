@@ -161,14 +161,14 @@ draw_cloud(sim_diag_m2,combi_perf15,row)
 
 # %%
 
-z = eval(open("/home/ikea/100x.lst",'r').read())
+z = eval(open("/home/ikea/data/100x.lst",'r').read())
 z=np.array(z)
 z[z==-1]=np.nan
 z = np.nanmean(z,axis=2)
 
 # %%
 
-
+from natto.out.quality import spacemap
 
 from natto.input import load
 names = load.get100names("/home/ikea/data/data")
@@ -183,14 +183,17 @@ nulabels = [s.getint[e] for e in labs  ]
 # %%
 import umap 
 
-fit = umap.UMAP(n_neighbors=3)
+fit = umap.UMAP(n_neighbors=4)
 u = fit.fit_transform(z)
 
-
-for 
-plt.scatter(u[:,0], u[:,1],label=lab)
+nulabels=np.array(nulabels)
+for item in items:
+    X = u[nulabels==s.getint[item]]
+    plt.scatter(X[:,0], X[:,1],label=item, color=draw.col[s.getint[item]])
 
 plt.legend()
 plt.show()
 
 
+
+# %%

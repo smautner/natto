@@ -56,11 +56,10 @@ class Data():
         self.sort_cells()
         return self
 
-    
-    def sort_cells(self):
-        
-        #assert False, "not implemented"
 
+
+    def sort_cells(self):
+        #assert False, "not implemented"
         for i in range(len(self.data)-1):
             hung, _ = h.hungarian(self.dx[i],self.dx[i+1])
             self.data[i+1].X = self.data[i+1].X[hung[1]]
@@ -68,37 +67,12 @@ class Data():
             self.d2[i+1] = self.d2[i+1][hung[1]]
             #self.pca[i+1] = self.pca[i+1][hung[1]]
 
-
-    def dimension_reduction(self, pca, dimensions, umap_n_neighbors, scale= True):
-        self.mk_pca(pca, scale= scale)
-        self.dx = self.umapify(dimensions, umap_n_neighbors)
-        self.d2 = self.umapify(2, umap_n_neighbors)
-
-
-
     def printcounts(self, where):
         counts  = [  e.X.shape[0] for e in self.data  ]
         print('printcounts:', where, counts)
 
-    def make_even(self):
 
-        # assert all equal 
-        size = self.data[0].X.shape[1]
-        assert all ([size == other.X.shape[1] for other in self.data])
 
-        # find smallest
-        counts  = [  e.X.shape[0] for e in self.data  ]
-        smallest = min(counts)
-
-        
-
-        for a in self.data:
-            if a.X.shape[0] > smallest:
-                sc.pp.subsample(a,
-                        fraction=None,
-                        n_obs=smallest,
-                        random_state=0,
-                        copy=False)
 
 
 
@@ -136,48 +110,6 @@ class Data():
         genes  = np.any(np.array(genelists), axis  = 0)  ##???? lets see if this works
         self.data = [ d[:,genes].copy() for d in self.data  ]
 
-    def scale(self):
-        [sc.pp.scale(adat, max_value =10) for adat in self.data]
-
-    def mk_pca(self, PCA, scale = True):
-
-
-        if scale:
-            self.scale()
-
-        read_mat = self._toarray()
-
-        if not PCA: 
-            self.pca = read_mat, PCA
-            return read_mat
-
-        # we do PCA
-        if scale == False: # if scale is false we scale all together to make pca vaible
-            scaler= StandardScaler()
-            scaled = [ scaler.fit_transform(m) for m in read_mat]
-        else:
-            scaled= read_mat
-
-
-        pca = sklearn.decomposition.PCA(n_components=PCA)
-        pca.fit(np.vstack(scaled))
-        blocks = [ pca.transform(e) for e in scaled  ]
-
-
-        self.pca = blocks, PCA
-        return blocks
-
-    def umapify(self, dimensions, n_neighbors):
-        stuff, pcadim = self.pca
-        if 0 < pcadim <= dimensions:
-            return stuff
-
-        mymap = umap.UMAP(n_components=dimensions,
-                          n_neighbors=n_neighbors,
-                          random_state=1337).fit(
-            np.vstack(stuff))
-
-        return [ mymap.transform(s) for s in stuff]
 
 
 
@@ -200,49 +132,11 @@ class Data():
 
 
 
-    def _toarray(self):
-        return [self.__toarray(x) for x in self.data]
-
-    def __toarray(self, thing):
-        if isinstance(thing, np.ndarray):
-            return thing
-        elif isinstance(thing, csr):
-            return thing.toarray()
-        elif isinstance(thing.X, np.ndarray):
-            return thing.X
-        elif isinstance(thing.X, csr):
-            return thing.X.toarray()
-        print("type problem in to array ")
-
-
-
-    def basic_filter(self, min_counts=3, min_genes=200):
-
-        # filter cells
-        [sc.pp.filter_cells(d, min_genes=min_genes, inplace=True) for d in self.data]
-
-        # filter genes
-        genef  = [ sc.pp.filter_genes(d, min_counts=min_counts, inplace=False)[0] for d in self.data]
-        geneab = np.any(np.array(genef),axis = 0)
-        for i,d in enumerate(self.data):
-            self.data[i] = d[:,geneab]
 
 
 
 
 
-    def normalize(self):
-
-        if self.mitochondria:
-            for d in self.data:
-                d.var['mt'] = d.var_names.str.startswith(self.mitochondria)
-                sc.pp.calculate_qc_metrics(d, qc_vars=['mt'], percent_top=None, inplace=True)
-
-            for i,d in enumerate(self.data):
-                self.data[i] = d[d.obs.pct_counts_mt < 5, :]
-
-        [sc.pp.normalize_total(d, 1e4) for d  in self.data]
-        [sc.pp.log1p(d) for d in self.data]
 
     def norm_data(self):
         self.basic_filter()
@@ -401,6 +295,8 @@ class Data():
         mask[mask] = np.array(accept)
 
         return mask
+
+
 
     def __init__(self):
         self.debug_ftsel = False

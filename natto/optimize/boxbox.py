@@ -139,11 +139,16 @@ boxes(sim_diag)
 #%% 
 # 3. cluster row
 distM = mirror(dist_raw, copy= True)
+
 distM2d = np.median(distM,axis=2)
+
 row = np.argmax(distM2d.sum(axis=1))
-print("row", row)
-draw_cloud(sim_diag,combi_perf,row) 
-draw_cloud(sim_diag,combi_perf15,row) 
+
+
+for row in range(8):
+    print("row", row)
+    draw_cloud(sim_diag,combi_perf,row) 
+    #draw_cloud(sim_diag,combi_perf15,row) 
 
 
 #%%
@@ -195,5 +200,9 @@ plt.legend()
 plt.show()
 
 
+
+# %%
+
+# %%
 
 # %%

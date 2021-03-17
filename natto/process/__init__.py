@@ -20,7 +20,7 @@ class Data():
             titles = "ABCDEFGHIJK",
             debug =  False,
             make_even=True,
-            sort_field=-1):
+            sortfield=-1):
 
         self.data= adatas
         self.titles = titles
@@ -37,7 +37,7 @@ class Data():
         self.projections = dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
 
 
-        if PCA:
+        if pca:
             self.PCA = self.projections[0]
 
         if sortfield >=0: 
@@ -45,7 +45,7 @@ class Data():
         
 
         if umaps:
-            for x,d in zip(umaps,self.projections[int(pca):):
+            for x,d in zip(umaps,self.projections[int(pca):]):
                 self.__dict__[f"d{x}"] = d
 
 
@@ -55,7 +55,7 @@ class Data():
     def sort_cells(self,projection_id = 1):
         # loop over data sets
         for i in range(len(self.data)-1):
-            hung, _ = u.hungarian(self.projections[sortfield][i],self.projections[sortfield][i+1])
+            hung, _ = u.hungarian(self.projections[projection_id][i],self.projections[projection_id][i+1])
             self.data[i+1].X = self.data[i+1].X[hung[1]]
 
             # loop over projections

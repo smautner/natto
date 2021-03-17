@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-def draw():
+def draw(p):
     for s in p.d2:
         plt.scatter(s[:, 0], s[:, 1])
     plt.show()
@@ -15,11 +15,12 @@ c= sc.pp.subsample(z,copy=True, n_obs =1000, random_state = 3)
 
 
 
-A = p.Data().fit([a.copy()],umaps=[2],visual_ftsel=False)
-B = p.Data().fit([y.copy() for y in [a,b]],umaps=[2],visual_ftsel=False)
-C = p.Data().fit([y.copy() for y in [a,b,c]],umaps=[2],visual_ftsel=False)
-exit()
-# draw(A) etc
+A = p.Data().fit([a.copy()],umaps=[2],visual_ftsel=False,sortfield=0)
+#B = p.Data().fit([y.copy() for y in [a,b]],umaps=[2],visual_ftsel=False)
+#C = p.Data().fit([y.copy() for y in [a,b,c]],umaps=[2],visual_ftsel=False)
+draw(A)
+draw(B)
+draw(C)
 
 
 

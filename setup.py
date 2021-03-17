@@ -95,7 +95,7 @@ setup(
     version=get_version(),
     author='Stefan Mautner',
     author_email='myl4stn4m3@cs.uni-freiburg.de',
-    packages=['natto','natto.input', 'natto.process', 'natto.out'],
+        packages=['natto','natto.input', 'natto.process', 'natto.out','natto.process.cluster'],
     scripts=[ ],
     include_package_data=True,
     package_data={},

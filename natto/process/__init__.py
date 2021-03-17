@@ -19,7 +19,8 @@ class Data():
 
             titles = "ABCDEFGHIJK",
             debug =  False,
-            make_even=True):
+            make_even=True,
+            sort_field=-1):
 
         self.data= adatas
         self.titles = titles
@@ -33,30 +34,35 @@ class Data():
 
 
         # do dimred
-        self.dimz = dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
+        self.projections = dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
 
 
-        # set data
+        if PCA:
+            self.PCA = self.projections[0]
+
+        if sortfield >=0: 
+            self.sort_cells(sortfield)
+        
+
         if umaps:
-            for i,d in zip(umaps,self.dimz):
-                self.__dict__[f"d{i}"] = d
-        else:
-            self.dx = self.dimz
+            for x,d in zip(umaps,self.projections[int(pca):):
+                self.__dict__[f"d{x}"] = d
 
-        #self.sort_cells(umaps)
+
         return self
 
 
-    def sort_cells(self,umaps=[]):
-        #assert False, "not implemented"
+    def sort_cells(self,projection_id = 1):
+        # loop over data sets
         for i in range(len(self.data)-1):
-            hung, _ = u.hungarian(self.dx[i],self.dx[i+1])
+            hung, _ = u.hungarian(self.projections[sortfield][i],self.projections[sortfield][i+1])
             self.data[i+1].X = self.data[i+1].X[hung[1]]
-            if umaps:
-                for x in umaps:
-                    self.__dict__[f"d{x}"][i+1] = self.__dict__[f"d{x}"][i+1][hung[1]]
-            else:
-                self.dx[i+1] = self.dx[i+1][hung[1]]
+
+            # loop over projections
+            for x in range(len(self.projections)):
+                self.projections[x][i+1] = self.projections[x][i+1][hung[1]]
+
+                
 
 
     def preprocess(self, selector, selectgenes, selectorargs):

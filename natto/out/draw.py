@@ -451,9 +451,9 @@ def auto_tiny(X,Y,wrap = 'auto',grad= False ):
 
 
 
-import natto.input.hungarian as h
+import natto.process.util as util
 def distance_debug(m):
-    (a,b),di = h.hungarian(*m.dx, debug = True)
+    (a,b),di = util.hungarian(*m.dx, debug = True)
     d = di[a,b]
     cmp2_grad(d,d,*m.d2,m.titles, save = False, cmap='viridis')
 

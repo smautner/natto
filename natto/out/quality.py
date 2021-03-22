@@ -8,8 +8,7 @@ from sklearn.metrics import adjusted_rand_score as rand
 import math
 from sklearn.metrics import pairwise_distances
 from rari import rari
-from natto.process.util import spacemap
-from natto.input.hungarian import hungarian
+from natto.process.util import spacemap, hungarian
 import pandas as pd
 
 # e^-dd / avg 1nn dist 

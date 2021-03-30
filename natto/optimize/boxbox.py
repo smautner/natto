@@ -159,22 +159,17 @@ distances=[]
 dataset_names = []
 for a in range(z.shape[0]):
     for b in range(z.shape[1]):
-        if a>=b and z[a,b]>0.4:
+        if a>=b and z[a,b]>0.3:
             dataset_names.append((names[a],names[b]))
             distances.append(alldata[a,b].tolist())
 
-print(len(distances), len(dataset_names))
+cluster_performance_p5 = eval(open("/home/ikea/data/boxbox_a.ev",'r').read())
 
-
-
-# %%
-cluster_performance = eval(open("/home/ikea/data/boxbox_a.ev",'r').read())
 
 def draw_cloud(distances, cluster_performance, datalabels):
     same_name=[]
     same_type=[]
     same_nothing=[]
-
 
     for a,b,labels in zip(distances, cluster_performance,datalabels):
         n1,n2 = labels
@@ -188,7 +183,7 @@ def draw_cloud(distances, cluster_performance, datalabels):
             else:
                 same_nothing.append(simp)
 
-    
+    print(len(same_name), len(same_type), len(same_nothing))
     plt.scatter(*Transpose(same_name),marker='o',color='black')
     plt.scatter(*Transpose(same_type),marker='2',color='black')
     plt.scatter(*Transpose(same_nothing),marker='*',color='black')
@@ -224,13 +219,23 @@ draw_cloud(distances,cluster_performance,dataset_names)
 ##############
 #distance_fake_multi.ev
 DATA  = eval(open("/home/ikea/data/distance_fake_multi.ev",'r').read())
+DATA2  = eval(open("/home/ikea/data/distance_fake_multi_p2.ev",'r').read())
 DATA = np.array(DATA)
+DATA2 = np.array(DATA2)
 
-#DATA = np.nanmean(DATA,axis=2)
+# use just 1 random slide
 DATA = DATA[:,:,2]
+DATA2 = DATA2[:,:,2]
 
+sns.heatmap(DATA);plt.plot()
+sns.heatmap(DATA2);plt.plot()
+
+# for adding i should make the missing things 0 ...
 DATA[DATA==-1]=0
+DATA2[DATA2==-1]=0
+DATA=DATA+DATA2
 
+#%%
 LABELS  = eval(open("/home/ikea/data/distance_fake_multi_labels.ev",'r').read())
 LABELS  = [l[:5] for l in LABELS] 
  

@@ -163,7 +163,21 @@ for a in range(z.shape[0]):
             dataset_names.append((names[a],names[b]))
             distances.append(alldata[a,b].tolist())
 
-cluster_performance_p5 = eval(open("/home/ikea/data/boxbox_a.ev",'r').read())
+#cluster_performance = eval(open("/home/ikea/data/boxbox_a.ev",'r').read())
+cluster_performance = np.array(eval(open("/home/ikea/data/point3.1.ev",'r').read()))
+
+
+def docalc(combi, d1,d2):
+    # calculates increase for clustering jointly
+    #return combi / max(d1,d2)
+    return 2*combi / (d1+d2)
+
+
+def addbox(rrr, color):
+    a,b = Transpose(rrr)
+    data = b 
+    position = np.median(a)
+    plt.boxplot(data,positions=[position])
 
 
 def draw_cloud(distances, cluster_performance, datalabels):
@@ -173,9 +187,11 @@ def draw_cloud(distances, cluster_performance, datalabels):
 
     for a,b,labels in zip(distances, cluster_performance,datalabels):
         n1,n2 = labels
-        if b[0]>-1:
-            simp = (np.median(a),np.median(b))
-                
+        if b[0][0]>-1:
+            simp = (np.median(a),np.median(b[:,0]))
+
+            clusterscore = [ docalc(*abc) for abc in b ]
+            simp = np.median(a), np.median(clusterscore)
             if n1==n2:
                 same_name.append(simp)
             elif n1[:5] == n2[:5]:
@@ -183,11 +199,20 @@ def draw_cloud(distances, cluster_performance, datalabels):
             else:
                 same_nothing.append(simp)
 
+
+    addbox(same_name,'red')
+    addbox(same_nothing,'red')
+    addbox(same_type,'red')
     print(len(same_name), len(same_type), len(same_nothing))
-    plt.scatter(*Transpose(same_name),marker='o',color='black')
-    plt.scatter(*Transpose(same_type),marker='2',color='black')
-    plt.scatter(*Transpose(same_nothing),marker='*',color='black')
+    plt.scatter(*Transpose(same_nothing),marker='o',color='blue',label=f'unrelated ({len(same_nothing)})')
+    plt.scatter(*Transpose(same_name),marker='o',color='red', label=f'same dataset({len(same_name)})')
+    plt.scatter(*Transpose(same_type),marker='o',color='black', label=f'same celltype ({len(same_type)})')
+    plt.legend()
     
+    x = [x/10 for x in range(3,11)]
+    plt.xticks(x,labels=x)
+
+
     allmarks=same_name+same_type+same_nothing
     #print('spearman black',spear(Transpose(s1)))
     s1,s2=Transpose(allmarks)
@@ -200,7 +225,7 @@ def draw_cloud(distances, cluster_performance, datalabels):
 
 
     plt.xlabel("similarity ")
-    plt.ylabel("cluster performance")
+    plt.ylabel("cluster performance (joint/max(a,b))")
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
 
@@ -219,7 +244,7 @@ draw_cloud(distances,cluster_performance,dataset_names)
 ##############
 #distance_fake_multi.ev
 DATA  = eval(open("/home/ikea/data/distance_fake_multi.ev",'r').read())
-DATA2  = eval(open("/home/ikea/data/distance_fake_multi_p2.ev",'r').read())
+DATA2  = eval(open("/home/ikea/data/distance_fake_multi_remake.ev",'r').read())
 DATA = np.array(DATA)
 DATA2 = np.array(DATA2)
 
@@ -227,13 +252,16 @@ DATA2 = np.array(DATA2)
 DATA = DATA[:,:,2]
 DATA2 = DATA2[:,:,2]
 
-sns.heatmap(DATA);plt.plot()
-sns.heatmap(DATA2);plt.plot()
-
 # for adding i should make the missing things 0 ...
 DATA[DATA==-1]=0
 DATA2[DATA2==-1]=0
-DATA=DATA+DATA2
+
+
+
+DATA= np.add(DATA,DATA2)
+
+sns.heatmap(DATA);plt.show()
+sns.heatmap(DATA2);plt.show()
 
 #%%
 LABELS  = eval(open("/home/ikea/data/distance_fake_multi_labels.ev",'r').read())

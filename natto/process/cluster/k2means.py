@@ -1,6 +1,5 @@
 
 from lmz import *
-from natto.input import hungarian as h 
 from sklearn.mixture import _gaussian_mixture as _gm
 import numpy as np
 from sklearn.metrics.pairwise import euclidean_distances as ed
@@ -20,8 +19,6 @@ def assign(x1,x2,c1,c2):
 
     return res,  np.argmin(r, axis = 1) !=  np.argmin(r2, axis = 1)
 
-    
-
 
 def centers(y,X):
     cents = []
@@ -32,7 +29,7 @@ def centers(y,X):
 
 def optimize_kmeans(X1,X2,y): 
     c1, c2 = centers(y,X1), centers(y,X2)
-    c2 = h.hungsort(c1,c2)
+    #c2 = h.hungsort(c1,c2)
     y,e = assign(X1,X2,c1,c2)
     return y,e
 
@@ -71,7 +68,7 @@ def optimize(X1,X2,y, cov='tied'):
     #(a,b),_ = h.hungarian(m1,m2) 
     #assert np.all(np.diff(b) > 0)
     log_resp = l1+l2
-    return log_resp.argmax(axis=1), l1.argmax(axis=1)!=l2.argmax(axis=1)
+    return log_resp.argmax(axis=1), l1.argmax(axis=1)!=l2.argmax(axis=1), (l1.argmax(axis=1),l2.argmax(axis=1))
 
 
 
@@ -129,7 +126,7 @@ def optistep(X1,X2,y,method):
 def simulclust(X1,X2,y, method = 'full', n_iter=100, debug = False):
     for asd in range(n_iter):
         yold = y.copy()
-        y , e=  optistep(X1,X2,y,method) 
+        y , e, s1s2=  optistep(X1,X2,y,method) 
         chang = sum(y!=yold)
         if debug > 1: 
             print(f"changes in iter:  {chang}")
@@ -138,9 +135,11 @@ def simulclust(X1,X2,y, method = 'full', n_iter=100, debug = False):
             break
     else:
         assert False, "did not converge"
-    return y,e
+    return y,e, s1s2
 
-
+def tunnelclust(X1,X2, method = 'full', n_iter=100, debug = False):
+    y = init(X1, clusts = 25) 
+    return simulclust(X1,X2,y,method=method, n_iter=n_iter, debug=debug)[2]
 
     
 

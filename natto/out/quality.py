@@ -110,7 +110,7 @@ def make_rari_compatible(ar):
     for k,v in s.getint.items(): 
         if k!=v:
             ar[ar==k] = v
-    return ar 
+    return np.array(ar)
             
 
 
@@ -125,15 +125,18 @@ def rari_score(Y1,Y2,X1,X2,metric='euclidean'):
     X2 = X2[new_order]
     Y2 = Y2[new_order]
 
+    return rari_srt(Y1,Y2,X1,X2) 
 
-    # distances:
+
+
+def  rari_srt(Y1,Y2,X1,X2):
     dist_x1 = pairwise_distances(X1) # clustering happened in euclidean space?
     dist_x2 = pairwise_distances(X2)
-
-    #
     Y1 = make_rari_compatible(Y1)
     Y2 = make_rari_compatible(Y2)
     return rari(Y1,Y2,dist_x1,dist_x2)  
+
+
 
 def rand_score(Y1,Y2):
      return rand(Y1,Y2)

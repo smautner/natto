@@ -56,7 +56,8 @@ class Data():
         # loop over data sets
         for i in range(len(self.data)-1):
             hung, _ = u.hungarian(self.projections[projection_id][i],self.projections[projection_id][i+1])
-            self.data[i+1].X = self.data[i+1].X[hung[1]]
+            self.data[i+1] = self.data[i+1][hung[1]]
+            #self.data[i+1].X = self.data[i+1].X[hung[1]]
 
             # loop over projections
             for x in range(len(self.projections)):

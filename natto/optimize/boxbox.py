@@ -168,13 +168,12 @@ for a in range(z.shape[0]):
             distances.append(alldata[a,b].tolist())
 
 #cluster_performance = eval(open("/home/ikea/data/boxbox_a.ev",'r').read())
-cluster_performance = np.array(eval(open("/home/ikea/data/point3.1.ev",'r').read()))
+cluster_performance = np.array(eval(open("/home/ikea/data/point3.2.ev",'r').read()))
 
 
-def docalc(combi, d1,d2):
+def docalc(combi, combi_r, a, ar, b, br, combi_natto, combi_natto_r):
     # calculates increase for clustering jointly
-    return combi / max(d1,d2)
-    #return 2*combi / (d1+d2)
+    return 2*combi_r / (ar+br)
 
 
 def addbox(rrr, color):
@@ -231,7 +230,7 @@ def draw_cloud(distances, cluster_performance, datalabels):
 
 
     plt.xlabel("similarity ")
-    plt.ylabel("cluster performance (joint/max(a,b))")
+    plt.ylabel("cluster performance (joint/avg(a,b))")
     plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
 
@@ -249,25 +248,16 @@ draw_cloud(distances,cluster_performance,dataset_names)
 # repeated sampling 
 ##############
 #distance_fake_multi.ev
-DATA  = eval(open("/home/ikea/data/distance_fake_multi.ev",'r').read())
-DATA2  = eval(open("/home/ikea/data/distance_fake_multi_remake.ev",'r').read())
-DATA = np.array(DATA)
-DATA2 = np.array(DATA2)
-
+DATAA  = eval(open("/home/ikea/data/distance_fake_multi_nuplacenta.ev",'r').read())
+DATAA = np.array(DATA)
+DATAA[DATAA==-1]=0
 # use just 1 random slide
-DATA = DATA[:,:,2]
-DATA2 = DATA2[:,:,2]
+DATA = DATAA[:,:,2]
 
 # for adding i should make the missing things 0 ...
-DATA[DATA==-1]=0
-DATA2[DATA2==-1]=0
 
-
-
-DATA= np.add(DATA,DATA2)
 
 sns.heatmap(DATA);plt.show()
-sns.heatmap(DATA2);plt.show()
 
 #%%
 LABELS  = eval(open("/home/ikea/data/distance_fake_multi_labels.ev",'r').read())
@@ -276,7 +266,7 @@ LABELS  = [l[:5] for l in LABELS]
 
 items = np.unique(LABELS)
 s= spacemap(items)
-nulabels = [s.getint[e] for e in LABELS  ] 
+nulabels = [s.getint[e] for e in LABELS] 
 nulabels=np.array(nulabels)
 
 

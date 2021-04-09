@@ -234,6 +234,7 @@ def load100(item, path='../data/100/data', seed= None, subsample=None, remove_un
     adata =  ad.read_h5ad(f"{path}/{item}.h5")
     if remove_unlabeled:
         adata = adata[adata.obs['true']!=-1]
+
     if subsample:
         sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=seed, copy=False)
     return adata

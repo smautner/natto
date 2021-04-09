@@ -145,11 +145,11 @@ for label in s.integerlist:
     g.ax_col_dendrogram.bar(0, 0, color=draw.col[label],
                             label=s.getitem[label], linewidth=0)
 
-g.ax_col_dendrogram.legend(loc="lower center", ncol=5, bbox_to_anchor=(.5,-1))
-g.ax_heatmap.tick_params(left=False, bottom=False)
-g.ax_heatmap.set_xlabel(None)
+g.ax_heatmap.tick_params(right=False, bottom=False)
+g.ax_heatmap.set(xticklabels=[])
+g.ax_heatmap.set(yticklabels=[])
 
-
+g.ax_col_dendrogram.legend( ncol=7, bbox_to_anchor=(1,-4.1))
 # %%
 # CLUSTER PERFORMANCE VS SIMILARITY , SIM > .5
 ###############################
@@ -289,5 +289,9 @@ for label in s.integerlist:
                             label=s.getitem[label], linewidth=0)
 
 g.ax_col_dendrogram.legend(loc="center", ncol=5)
+g.ax_heatmap.tick_params(right=False, bottom=False)
+g.ax_heatmap.set(xticklabels=[])
+g.ax_heatmap.set(yticklabels=[])
 
+g.ax_col_dendrogram.legend( ncol=7, bbox_to_anchor=(1,-4.1))
 # %%

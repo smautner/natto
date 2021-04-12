@@ -136,8 +136,10 @@ for n in [8]: #range(2,10):
     scatter(u)
 
 
-# %%
+# %% 100x100 plot
 import seaborn as sns 
+z = np.nanmean(alldata,axis=2)
+#z = alldata[:,:,10]
 colz = [draw.col[x] for x in nulabels]
 g=sns.clustermap(z,row_colors = colz, col_colors = colz)
 
@@ -145,36 +147,41 @@ for label in s.integerlist:
     g.ax_col_dendrogram.bar(0, 0, color=draw.col[label],
                             label=s.getitem[label], linewidth=0)
 
-g.ax_col_dendrogram.legend(loc="lower center", ncol=5, bbox_to_anchor=(.5,-1))
-g.ax_heatmap.tick_params(left=False, bottom=False)
-g.ax_heatmap.set_xlabel(None)
+g.ax_heatmap.tick_params(right=False, bottom=False)
+g.ax_heatmap.set(xticklabels=[])
+g.ax_heatmap.set(yticklabels=[])
 
-
-# %%
-# CLUSTER PERFORMANCE VS SIMILARITY , SIM > .5
+g.ax_col_dendrogram.legend( ncol=7, bbox_to_anchor=(1,-4.1))
+# %%  CLUSTER PERFORMANCE VS SIMILARITY , SIM > .3
 ###############################
 
+def docalc(combi, combi_r, a, ar, b, br, combi_natto, combi_natto_r):
+    # how we calculate the clustering score, there are many options oO 
+    #return 2*combi_r - (ar+br)
+    #return 2*combi - (a+b)
+    return np.mean((ar,br))/combi_r
 
-# TODO :  measure clusterperformance by
-#  px+py - perf(x+y) / (p(x)+p(y)) <- something like that
+sametype_cnt = 822 
+unrelated_cnt = 10000 -922 
 
+print(same, overlap,unrelated)
 import pprint
 distances=[]
 dataset_names = []
+STUPID = [] 
+z = np.nanmean(alldata,axis=2) # copy pasted this here just to make sure
 for a in range(z.shape[0]):
-    for b in range(z.shape[1]):
+    for b in range(z.shape[1]): 
         if a>=b and z[a,b]>0.3:
             dataset_names.append((names[a],names[b]))
             distances.append(alldata[a,b].tolist())
+            STUPID.append( z[a,b])
 
-#cluster_performance = eval(open("/home/ikea/data/boxbox_a.ev",'r').read())
-cluster_performance = np.array(eval(open("/home/ikea/data/point3.1.ev",'r').read()))
-
-
-def docalc(combi, d1,d2):
-    # calculates increase for clustering jointly
-    return combi / max(d1,d2)
-    #return 2*combi / (d1+d2)
+cluster_performance = np.array(eval(open("/home/ikea/projects/data/natto/point3.2.ev",'r').read()))
+CUTOFF = .3
+dataset_names = [dn for dn,d in zip(dataset_names,STUPID) if d > CUTOFF]
+distances = [np.nanmedian(dn) for dn,d in zip(distances,STUPID) if d > CUTOFF]
+clusterscores = [np.median(Map(lambda x:docalc(*x),dn)) for dn,d in zip(cluster_performance,STUPID) if d > CUTOFF]
 
 
 def addbox(rrr, color):
@@ -192,33 +199,35 @@ def draw_cloud(distances, cluster_performance, datalabels):
     same_name=[]
     same_type=[]
     same_nothing=[]
+    sns.set_theme(style="darkgrid")
 
-    for a,b,labels in zip(distances, cluster_performance,datalabels):
+
+    for dist,cluster,labels in zip(distances, cluster_performance,datalabels):
         n1,n2 = labels
-        if b[0][0]>-1:
-            simp = (np.median(a),np.median(b[:,0]))
-
-            clusterscore = [ docalc(*abc) for abc in b ]
-            simp = np.median(a), np.median(clusterscore)
-            if n1==n2:
-                same_name.append(simp)
-            elif n1[:5] == n2[:5]:
-                same_type.append(simp)
-            else:
-                same_nothing.append(simp)
+        #if cluster[0][0]>-1:
+        simp = dist,cluster
+        if n1==n2:
+            same_name.append(simp)
+        elif n1[:5] == n2[:5]:
+            same_type.append(simp)
+        else:
+            same_nothing.append(simp)
 
     #addbox(same_name,'red')
     #addbox(same_nothing,'red')
     #addbox(same_type,'red')
-    plt.scatter(*Transpose(same_nothing),marker='o',color='blue',label=f'unrelated ({len(same_nothing)})')
-    plt.scatter(*Transpose(same_name),marker='o',color='red', label=f'same dataset({len(same_name)})')
-    plt.scatter(*Transpose(same_type),marker='o',color='magenta', label=f'same celltype ({len(same_type)})')
+    sns.scatterplot(*Transpose(same_nothing),marker='o',color='blue',
+        label=f'unrelated ({len(same_nothing)})  {len(same_nothing)/unrelated_cnt:.2f} ')
+    sns.scatterplot(*Transpose(same_name),marker='o',color='red', 
+        label=f'same dataset({len(same_name)})  {len(same_name)/100:.2f} ')
+    sns.scatterplot(*Transpose(same_type),marker='o',color='magenta',
+        label=f'same celltype ({len(same_type)})  {len(same_type)/sametype_cnt:.2f}')
     plt.legend()
     
-    x = [x/10 for x in range(3,11)]
-    plt.xticks(x,labels=x)
+    #x = [x/10 for x in range(3,11)]
+    #plt.xticks(x,labels=x)
 
-
+    """
     allmarks=same_name+same_type+same_nothing
     #print('spearman black',spear(Transpose(s1)))
     s1,s2=Transpose(allmarks)
@@ -227,56 +236,45 @@ def draw_cloud(distances, cluster_performance, datalabels):
     mylr.fit(s1,s2)
     stuff =[.3,1]
     plt.plot(stuff, [mylr.predict([[x]]) for x in stuff])
-
+    """
 
 
     plt.xlabel("similarity ")
-    plt.ylabel("cluster performance (joint/max(a,b))")
-    plt.gca().set_aspect('equal', adjustable='box')
+    plt.ylabel("cluster performance (mean(a,b)/joint)")
+    #plt.gca().set_aspect('equal', adjustable='box')
     plt.show()
 
 
-draw_cloud(distances,cluster_performance,dataset_names)
+draw_cloud(distances,clusterscores,dataset_names)
 
 
 
 
 
 # %%
-
-################
 # here i will draw the clustermap for 
 # repeated sampling 
 ##############
 #distance_fake_multi.ev
-DATA  = eval(open("/home/ikea/data/distance_fake_multi.ev",'r').read())
-DATA2  = eval(open("/home/ikea/data/distance_fake_multi_remake.ev",'r').read())
-DATA = np.array(DATA)
-DATA2 = np.array(DATA2)
-
+DATAA  = eval(open("/home/ikea/projects/data/natto/distance_fake_multi_nuplacenta.ev",'r').read())
+DATAA = np.array(DATA)
+DATAA[DATAA==-1]=0
 # use just 1 random slide
-DATA = DATA[:,:,2]
-DATA2 = DATA2[:,:,2]
+DATA = DATAA[:,:,2]
 
 # for adding i should make the missing things 0 ...
-DATA[DATA==-1]=0
-DATA2[DATA2==-1]=0
 
-
-
-DATA= np.add(DATA,DATA2)
 
 sns.heatmap(DATA);plt.show()
-sns.heatmap(DATA2);plt.show()
 
 #%%
-LABELS  = eval(open("/home/ikea/data/distance_fake_multi_labels.ev",'r').read())
+LABELS  = eval(open("/home/ikea/projects/data/natto/distance_fake_multi_labels.ev",'r').read())
 LABELS  = [l[:5] for l in LABELS] 
  
 
 items = np.unique(LABELS)
 s= spacemap(items)
-nulabels = [s.getint[e] for e in LABELS  ] 
+nulabels = [s.getint[e] for e in LABELS] 
 nulabels=np.array(nulabels)
 
 
@@ -289,5 +287,16 @@ for label in s.integerlist:
                             label=s.getitem[label], linewidth=0)
 
 g.ax_col_dendrogram.legend(loc="center", ncol=5)
+g.ax_heatmap.tick_params(right=False, bottom=False)
+g.ax_heatmap.set(xticklabels=[])
+g.ax_heatmap.set(yticklabels=[])
+
+g.ax_col_dendrogram.legend( ncol=7, bbox_to_anchor=(1,-4.1))
+# %%
 
 # %%
+
+from collections import Counter
+mynames = [n[:5] for n in names]
+ctr = Counter(mynames)
+print(sum([v*v for v in ctr.values()]))

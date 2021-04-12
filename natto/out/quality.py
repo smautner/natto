@@ -107,10 +107,11 @@ def doubleclust(X,X2, Y,Y2):
 def make_rari_compatible(ar): 
     ''' not matching clusternames cause holes in clusternames causing rari 2 die'''
     s= spacemap(np.unique(ar) )
+    ar = np.array(ar)
     for k,v in s.getint.items(): 
         if k!=v:
             ar[ar==k] = v
-    return np.array(ar)
+    return ar
             
 
 

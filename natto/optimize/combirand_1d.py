@@ -68,6 +68,6 @@ if __name__ == "__main__":
     self, other = loadtasks()[task]
     result=  get_score(self, other, seed = rep)
     print("res: ", result)
-    #ba.dumpfile(result,"res/"+sys.argv[1].replace(" ",'_'))
+    ba.dumpfile(result,"res/"+sys.argv[1].replace(" ",'_'))
     #print("all good")
 

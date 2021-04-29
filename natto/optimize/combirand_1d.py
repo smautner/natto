@@ -13,7 +13,7 @@ from natto.process.cluster.k2means import tunnelclust
 from natto.out.quality import rari_srt
 
 debug = False
-sampnum = 200 if debug else 400 # when using 1000  there is not much difference.. 
+sampnum = 200 if debug else 2500 # when using 1000  there is not much difference.. 
 
 
 

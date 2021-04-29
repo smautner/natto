@@ -77,7 +77,8 @@ def drawclustermap(z, labels, dic):
     g.ax_heatmap.set(xticklabels=[])
     g.ax_heatmap.set(yticklabels=[])
     # possition of legend
-    g.ax_col_dendrogram.legend( ncol=7, bbox_to_anchor=(1,-4.1))
+    g.ax_col_dendrogram.legend( ncol=5, bbox_to_anchor=(1,-4.1), fontsize= 18)
+    plt.show()
 
 drawclustermap(z,lab, dic)
 
@@ -93,7 +94,7 @@ drawclustermap(z,lab, dic)
 import seaborn as sns 
 
 
-def get_data(slide,rep_id=1):
+def get_data2(slide,rep_id=1):
     DATAA  = eval(open("/home/ikea/projects/data/natto/distance_fake_multi_nuplacenta.ev",'r').read())
     DATAA = np.array(DATAA)
     DATAA[DATAA==-1]=0
@@ -101,8 +102,7 @@ def get_data(slide,rep_id=1):
     return DATA
 
 
-
-def get_labels():
+def get_labels2():
     LABELS  = eval(open("/home/ikea/projects/data/natto/distance_fake_multi_labels.ev",'r').read())
     LABELS  = [l[:5] for l in LABELS] 
     
@@ -113,7 +113,42 @@ def get_labels():
 
     return nulabels, s.getitem
 
-z= get_data(1)
-labels, dic = get_labels()
+z= get_data2(1)
+labels, dic = get_labels2()
 drawclustermap(z, labels, dic)
 
+
+# %%
+# cutting out so we have one celltype 
+
+z = get_matrix(median=False)
+labels, labelnames = get_labels()
+
+for typ, v in labelnames.items():
+    onecelltype = z[labels == typ]
+    onecelltype = onecelltype[:,labels == typ,:5]
+    data = np.hstack([onecelltype[:,:,i] for i in range(5)])
+    instances = sum(labels == typ)
+    drawclustermap(data, list(range(instances))*5 , {i:f"{v}-{i}"for i in range(instances)})
+
+# %%
+
+
+# cutting such that we have multiple celltypes
+z = get_matrix(median=False)
+labels, labelnames = get_labels()
+import random
+from collections import defaultdict
+r = defaultdict(list)
+for i,e in enumerate(labels):
+    r[e].append(i)
+
+selection = np.array([ random.choice(r[k])  for k in r.keys() ])
+
+onecelltype = z[selection]
+onecelltype = onecelltype[:,selection,:5]
+data = np.vstack([onecelltype[:,:,i] for i in range(5)])
+instances = len(selection)
+drawclustermap(data, list(range(instances))*5 , labelnames)
+
+# %%

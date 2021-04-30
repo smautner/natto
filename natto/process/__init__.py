@@ -78,6 +78,7 @@ class Data():
             genes = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes) for d in self.data]
 
         self.data = preprocess.unioncut(genes, self.data)
+        self.genes=genes
         self.data = preprocess.make_even(self.data)
 
     def __init__(self):

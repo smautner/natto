@@ -22,13 +22,14 @@ Testis_10xchromium_SRA645804-SRS2823407_4046.h5  Testis_10xchromium_SRA645804-SR
 Testis_10xchromium_SRA645804-SRS2823408_4306.h5"""
 dnames = [d[:-3] for d in dnames.split()]
 
-from natto.input.preprocessing import Data
+from natto.process import Data
 from natto.out.quality import rari_score
-from natto.input import load 
+from natto import input
 from natto import process
+from natto.process.cluster import gmm_2
 
 
-dnames = load.get100names(path='../data')
+dnames = input.get100names(path='../data')
 debug = False
 if debug: 
     print(f"dnames:{len(dnames)}")
@@ -40,20 +41,40 @@ def similarity(stra, strb, rep):
     seed1, seed2 = rep,rep
     if stra == strb:
         seed2 = 29347234
-    d = Data().fit(load.load100(stra,path=path, subsample= subsample, seed = seed1),
-                 load.load100(strb, path=path, subsample= subsample, seed= seed2), 
-                debug_ftsel = False,
+    d = Data().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
+                 input.load100(strb, path=path, subsample= subsample, seed= seed2)], 
+                visual_ftsel = False,
                 scale= scale, 
-                do2dumap = False,
-                quiet = True, 
                 pca = 20, 
-                titles= ("a",'b'),
-                make_even=True
+                umaps=[10],
+                make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
             )
     print("clustering..",end='')
-    l=process.gmm_2(*d.dx,nc=15, cov='full')
-    r=rari_score(*l, *d.dx)
+    l=gmm_2(*d.d10,nc=15, cov='full')
+    r=rari_score(*l, *d.d10)
     return r
+
+def similarity_gene(stra, strb, rep): 
+    '''
+    for comparison we also see how much gene overlap there is
+    '''
+    scale = False, 
+    subsample = 200 if debug else 2000
+    path='../data'
+    seed1, seed2 = rep,rep
+    if stra == strb:
+        seed2 = 29347234
+    d = Data().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
+                 input.load100(strb, path=path, subsample= subsample, seed= seed2)], 
+                visual_ftsel = False,
+                scale= scale, 
+                pca = 0, 
+                umaps=[],
+                make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
+            )
+    
+    return sum([ a and b for a,b in zip(*d.genes)])
+
 
 
 if __name__ == "__main__":
@@ -61,7 +82,7 @@ if __name__ == "__main__":
     home = dnames[task] 
     other = dnames[t2]
     if debug: print("fanmes", home, other)
-    result =  similarity(home, other,rep)
+    result =  similarity_gene(home, other,rep)
         
     print(result)
     ba.dumpfile(result,writeto)

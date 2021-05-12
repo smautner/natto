@@ -59,7 +59,7 @@ def similarity_gene(stra, strb, rep):
     for comparison we also see how much gene overlap there is
     '''
     scale = False, 
-    subsample = 200 if debug else 2000
+    subsample = 200 if debug else 1000
     path='../data'
     seed1, seed2 = rep,rep
     if stra == strb:

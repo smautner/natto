@@ -13,8 +13,8 @@ from natto import input
 #######################
 
 # load distance matrix for 100x100 and the labels
-def get_matrix(median=False): 
-    alldata = eval(open("/home/ikea/data/100x.lst",'r').read())
+def get_matrix(median=False, path = "/home/ikea/data/100x.lst"): 
+    alldata = eval(open(path,'r').read())
     alldata=np.array(alldata)
     if not median: 
         return alldata
@@ -82,7 +82,31 @@ def drawclustermap(z, labels, dic):
 
 drawclustermap(z,lab, dic)
 
+# %% 
 
+from sklearn.cluster import AgglomerativeClustering as AG
+from sklearn.metrics import adjusted_rand_score as ra
+geneZ = get_matrix(median=False,path = "/home/ikea/projects/data/natto/natto_latest/distance_genes.ev")
+
+jacca = lambda x: x/(1600-x)
+J = jacca(geneZ[:,:,1])
+
+def myscore(m,lab):
+    s= []
+    for nclu in range(5,14):
+        mo=AG(n_clusters= nclu).fit(m)
+        s.append(ra(mo.labels_, lab)) 
+    print(max(s))
+
+drawclustermap(J,lab, dic)
+myscore(J,lab)
+myscore(z,lab)
+
+#myscore(geneZ[:,:,1],lab)
+# get clusters by setting (0..alot) in agglo -> can calculate rand index -> report max
+# quality of clustering for each cluster -> are we improvin on small clusters? -> plot clustersize vs performancegain
+#geneZ = get_matrix(median=True,path = "/home/ikea/projects/data/natto/natto_latest/distance_genes.ev")
+#drawclustermap(geneZ,lab, dic)
 
 
 # %%

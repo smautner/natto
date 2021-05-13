@@ -4,17 +4,29 @@
 import numpy as np
 import matplotlib.pyplot as plt 
 import umap
-import agglo100 as a 
+from natto import input
+from natto.out.quality import spacemap
+from lmz import *
+def get_matrix(median=False, path = "/home/ikea/data/100x.lst"): 
+    alldata = eval(open(path,'r').read())
+    alldata=np.array(alldata)
+    if not median: 
+        return alldata
+    alldata[alldata==-1]=np.nan
+    z = np.nanmean(alldata,axis=2)
+    return z 
 
 
 # load distance matrix for 100x100 and the labels
-matrix = a.get_matrix(median=True)
+matrix = get_matrix(median=True)
 
+names = input.get100names("/home/ikea/data/data")
 
 
 
 # %%  CLUSTER PERFORMANCE VS SIMILARITY , SIM > .3
 ###############################
+import seaborn as sns
 
 def docalc(combi, combi_r, a, ar, b, br, combi_natto, combi_natto_r):
     # how we calculate the clustering score, there are many options oO 
@@ -25,21 +37,20 @@ def docalc(combi, combi_r, a, ar, b, br, combi_natto, combi_natto_r):
 sametype_cnt = 822 
 unrelated_cnt = 10000 - 922 
 
-print(same, overlap,unrelated)
 import pprint
 distances=[]
 dataset_names = []
 STUPID = [] 
-z = np.nanmean(alldata,axis=2) # copy pasted this here just to make sure
-for a in range(z.shape[0]):
-    for b in range(z.shape[1]): 
-        if a>=b and z[a,b]>0.3:
+for a in range(matrix.shape[0]):
+    for b in range(matrix.shape[1]): 
+        if a>=b and matrix[a,b]>0.3:
             dataset_names.append((names[a],names[b]))
-            distances.append(alldata[a,b].tolist())
-            STUPID.append( z[a,b])
+            distances.append(matrix[a,b].tolist())
+            STUPID.append( matrix[a,b])
 
-cluster_performance = np.array(eval(open("/home/ikea/projects/data/natto/point3.2.ev",'r').read()))
-CUTOFF = .3
+#cluster_performance = np.array(eval(open("/home/ikea/projects/data/natto/point3.2.ev",'r').read()))
+cluster_performance = np.array(eval(open("/home/ikea/projects/data/natto/p3.3.ev",'r').read()))
+CUTOFF = .4
 dataset_names = [dn for dn,d in zip(dataset_names,STUPID) if d > CUTOFF]
 distances = [np.nanmedian(dn) for dn,d in zip(distances,STUPID) if d > CUTOFF]
 clusterscores = [np.median(Map(lambda x:docalc(*x),dn)) for dn,d in zip(cluster_performance,STUPID) if d > CUTOFF]
@@ -107,3 +118,5 @@ def draw_cloud(distances, cluster_performance, datalabels):
 
 
 draw_cloud(distances,clusterscores,dataset_names)
+
+# %%

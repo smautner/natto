@@ -54,17 +54,21 @@ def similarity(stra, strb, rep):
     r=rari_score(*l, *d.d10)
     return r
 
+class myData(Data): 
+    def preprocess(self, selector, selectgenes, selectorargs):
+        return super().preprocess(selector,selectgenes,selectorargs, savescores=True)
+
 def similarity_gene(stra, strb, rep): 
     '''
     for comparison we also see how much gene overlap there is
     '''
     scale = False, 
-    subsample = 200 if debug else 1000
+    subsample = 200 if debug else 2000
     path='../data'
     seed1, seed2 = rep,rep
     if stra == strb:
         seed2 = 29347234
-    d = Data().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
+    d = myData().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
                  input.load100(strb, path=path, subsample= subsample, seed= seed2)], 
                 visual_ftsel = False,
                 scale= scale, 
@@ -72,8 +76,15 @@ def similarity_gene(stra, strb, rep):
                 umaps=[],
                 make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
             )
+    #return sum([ a and b for a,b in zip(*d.genes)])
+    return [countoverlap(*d.genescores,num) for num in range(50,1300,50)]
+
+def countoverlap(a,b,num): 
+    srta = set(np.argsort(a)[:num])
+    srtb = set(np.argsort(b)[:num])
+    res = len(srta&srtb)
+    return res
     
-    return sum([ a and b for a,b in zip(*d.genes)])
 
 
 
@@ -83,7 +94,6 @@ if __name__ == "__main__":
     other = dnames[t2]
     if debug: print("fanmes", home, other)
     result =  similarity_gene(home, other,rep)
-        
     print(result)
     ba.dumpfile(result,writeto)
 

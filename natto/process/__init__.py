@@ -2,6 +2,7 @@ from natto.process import preprocess
 import scanpy as sc
 from natto.process import dimensions
 from natto.process import util as u
+from lmz import *
 
 
 class Data():
@@ -66,14 +67,16 @@ class Data():
                 
 
 
-    def preprocess(self, selector, selectgenes, selectorargs):
+    def preprocess(self, selector, selectgenes, selectorargs, savescores = False):
 
         self.data = preprocess.basic_filter(self.data)  # min_counts min_genes
         self.data = preprocess.normlog(self.data)
 
         if selector == 'natto':
-            genes = [preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
-                     for d,title in zip(self.data, self.titles)]
+            genes,scores = Transpose([preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
+                     for d,title in zip(self.data, self.titles)])
+            if savescores:
+                self.genescores = scores
         else:
             genes = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes) for d in self.data]
 

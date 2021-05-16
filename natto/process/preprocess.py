@@ -39,7 +39,11 @@ def get_expected_values(x, y, x_all):
     return res
 
 
-def getgenes_natto(adata, selectgenes, title, mean=(.015,4),bins=(.25,1),plot=True):
+def getgenes_natto(adata, selectgenes, title,
+        mean=(.015,4),
+        bins=(.25,1),
+        plot=True):
+
     matrix= adata.to_df().to_numpy()
     
     a = np.expm1(matrix)
@@ -105,9 +109,13 @@ def getgenes_natto(adata, selectgenes, title, mean=(.015,4),bins=(.25,1),plot=Tr
 
         print(f"ft selected:{sum(accept)}")
 
+
+    
+    raw = np.zeros(len(mask))
+    raw[mask] = Y[mask] 
     mask[mask] = np.array(accept)
 
-    return mask
+    return mask, raw
 
 
 ##################

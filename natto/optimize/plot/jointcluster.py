@@ -120,3 +120,36 @@ def draw_cloud(distances, cluster_performance, datalabels):
 draw_cloud(distances,clusterscores,dataset_names)
 
 # %%
+
+
+
+
+# TODO SET A CUTOFF 
+ 
+scd = eval(open("/home/ikea/projects/data/natto/smallclu.ev",'r').read()) # small cluster data
+
+combiloss = []
+singleloss = []
+data=[]
+for r in scd: 
+    re = r[1][0]
+
+    print(re)
+
+    # re has 4 elements: set1+gmm, set1+tunne, set2+gmm, set2+tunnel
+    if re != -1:
+        tunnel = True
+        alldata = re[tunnel]+re[tunnel+2]
+        # alldata is now a list of: 1. clustersize, combilos, singleloss
+        data+=alldata
+
+
+
+# %%
+
+data = np.array(data)
+plt.scatter(data[:,0], data[:,1], label = 'combi', s=2)
+plt.scatter(data[:,0], data[:,2], label = 'single', s=2)
+plt.legend()
+plt.show()
+# %%

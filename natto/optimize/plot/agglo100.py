@@ -62,7 +62,7 @@ z = get_matrix(median=True)
 lab, dic = get_labels()
 
 
-def drawclustermap(z, labels, dic):
+def drawclustermap(z, labels, dic, ncol = 5):
     # draw
     colz = [draw.col[x] for x in labels]
     g=sns.clustermap(z,row_colors = colz, col_colors = colz)
@@ -77,7 +77,7 @@ def drawclustermap(z, labels, dic):
     g.ax_heatmap.set(xticklabels=[])
     g.ax_heatmap.set(yticklabels=[])
     # possition of legend
-    g.ax_col_dendrogram.legend( ncol=5, bbox_to_anchor=(1,-4.1), fontsize= 18)
+    g.ax_col_dendrogram.legend( ncol=ncol, bbox_to_anchor=(1,-4.1), fontsize= 18)
     plt.show()
 
 drawclustermap(z,lab, dic)
@@ -86,10 +86,10 @@ drawclustermap(z,lab, dic)
 
 from sklearn.cluster import AgglomerativeClustering as AG
 from sklearn.metrics import adjusted_rand_score as ra
-geneZ = get_matrix(median=False,path = "/home/ikea/projects/data/natto/natto_latest/distance_genes.ev")
-
+geneZ = get_matrix(median=True,path = "/home/ikea/projects/data/natto/natto_latest/distance_genes.ev")
+# note: using the median will reduce performance
 jacca = lambda x: x/(1600-x)
-J = jacca(geneZ[:,:,1])
+J = jacca(geneZ)
 
 def myscore(m,lab):
     s= []
@@ -100,6 +100,7 @@ def myscore(m,lab):
 
 drawclustermap(J,lab, dic)
 myscore(J,lab)
+z = get_matrix(median=True) # median makes it better
 myscore(z,lab)
 
 #myscore(geneZ[:,:,1],lab)
@@ -153,7 +154,7 @@ for typ, v in labelnames.items():
     onecelltype = onecelltype[:,labels == typ,:5]
     data = np.hstack([onecelltype[:,:,i] for i in range(5)])
     instances = sum(labels == typ)
-    drawclustermap(data, list(range(instances))*5 , {i:f"{v}-{i}"for i in range(instances)})
+    drawclustermap(data, list(range(instances))*5 , {i:f"{v}-{i}"for i in range(instances)}, ncol=4)
 
 # %%
 

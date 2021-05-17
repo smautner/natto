@@ -22,7 +22,7 @@ Testis_10xchromium_SRA645804-SRS2823407_4046.h5  Testis_10xchromium_SRA645804-SR
 Testis_10xchromium_SRA645804-SRS2823408_4306.h5"""
 dnames = [d[:-3] for d in dnames.split()]
 
-from natto.process import Data
+from natto.process import Data, Data_DELME
 from natto.out.quality import rari_score
 from natto import input
 from natto import process
@@ -53,6 +53,37 @@ def similarity(stra, strb, rep):
     l=gmm_2(*d.d10,nc=15, cov='full')
     r=rari_score(*l, *d.d10)
     return r
+
+
+
+
+
+def similarity_manygenes(stra, strb, rep): 
+    scale = False, 
+    subsample = 200 if debug else 1000 
+    path='../data'
+    seed1, seed2 = rep,rep
+    if stra == strb:
+        seed2 = 29347234
+    d = Data_DELME().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
+                 input.load100(strb, path=path, subsample= subsample, seed= seed2)], 
+                visual_ftsel = False,
+                scale= scale, 
+                pca = 20, 
+                umaps=[10],
+                make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
+            )
+    print("clustering..",end='')
+
+    def scr(x):
+        x=x[-1] # -1 should be the d10
+        l=gmm_2(*x,nc=15, cov='full')
+        return rari_score(*l, *x)
+    lal = [ scr(x) for x in d.projections ]
+    return lal
+
+
+
 
 class myData(Data): 
     def preprocess(self, selector, selectgenes, selectorargs):
@@ -94,7 +125,7 @@ if __name__ == "__main__":
     home = dnames[task] 
     other = dnames[t2]
     if debug: print("fanmes", home, other)
-    result =  similarity_gene(home, other,rep)
+    result =  similarity_manygenes(home, other,rep)
     print(result)
     ba.dumpfile(result,writeto)
 

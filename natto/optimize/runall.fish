@@ -8,7 +8,7 @@ source setvar.fish
 
 
 
-for rep in (seq 0 0)
+for rep in (seq 0 2)
     for i in (seq 0 99)
         for j in (seq $i 99)
       ! test -e ./res/(string join _ $i $j $rep) && echo "$i $j $rep";

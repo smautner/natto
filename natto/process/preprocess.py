@@ -113,8 +113,9 @@ def getgenes_natto(adata, selectgenes, title,
     
     raw = np.zeros(len(mask))
     raw[mask] = Y[mask] 
-    mask[mask] = np.array(accept)
 
+
+    mask[mask] = np.array(accept)
     return mask, raw
 
 

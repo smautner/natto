@@ -16,7 +16,7 @@ for rep in (seq 0 0)
 
 #loadblock -d 65 65 5 --diag -m  -f res > ~/distance_fake_multi_nuplacenta.ev
 
-
+#loadblock3 --mir --fdim 39 > ~/geneselect39.ev
 
 
 

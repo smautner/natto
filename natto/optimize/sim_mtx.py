@@ -63,7 +63,7 @@ def similarity_gene(stra, strb, rep):
     for comparison we also see how much gene overlap there is
     '''
     scale = False, 
-    subsample = 200 if debug else 2000
+    subsample = 200 if debug else 1000
     path='../data'
     seed1, seed2 = rep,rep
     if stra == strb:
@@ -77,7 +77,8 @@ def similarity_gene(stra, strb, rep):
                 make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
             )
     #return sum([ a and b for a,b in zip(*d.genes)])
-    return [countoverlap(*d.genescores,num) for num in range(50,1300,50)]
+    #return [countoverlap(*d.genescores,num) for num in range(50,1300,50)]
+    return [countoverlap(*d.genescores,num) for num in range(50,2000,50)]
 
 def countoverlap(a,b,num): 
     srta = set(np.argsort(a)[:num])

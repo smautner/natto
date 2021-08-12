@@ -46,7 +46,7 @@ def supernndist(a,b,ca,cb,c=None):
     
 def compare_heatmap(y11,y12,y21,y22,mata,matb):
     
-    from lapsolver import solve_dense
+    #from lapsolver import solve_dense
     from sklearn.metrics.pairwise import euclidean_distances as ed
     from natto.process.hungutil import make_canvas_and_spacemaps
     from natto.out.draw import quickdoubleheatmap

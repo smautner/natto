@@ -1,4 +1,4 @@
-from lapsolverc import solve_dense
+#from lapsolver import solve_dense
 from matplotlib import pyplot as plt
 from sklearn.metrics import pairwise_distances
 
@@ -22,15 +22,15 @@ def cleanlabels(asd):
 
     return [[s.getint[e] for e in li  ] for li in asd]
 
-
+from scipy.optimize import linear_sum_assignment 
 def hungarian(X1, X2, debug = False,metric='euclidean'):
     # get the matches:
     distances = pairwise_distances(X1,X2, metric=metric)
     #distances = ed(X1, X2)
 
     #if solver != 'scipy':
-    #    row_ind, col_ind = linear_sum_assignment(distances)
-    row_ind,col_ind = solve_dense(distances)
+    row_ind, col_ind = linear_sum_assignment(distances)
+    #row_ind,col_ind = solve_dense(distances)
 
     if debug:
         x = distances[row_ind, col_ind]

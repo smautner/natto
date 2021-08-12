@@ -4,7 +4,7 @@ import tabulate
 from collections import Counter
 import numpy as np
 from collections import  defaultdict
-from lapsolver import solve_dense
+#from lapsolver import solve_dense
 
 from natto.input.hungarian import hungarian
 from natto.out import draw

@@ -3,7 +3,8 @@
 
 import sys
 import os
-writeto = "res/"+sys.argv[1].replace(" ",'_')
+writeto = "res/"+'_'.join(sys.argv[1:])
+#writeto = "res/"+sys.argv[1].replace(" ",'_')
 
 #if os.path.exists(writeto):
 #    print("file exists")
@@ -30,7 +31,7 @@ from natto.process.cluster import gmm_2
 
 
 dnames = input.get100names(path='../data')
-debug = False
+debug = True
 if debug: 
     print(f"dnames:{len(dnames)}")
 
@@ -40,7 +41,7 @@ def similarity(stra, strb, rep):
     path='../data'
     seed1, seed2 = rep,rep
     if stra == strb:
-        seed2 = 29347234
+        seed2 += 29347234
     d = Data().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
                  input.load100(strb, path=path, subsample= subsample, seed= seed2)], 
                 visual_ftsel = False,
@@ -116,16 +117,16 @@ def countoverlap(a,b,num):
     srtb = set(np.argsort(b)[:num])
     res = len(srta&srtb)
     return res
-    
-
 
 
 if __name__ == "__main__":
-    task,t2,rep = map(int, sys.argv[1].strip().split(' '))
+    print (sys.argv[1:])
+    task,t2,rep = map(int, sys.argv[1:])
+    #task,t2,rep = map(int, sys.argv[1].strip().split(' '))
     home = dnames[task] 
     other = dnames[t2]
     if debug: print("fanmes", home, other)
-    result =  similarity_manygenes(home, other,rep)
+    result =  similarity(home, other,rep)
     print(result)
     ba.dumpfile(result,writeto)
 

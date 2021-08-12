@@ -94,6 +94,10 @@ class Data():
 
 import numpy as np
 class Data_DELME():
+    """
+        so we set the number of genes to 800,
+        this guy selects more than 1 gene-set.
+    """
     def fit(self,adatas,
             selector='natto',
             selectgenes=2000,

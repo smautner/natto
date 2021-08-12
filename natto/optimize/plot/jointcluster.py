@@ -128,6 +128,12 @@ draw_cloud(distances,clusterscores,dataset_names)
  
 scd = eval(open("/home/ikea/projects/data/natto/smallclu.ev",'r').read()) # small cluster data
 
+
+
+CUTOFF = .7
+scd = [dn for dn,d in zip(scd,STUPID) if d > CUTOFF]
+
+
 combiloss = []
 singleloss = []
 data=[]
@@ -138,7 +144,7 @@ for r in scd:
 
     # re has 4 elements: set1+gmm, set1+tunne, set2+gmm, set2+tunnel
     if re != -1:
-        tunnel = True
+        tunnel = False
         alldata = re[tunnel]+re[tunnel+2]
         # alldata is now a list of: 1. clustersize, combilos, singleloss
         data+=alldata
@@ -148,8 +154,31 @@ for r in scd:
 # %%
 
 data = np.array(data)
-plt.scatter(data[:,0], data[:,1], label = 'combi', s=2)
 plt.scatter(data[:,0], data[:,2], label = 'single', s=2)
+plt.scatter(data[:,0], data[:,1], label = 'combi', s=2)
+plt.legend()
+plt.show()
+# %%
+ 
+
+
+
+
+scd = eval(open("/home/ikea/projects/data/natto/p3.5.ev",'r').read()) # small cluster data
+CUTOFF = .7
+scd = [dn for dn,d in zip(scd,STUPID) if d > CUTOFF and len(dn)>1]
+
+
+
+#%%
+import numpy as np
+from lmz import *
+data = np.vstack([np.array(Transpose(x)) for x in scd])
+
+
+# %%
+
+plt.scatter(data[:,0], data[:,1], c=data[:,2], s=2)
 plt.legend()
 plt.show()
 # %%

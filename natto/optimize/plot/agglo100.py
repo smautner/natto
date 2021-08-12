@@ -83,7 +83,9 @@ def drawclustermap(z, labels, dic, ncol = 5):
 drawclustermap(z,lab, dic)
 
 # %% 
-
+#############
+#  DISTANCE GENES
+################
 from sklearn.cluster import AgglomerativeClustering as AG
 from sklearn.metrics import adjusted_rand_score as ra
 geneZ = get_matrix(median=True,path = "/home/ikea/projects/data/natto/natto_latest/distance_genes.ev")
@@ -102,6 +104,69 @@ drawclustermap(J,lab, dic)
 myscore(J,lab)
 z = get_matrix(median=True) # median makes it better
 myscore(z,lab)
+
+# %%
+def get_matrix2(median=False, path = "/home/ikea/projects/data/natto/geneselect39.ev"): 
+    alldata = eval(open(path,'r').read())
+    alldata=np.array(alldata)
+
+    if not median: 
+        return alldata
+    #alldata[alldata==-1]=np.nan
+    z = np.nanmean(alldata,axis=2)
+    return z
+
+def myscore(m,lab):
+    s= []
+    for nclu in range(5,14):
+        mo=AG(n_clusters= nclu).fit(m)
+        s.append(ra(mo.labels_, lab)) 
+    return max(s)
+
+
+# %%
+geneZ = get_matrix2(median=True,path = "/home/ikea/projects/data/natto/geneselect39.ev")
+#geneZ = geneZ[:,:,0,:]
+sizes = list(range(50,2000,50))
+
+geneZ = get_matrix2(median=True,path = "/home/ikea/projects/data/natto/natto_incgene19.ev")
+#geneZ = geneZ[:,:,0,:]
+sizes = list(range(100,2000,100))
+
+# note: using the median will reduce performance
+J = lambda x,s: x/(s*2-x)
+aa,bb=[],[]
+for i,s in enumerate(sizes):
+    print ("size:",s)
+    m= geneZ[:,:,i]
+    a = myscore(m,lab)
+    b = myscore(J(m,s),lab)
+    aa.append(a)
+    bb.append(b)
+# %%
+for x in range(0,18,2):
+    print('sizes:',sizes[x])
+    drawclustermap(geneZ[:,:,x],lab, dic)
+#drawclustermap(J(geneZ[:,:,4],sizes[-1]),lab, dic)
+    #drawclustermap(J(m,s),lab, dic)
+
+
+#%%
+
+plt.plot(sizes, aa, label = 'overlap count')
+plt.plot(sizes, bb, label = 'jaccard')
+plt.legend()
+plt.xlabel("numgenes")
+plt.ylabel("randindex(real_labels vs clustering(distance matrix) )")
+
+# %%
+z = get_matrix(median=True) # median makes it better
+myscore(z,lab)
+
+
+
+
+
 
 #myscore(geneZ[:,:,1],lab)
 # get clusters by setting (0..alot) in agglo -> can calculate rand index -> report max

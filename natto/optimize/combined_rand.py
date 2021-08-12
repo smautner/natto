@@ -7,7 +7,6 @@ from natto.input import preprocessing, pp_many
 from sklearn.metrics import pairwise_distances, adjusted_rand_score
 import ubergauss as ug 
 import natto
-
 debug = False
 sampnum = 200 if debug else 1000
 

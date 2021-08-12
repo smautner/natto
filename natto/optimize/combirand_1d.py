@@ -6,7 +6,7 @@ import basics as ba
 import numpy as np
 from natto import input as load
 from natto import process
-from sklearn.metrics import pairwise_distances, adjusted_rand_score
+from sklearn.metrics import pairwise_distances, adjusted_rand_score, f1_score
 import ubergauss as ug 
 import natto
 from natto.process import cluster as cluster
@@ -14,7 +14,7 @@ from natto.process.cluster.k2means import tunnelclust
 from natto.out.quality import rari_srt
 
 debug = False
-sampnum = 200 if debug else 1000 # when using 1000  there is not much difference.. 
+sampnum = 200 if debug else 2000 # when using 1000  there is not much difference.. 
 
 
 
@@ -59,37 +59,56 @@ def get_score(n1, n2, seed):
     y1,y2 = [list(d.obs['true']) for d in pp.data]
     X = np.vstack(pp.d10)
 
-    ascore, arari = score(pp.d10[0],y1)
-    bscore,brari = score(pp.d10[1],y2)
-
+    #ascore, arari = score(pp.d10[0],y1)
+    #bscore,brari = score(pp.d10[1],y2)
     # joint cluster
-    labels = cluster.gmm_1(X,nc=15)
-    mylabels = tunnelclust(*pp.d10)
-    mylabels = np.hstack(mylabels)
+    #labels = cluster.gmm_1(X,nc=15)
+    #mylabels = tunnelclust(*pp.d10)
+    #mylabels = np.hstack(mylabels)
     # score
-    joint_score, jrari = nuscore(X,labels, y1,y2)
-    nattoclust_score , nattoclust_rari = nuscore(X,mylabels,y1,y2)
+    #joint_score, jrari = nuscore(X,labels, y1,y2)
+    #nattoclust_score , nattoclust_rari = nuscore(X,mylabels,y1,y2)
+    #otherstuff = score_smallfry(mylabels, labels, *pp.d10, y1,y2,nc)
+
 
     nc = max(map(len,map(np.unique,[y1,y2])))
     labels = cluster.gmm_1(X,nc=nc)
-    otherstuff = score_smallfry(mylabels, labels, *pp.d10, y1,y2,nc)
-
-    return joint_score,jrari, ascore,arari, bscore,brari, nattoclust_score, nattoclust_rari, otherstuff
-
-
-
-
-def score_smallfry(mylabels,labels,x1,x2,y1,y2,nc=15): 
+    h1,h2 = labels[:len(y1)],  labels[len(y1):]
+    labels1 = cluster.gmm_1(pp.d10[0],nc=nc)
+    labels2 = cluster.gmm_1(pp.d10[1],nc=nc)
     
+    
+    y1=np.array(y1)
+    y2=np.array(y2)
+    single=[]
+    multi =[]
+    sizes=[]
+    for real,s,m in [[y1,labels1,h1],[y2,labels2,h2]]:
+        for rlabel in np.unique(real):
+            single.append(f1(rlabel,s,real))
+            multi.append(f1(rlabel,m,real))
+            sizes.append(sum(real==rlabel))
+    return single, multi, sizes
+
+
+def f1(l,m,r): # label to check, clustering, real_labels 
+    rclust = max([ (lap(i,l,m,r),i) for i in np.unique(m)  ], key = lambda x:x[0])[1]
+    return f1_score(r==l,m==rclust)
+
+def lap(target, l,m,r):
+    tmask = m==target
+    rmask = r==l
+    return sum(np.logical_and(tmask,rmask)) / sum(tmask)
+
+
+
+'''
+def score_smallfry(mylabels,labels,x1,x2,y1,y2,nc=15): 
     # get all the labels
     h1,h2 = labels[:len(y1)],  labels[len(y1):]
     j1,j2 = mylabels[:len(y1)],  mylabels[len(y1):]
-
-    
-
     i1 = cluster.gmm_1(x1,nc=nc)
     i2 = cluster.gmm_1(x2,nc=nc)
-
     # ok lets start with ds1:
     sc = lambda x: list(score_clusters(y1,x,i1))
     s1 = sc(h1)
@@ -98,23 +117,20 @@ def score_smallfry(mylabels,labels,x1,x2,y1,y2,nc=15):
     s3 = sc(h2)
     s4 = sc(j2)
     return s1,s2,s3,s4
-
 def score_clusters(y,yc,yhon): 
     #print ( Zip(y,yhon))
-
     for u in np.unique(y): 
         scom = count(y,u,yc)
         shon = count(y,u,yhon)
         #print(u, sum(y==u),shon) 
         yield sum(y==u), scom, shon 
-    
 def count(y,u,h):
     candidates = np.unique(h[y==u])
     def countmiss(thing):
         overlap = sum(np.logical_and(y==u,h==thing))
         return sum(y==u) - overlap  + sum(h==thing) - overlap
     return min(map(countmiss,candidates))
-
+'''
 
 
 def loadtasks():
@@ -127,6 +143,6 @@ if __name__ == "__main__":
     self, other = loadtasks()[task]
     result=  get_score(self, other, seed = rep)
     print("res: ", result)
-    ba.dumpfile(result,"res/"+sys.argv[1].replace(" ",'_'))
+    ba.dumpfile(result,"resOMG/"+sys.argv[1].replace(" ",'_'))
     #print("all good")
 

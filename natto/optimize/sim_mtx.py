@@ -1,5 +1,7 @@
 #!/home/ubuntu/.myconda/miniconda3/bin/python
 
+import matplotlib
+matplotlib.use('module://matplotlib-sixel')
 
 import sys
 import os
@@ -27,22 +29,23 @@ from natto.process import Data, Data_DELME
 from natto.out.quality import rari_score
 from natto import input
 from natto import process
-from natto.process.cluster import gmm_2
+from natto.process.cluster import gmm_2, spec_2, kmeans_2
+from umap import UMAP
 
 
 dnames = input.get100names(path='../data')
-debug = True
+debug = False
 if debug: 
     print(f"dnames:{len(dnames)}")
 
 def similarity(stra, strb, rep): 
     scale = False, 
-    subsample = 200 if debug else 2500 
+    subsample = 200 if debug else 1000
     path='../data'
     seed1, seed2 = rep,rep
     if stra == strb:
         seed2 += 29347234
-    d = Data().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
+    scelldata = Data().fit([input.load100(stra,path=path, subsample= subsample, seed = seed1),
                  input.load100(strb, path=path, subsample= subsample, seed= seed2)], 
                 visual_ftsel = False,
                 scale= scale, 
@@ -51,11 +54,40 @@ def similarity(stra, strb, rep):
                 make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
             )
     print("clustering..",end='')
-    l=gmm_2(*d.d10,nc=15, cov='full')
-    r=rari_score(*l, *d.d10)
-    return r
 
+    # cluster
+    gmm_labels=gmm_2(*scelldata.d10,nc=15, cov='full')
+    
+    #specdim = 15
+    #spectral_labels=spec_2(scelldata.PCA[0][:,:specdim], scelldata.PCA[1][:,:specdim],nc=15)
 
+    # spectral_labels=spec_2(scelldata.d10[0][:,:specdim], scelldata.d10[1][:,:specdim],nc=15)
+    spectral_labels=spec_2(*scelldata.d10,nc=15)
+    
+    # print(f" {np.unique(scelldata.d10[0],return_counts = True, axis=0)[1]}")
+    # print(f" {np.unique(scelldata.d10[1],return_counts = True, axis=0)[1]}")
+    # get score
+    r=rari_score(*gmm_labels, *scelldata.d10)
+    s=rari_score(*spectral_labels, *scelldata.d10)
+
+    '''
+    kmeans_labels=kmeans_2(*scelldata.d10,nc=15)
+    import matplotlib.pyplot as plt 
+    from sklearn import manifold
+    #zz = manifold.MDS().fit_transform(scelldata.d10[0])
+    zz = UMAP().fit_transform(scelldata.d10[0])
+    plt.scatter(zz[:,0],zz[:,1], c= spectral_labels[0])
+    plt.show()
+    plt.close()
+
+    #zz = manifold.MDS().fit_transform(scelldata.d10[1])
+    zz = UMAP().fit_transform(scelldata.d10[1])
+    plt.scatter(zz[:,0],zz[:,1], c= spectral_labels[1])
+    plt.show()
+    print(f" {zz.shape} {np.unique(zz,return_counts = True, axis=0)[1]}")
+    '''
+
+    return r,s
 
 
 
@@ -129,6 +161,7 @@ if __name__ == "__main__":
     result =  similarity(home, other,rep)
     print(result)
     ba.dumpfile(result,writeto)
+    sys.exit(2)
 
 '''
 source setvar.fish 
@@ -138,3 +171,4 @@ source setvar.fish
     if ! test -e ./res/(string join _ $i $j $rep) && echo "$i $j $rep"; end
     end; end; end |  parallel -j 32 --bar ./sim_mtx.py
 '''
+

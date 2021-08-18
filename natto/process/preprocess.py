@@ -29,13 +29,13 @@ def transform( means, var,plot, stepsize=.5, ran=3, minbin=0 ):
     return x, y, y_std
 
 
-def get_expected_values(x, y, x_all):
+def get_expected_values(x, y, x_all, firstbinchoice = max):
     mod = sklearn.linear_model.HuberRegressor()
     mod.fit(x, y)
     res = mod.predict(x_all.reshape(-1, 1))
     firstbin = y[0]
     firstbin_esti = mod.predict([x[0]])
-    res[x_all < x[0]] = max(firstbin, firstbin_esti)
+    res[x_all < x[0]] = firstbinchoice(firstbin, firstbin_esti)
     return res
 
 
@@ -160,3 +160,4 @@ def normlog(data):
 def unioncut(gene_lists, data):
     genes = np.any(np.array(gene_lists), axis=0)
     return [d[:, genes].copy() for d in data]
+

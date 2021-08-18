@@ -232,11 +232,14 @@ def get100gz(item, path = '../data/100/data'):
 
 def load100(item, path='../data/100/data', seed= None, subsample=None, remove_unlabeled = False):
     adata =  ad.read_h5ad(f"{path}/{item}.h5")
+
     if remove_unlabeled:
         adata = adata[adata.obs['true']!=-1]
-
+    
+    i = adata.X.shape
     if subsample:
         sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=seed, copy=False)
+    print(f"LOADING: SHAPE {i} (subsample)-> {adata.X.shape}")
     return adata
 
 

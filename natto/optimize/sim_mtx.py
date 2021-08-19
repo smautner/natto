@@ -17,6 +17,7 @@ import gc
 import numpy as np
 '''
 dnames = load.get100names(path='../data')
+dnames = input.get100names(path='../data')
 '''
 dnames = """Testis_10xchromium_SRA645804-SRS2823404_4197.h5  Testis_10xchromium_SRA645804-SRS2823409_4791.h5
 Testis_10xchromium_SRA645804-SRS2823405_3598.h5  Testis_10xchromium_SRA645804-SRS2823410_4045.h5

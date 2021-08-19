@@ -12,21 +12,24 @@ matplotlib.use('module://matplotlib-sixel')
 import matplotlib.pyplot as plt
 
 if what == "run":
-    parallel -j 32 --bar --jl job.log ./sim_mtx.py ::: @$(seq 0 99) ::: @$(seq 0 99) ::: @$(seq 0 2)
+    parallel -j 32 --bar --jl job.log ./sim_mtx.py ::: @$(seq 0 56) ::: @$(seq 0 56) ::: @$(seq 0 4)
 
 
 elif what == "plot":
     #loadblock -d 65 65 5 --diag -m  -f res > ~/distance_fake_multi_nuplacenta.ev
     import loadblock3
     import numpy as np
-    res = loadblock3.make_matrix(dim = [100,100,3], fdim =2) 
-
-    spectral = np.nanmean(res[:,:,:,1],axis=2)
-    gmm = np.nanmean(res[:,:,:,0],axis=2)
-
     import plot.dendro as dendro
-    dendro.plot(spectral)
-    dendro.plot(gmm)
+    import natto.input as input
+
+    fdim = 2
+    res = loadblock3.make_matrix(dim = [57,57,5], fdim = fdim) 
+    labels = input.get57names()
+    for fd in range(fdim):
+        print(f" starting plot: {fd}")
+        distancematrix = np.nanmean(res[:,:,:,fd],axis=2)
+        dendro.plot(distancematrix)
+        print(f" score: {dendro.score(distancematrix,labels,range(5,14))} ")
 
 elif what  == '100data':
     from natto import input 

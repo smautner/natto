@@ -2,37 +2,56 @@ $MKL_NUM_THREADS =1
 $NUMBA_NUM_THREADS =1
 $OMP_NUM_THREADS =1
 $OPENBLAS_NUM_THREADS =1
-
 import sys
 args = sys.argv[1:]
 what = args[0]
-
 import matplotlib
 matplotlib.use('module://matplotlib-sixel')
 import matplotlib.pyplot as plt
 
+
+
+
+
+debug = False # also set sim_mtx debug manualy ...
+directory = 'res3k'
+$directory = directory
+
+
 if what == "run":
-    parallel -j 32 --bar --jl job.log ./sim_mtx.py ::: @$(seq 0 56) ::: @$(seq 0 56) ::: @$(seq 0 4)
+    mkdir $directory
+    rm $directory/*
+    if debug:
+        parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 13) ::: @$(seq 0 13) ::: @$(seq 0 1)
+    else:
+        parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 56) ::: @$(seq 0 56) ::: @$(seq 0 4)
 
 
 elif what == "plot":
-    #loadblock -d 65 65 5 --diag -m  -f res > ~/distance_fake_multi_nuplacenta.ev
     import loadblock3
     import numpy as np
     import plot.dendro as dendro
     import natto.input as input
-
-    fdim = 2
-    res = loadblock3.make_matrix(dim = [57,57,5], fdim = fdim) 
+    fdim = 5
     labels = input.get57names()
+    if debug:
+        res = loadblock3.make_matrix(dim = [14,14,2], fdim = fdim, dir = directory)
+        labels = labels[:14]
+        unilabels = range(2,5)
+    else:
+        res = loadblock3.make_matrix(dim = [57,57,5], fdim = fdim, dir = directory)
+        unilabels = range(5,14)
+
     for fd in range(fdim):
         print(f" starting plot: {fd}")
         distancematrix = np.nanmean(res[:,:,:,fd],axis=2)
-        dendro.plot(distancematrix)
-        print(f" score: {dendro.score(distancematrix,labels,range(5,14))} ")
+        plt.imshow(distancematrix); plt.show();plt.close()
+        dendro.plot(distancematrix, labels)
+        dendro.score(distancematrix,labels,unilabels)
 
 elif what  == '100data':
-    from natto import input 
+    '''remove the garbage datasets form the 100'''
+    from natto import input
     import basics as ba
     dnames = input.get100names(path='../data')
     #sizes = [ input.load100(dna,path = '../data', subsample=False).X.shape[0] for dna in dnames ]

@@ -3,38 +3,38 @@ import random
 import copy
 import numpy as np
 import umap
-from natto.input.preprocessing import Data
-import basics as ba 
+from natto.process import Data
+import basics as ba
 
-class fromdata: 
+class fromdata:
     def fit(self, things):
         self.things =  list(things)
-    def get(self): 
-        return random.choice(self.things) 
+    def get(self):
+        return random.choice(self.things)
 
-def noisiate(mtx,noise_percentage,noisemodel= fromdata()): 
+def noisiate(mtx,noise_percentage,noisemodel= fromdata()):
     print("noisiate called, noise:",noise_percentage )
-    # column wise allply noise 
-    noisy = mtx.copy().transpose() 
+    # column wise allply noise
+    noisy = mtx.copy().transpose()
     for row in range(noisy.shape[0]):
         #distribution of values
         rval = noisy[row,:].todense().A1
         noisemodel.fit(rval)
-        # write new numbers to rval 
+        # write new numbers to rval
         loc = ( np.random.rand(noisy.shape[1]) < noise_percentage ).nonzero()[0]
         values  = np.array([noisemodel.get() for r in range(len(loc))])
         rval[loc] = values
-        # somehow integrate this in noisy... 
+        # somehow integrate this in noisy...
         noisy[row] = csr_matrix(rval) # do it like this to prevent explicit 0s everywhere
 
     return noisy.transpose()
-  
-def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()): 
-    
+
+def noisiate_adata(adata,noise_percentage=.05, noisemodel=fromdata()):
+
     # OK THIS IS HOW WE NOISE
     # 1. have a global percentage of affected cells
-    # 2. pick from distri (with zeros) 
-    #matrix to fill with noise 
+    # 2. pick from distri (with zeros)
+    #matrix to fill with noise
     adata.X = noisiate(adata.X,noise_percentage, noisemodel )
     return adata
 
@@ -47,14 +47,14 @@ def appnoize(args):
     print(f"appnoize{level}")
     pca=20
     #re = copy.deepcopy(m)
-    re = m 
-    if level > 0: 
+    re = m
+    if level > 0:
         re.b.X = noisiate(re.b.X,level/100)
         re.mk_pca(pca)
         re.dx = re.umapify(10,10)
         if title != "magic":
             re.d2 = re.umapify(2,10)
-    else: 
+    else:
         re.mk_pca(pca)
         us = umap.UMAP(n_components = 2, n_neighbors=10, random_state=24).fit(re.pca[0])
         ul = umap.UMAP(n_components = 10, n_neighbors=10, random_state=24).fit(re.pca[0])
@@ -80,20 +80,20 @@ def get_noise_data(adat, noiserange,title, poolsize = -1, cluster=None):
                                dimensions=10,
                                umap_n_neighbors=10, # used in example
                                debug_ftsel=False,
-                               make_even=True) 
+                               make_even=True)
 
     if title=='magic':print("starting appnoizing ")
     if poolsize != 1:
         rdydata=ba.mpmap(appnoize,[(m,noise, title, cluster) for noise in noiserange ],
                 poolsize=poolsize,
-                chunksize =1 )  
+                chunksize =1 )
     else:
         rdydata= [ appnoize((m,noise,title, cluster)) for noise in noiserange]
     if title=='magic':print("done")
     return rdydata
 
 #############
-# slownoise 
+# slownoise
 ############
 
 
@@ -116,10 +116,10 @@ def get_noise_data_slow(loader, noiserange,title):
 			       umap_n_neighbors=10, # used in example
 			       debug_ftsel=True,
 			       scale=False,
-			       titles = tits, 
-			       make_even=True) 
+			       titles = tits,
+			       make_even=True)
         print("ONE DONE ")
-        return m 
+        return m
 
     rdydata=[fit(noise,loader, (f"{title}", f"{title} {noise}% noise") ) for noise in noiserange]
     return rdydata
@@ -127,7 +127,7 @@ def get_noise_data_slow(loader, noiserange,title):
 
 #########
 #  MP friendly version
-####### 
+#######
 
 def get_noise_single(adat, level):
     # SETUP
@@ -145,16 +145,16 @@ def get_noise_single(adat, level):
                                pca = 20,
                                dimensions=10,
                                debug_ftsel=False,
-                               make_even=True) 
+                               make_even=True)
     '''
 
     m = Data().fit(adat, bdat)
 
     if level == 0:
-        return m     
+        return m
 
     m.b.X = noisiate(m.b.X,level/100)
     m.transform_data(False,False)
     m.mk_pca(20)
     m.dx = m.umapify(10,10)
-    return m 
+    return m

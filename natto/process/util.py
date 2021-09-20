@@ -1,7 +1,7 @@
 #from lapsolver import solve_dense
 from matplotlib import pyplot as plt
 from sklearn.metrics import pairwise_distances
-
+import numpy as np
 
 class spacemap():
     # we need a matrix in with groups of clusters are the indices, -> map to integers
@@ -13,7 +13,6 @@ class spacemap():
         self.getint = { k:i for i,k in enumerate(items)}
 
 
-import numpy as np
 def cleanlabels(asd):
     # asd is a list of label-lists
 
@@ -22,15 +21,28 @@ def cleanlabels(asd):
 
     return [[s.getint[e] for e in li  ] for li in asd]
 
-from scipy.optimize import linear_sum_assignment 
+
 def hungarian(X1, X2, debug = False,metric='euclidean'):
     # get the matches:
     distances = pairwise_distances(X1,X2, metric=metric)
     #distances = ed(X1, X2)
 
     #if solver != 'scipy':
+    '''
+    from time import time
+    now = time()
+    from lapjv import lapjv
+    row_ind, col_ind, _ = lapjv(distances)
+    print(f"  {time() - now}s"); now =time()
+    from scipy.optimize import linear_sum_assignment
     row_ind, col_ind = linear_sum_assignment(distances)
-    #row_ind,col_ind = solve_dense(distances)
+    print(f"  {time() - now}s"); now =time()
+    from lapsolver import solve_dense
+    row_ind,col_ind = solve_dense(distances)
+    print(f"  {time() - now}s"); now =time()
+    '''
+    from scipy.optimize import linear_sum_assignment
+    row_ind, col_ind = linear_sum_assignment(distances)
 
     if debug:
         x = distances[row_ind, col_ind]

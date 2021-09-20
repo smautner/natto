@@ -1,4 +1,4 @@
-from natto.input.preprocessing import Data
+from natto.process import Data
 from scipy.sparse import csr_matrix
 import time
 from natto.out import quality as Q

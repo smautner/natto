@@ -1,20 +1,22 @@
-# %% 
+# %%
 
 
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import umap
 from natto.out.quality import spacemap
-from natto.out import draw 
+from natto.out import draw
 from natto import input
-import seaborn as sns 
+import seaborn as sns
+from lmz import *
+
 # %%
-# 100 DATA.. 
+# 100 DATA..
 #######################
 
 def get_labels(labelpath, names = []):
     '''
-    returns: 0-indexed labels,  and dictionary to get the str-label 
+    returns: 0-indexed labels,  and dictionary to get the str-label
     '''
     if not names:
         names = input.get100names(labelpath)
@@ -22,7 +24,7 @@ def get_labels(labelpath, names = []):
     labs = [n[:5] for n in names]
     items = np.unique(labs)
     s= spacemap(items)
-    nulabels = [s.getint[e] for e in labs  ] 
+    nulabels = [s.getint[e] for e in labs  ]
     nulabels=np.array(nulabels)
     return nulabels, s.getitem
 
@@ -45,9 +47,9 @@ def drawclustermap(data, intlabels, labeldict, ncol = 5):
     g.ax_col_dendrogram.legend( ncol=ncol, bbox_to_anchor=(1,-4.1), fontsize= 18)
 
 
-def plot(data, labelpath = '../data', save ='not implemented'):
+def plot(data,labels = [], save ='not implemented'):
     assert save == 'not implemented'
-    intlabels, labeldict  = get_labels(labelpath)
+    intlabels, labeldict  = get_labels(None, names =labels)
     drawclustermap(data,intlabels,labeldict)
     plt.show()
     plt.close()
@@ -58,11 +60,19 @@ from sklearn.metrics import adjusted_rand_score as ra
 
 def score(distance_matrix, labels, nc_range):
     """
-    so we get the distance matrix for the 100x100 or whatever, 
+    so we get the distance matrix for the 100x100 or whatever,
     then we choose max( rand(labels, agglo(data,n_clust)  ) vor all n_clust ) to score the data
     """
-    l,_ =  get_labels(labels)
-    return max([ ra(l,AG(n_clusters= n_clust).fit(distance_matrix).labels_) for n_clust in nc_range])
+    l,_ =  get_labels(None, labels) # -> turn labels to int
+
+    Lpredictions = [ AG(n_clusters= n_clust, linkage='ward').fit(distance_matrix).labels_ for n_clust in nc_range]
+
+    #for e in Lpredictions: print(f" {e=}")
+
+    scorez = Map(lambda z: ra(l,z), Lpredictions)
+    print(f" score: {max(scorez)}")
+    print(f"real labels: {l} {scorez=}")
+    return max(scorez)
 
 
 

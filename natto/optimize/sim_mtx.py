@@ -42,6 +42,7 @@ from natto.optimize.util import sim as neighborssim
 #dnames = input.get100names(path='../data')
 dnames = input.get57names()
 debug = False
+debugOUT = True
 if debug:
     print(f"dnames:{len(dnames)}")
 
@@ -57,7 +58,7 @@ def similarity(stra, strb, rep):
                 visual_ftsel = False,
                 scale= scale,
                 pca = 20,
-                umaps=[10],
+                umaps=[2,10] if debugOUT else [10] ,
                 make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
             )
     #print("clustering..",end='')
@@ -76,7 +77,16 @@ def similarity(stra, strb, rep):
     r2=rari_score(*gmm_2(*scelldata.d10,nc=15, cov='tied'), *scelldata.d10)
     s=rari_score(*spec_2(*scelldata.d10,nc=15), *scelldata.d10)
     #s8=rari_score(*spec_2(*scelldata.d10,nc=8), *scelldata.d10)
-
+    if debugOUT:
+        import matplotlib
+        import matplotlib.pyplot as plt
+        matplotlib.use('module://matplotlib-sixel')
+        plt.scatter(scelldata.d2[0][:,0],scelldata.d2[0][:,1],  alpha = .5)
+        #plt.show()
+        #plt.close()
+        plt.scatter(scelldata.d2[1][:,0],scelldata.d2[1][:,1], alpha = .5)
+        plt.show()
+        plt.close()
     '''
     kmeans_labels=kmeans_2(*scelldata.d10,nc=15)
     import matplotlib.pyplot as plt

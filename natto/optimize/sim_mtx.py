@@ -40,15 +40,15 @@ from natto.optimize.util import sim as neighborssim
 
 
 #dnames = input.get100names(path='../data')
-dnames = input.get57names()
+dnames = input.get71names()
 debug = False
-debugOUT = True
+debugOUT = False
 if debug:
     print(f"dnames:{len(dnames)}")
 
 def similarity(stra, strb, rep):
     scale = False,
-    subsample = 200 if debug else 2000
+    subsample = 200 if debug else 1500
     path='../data'
     seed1, seed2 = rep,rep
     if stra == strb:

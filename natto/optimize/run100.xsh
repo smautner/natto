@@ -24,7 +24,7 @@ if what == "run":
     if debug:
         parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 13) ::: @$(seq 0 13) ::: @$(seq 0 1)
     else:
-        parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 56) ::: @$(seq 0 56) ::: @$(seq 0 4)
+        parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 70) ::: @$(seq 0 70) ::: @$(seq 0 4)
 
 
 elif what == "plot":
@@ -39,7 +39,7 @@ elif what == "plot":
         labels = labels[:14]
         unilabels = range(2,5)
     else:
-        res = loadblock3.make_matrix(dim = [57,57,5], fdim = fdim, dir = directory)
+        res = loadblock3.make_matrix(dim = [71,71,5], fdim = fdim, dir = directory)
         unilabels = range(5,14)
 
     for fd in range(fdim):

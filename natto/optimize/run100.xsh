@@ -33,14 +33,14 @@ elif what == "plot":
     import plot.dendro as dendro
     import natto.input as input
     fdim = 5
-    labels = input.get57names()
+    labels = input.get71names()
     if debug:
         res = loadblock3.make_matrix(dim = [14,14,2], fdim = fdim, dir = directory)
         labels = labels[:14]
         unilabels = range(2,5)
     else:
         res = loadblock3.make_matrix(dim = [71,71,5], fdim = fdim, dir = directory)
-        unilabels = range(5,14)
+        unilabels = Range(5,20)
 
     for fd in range(fdim):
         print(f" starting plot: {fd}")
@@ -50,7 +50,7 @@ elif what == "plot":
             distancematrix *=-1
             distancematrix /= -distancematrix.min()
             distancematrix +=1
-        plt.imshow(distancematrix); plt.show();plt.close()
+        #plt.imshow(distancematrix); plt.show();plt.close()
         dendro.plot(distancematrix, labels)
         dendro.score(distancematrix,labels,unilabels)
 

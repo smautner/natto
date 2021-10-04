@@ -71,7 +71,7 @@ def score(distance_matrix, labels, nc_range):
 
     scorez = Map(lambda z: ra(l,z), Lpredictions)
     print(f" score: {max(scorez)}")
-    print(f"real labels: {l} {scorez=}")
+    print(f"real labels: {l} {Zip(nc_range,scorez)=}")
     return max(scorez)
 
 

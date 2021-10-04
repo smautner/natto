@@ -41,22 +41,21 @@ def filter(adata, cells='mito'):
 
     return adata
 
-def load3k(cells: 'mito all seurat' ='mito', subsample=.15, seed = None)-> 'anndata object':
+def load3k(cells: 'mito all seurat' ='mito', subsample=.15, seed = None, pathprefix = '..')-> 'anndata object':
     adata =  sc.read_10x_mtx(
-    '../data/3k/hg19/',
+    pathprefix+'/data/3k/hg19/',
     var_names='gene_symbols', cache=True)
-    adata.obs['labels']= loadlabels(load( "../data/3k/pbmc.3k.labels"), load( "../data/3k/hg19/barcodes.tsv"))
-
+    adata.obs['labels']= loadlabels(load( pathprefix+"/data/3k/pbmc.3k.labels"), load(pathprefix+"/data/3k/hg19/barcodes.tsv"))
     adata = filter(adata,cells)
     adata = do_subsample(adata, subsample,seed)
     return adata
 
-def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None)-> 'anndata object':
+def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None, pathprefix = '..')-> 'anndata object':
     adata =  sc.read_10x_mtx(
-    '../data/6k/hg19/',
+    pathprefix+'/data/6k/hg19/',
     var_names='gene_symbols', cache=True)
 
-    adata.obs['labels']= loadlabels(load( "../data/6k/pbmc.6k.labels"), load( "../data/6k/hg19/barcodes.tsv"))
+    adata.obs['labels']= loadlabels(load( pathprefix+"/data/6k/pbmc.6k.labels"), load( pathprefix+"/data/6k/hg19/barcodes.tsv"))
 
     adata = filter(adata,cells)
     adata = do_subsample(adata, subsample, seed)
@@ -69,8 +68,8 @@ def loadpbmc(path=None, subsample=None, seed=None):
     adata = do_subsample(adata, subsample,seed)
     return adata
 
-def load3k6k(subsample=False,seed=None):
-    return load3k(subsample=subsample, seed=seed), load6k(subsample=subsample,seed=seed)
+def load3k6k(subsample=False,seed=None, pathprefix = '..'):
+    return load3k(subsample=subsample, seed=seed, pathprefix = pathprefix), load6k(subsample=subsample,seed=seed, pathprefix = pathprefix)
 
 def loadp7de(subsample=False,pathprefix='..', seed=None):
     return loadpbmc('%s/data/p7d'%pathprefix ,subsample,seed), loadpbmc('%s/data/p7e'%pathprefix,subsample, seed)

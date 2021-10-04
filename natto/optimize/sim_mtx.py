@@ -106,6 +106,7 @@ def similarity(stra, strb, rep):
 
     ezcompe = neighborssim(*scelldata.d10)
     ezcompe2 = neighborssim(*scelldata.PCA)
+    ezcompe2 = neighborssim(*scelldata.data) # !! RUN THIS :))))
     return r,r2,s,ezcompe2, ezcompe
 
 

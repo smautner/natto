@@ -5,7 +5,7 @@ from natto.process import util as u
 from lmz import *
 
 class Data():
-    def fit(self,adatas,
+    def fit(self,adataList,
             selector='natto',
             selectgenes=800,
 
@@ -21,7 +21,7 @@ class Data():
             make_even=True,
             sortfield=-1):
 
-        self.data= adatas
+        self.data= adataList
         self.titles = titles
         self.even = make_even
 

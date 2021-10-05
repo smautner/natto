@@ -12,7 +12,6 @@ class spacemap():
         self.getitem = { i:k for i,k in enumerate(items)}
         self.getint = { k:i for i,k in enumerate(items)}
 
-
 def cleanlabels(asd):
     # asd is a list of label-lists
 

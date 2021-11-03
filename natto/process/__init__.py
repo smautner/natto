@@ -20,7 +20,9 @@ class Data():
             titles = "ABCDEFGHIJK",
             make_even=True,
             sortfield=-1):
-
+        '''
+        sortfield = 0  -> use adata -> TODO one should test if the cell reordering works when applied to anndata
+        '''
         self.data= adataList
         self.titles = titles
         self.even = make_even
@@ -32,35 +34,35 @@ class Data():
 
 
         # do dimred
-        self.projections = dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
+        self.projections =[self.data]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
 
 
         if pca:
-            self.PCA = self.projections[0]
+            self.PCA = self.projections[1]
 
         if sortfield >=0:
             self.sort_cells(sortfield)
 
 
         if umaps:
-            for x,d in zip(umaps,self.projections[int(pca>0):]):
+            for x,d in zip(umaps,self.projections[int(pca>0)+1:]):
                 self.__dict__[f"d{x}"] = d
-
-
         return self
 
 
-    def sort_cells(self,projection_id = 1):
+    def sort_cells(self,projection_id = 0):
         # loop over data sets
         for i in range(len(self.data)-1):
-            hung, _ = u.hungarian(self.projections[projection_id][i],self.projections[projection_id][i+1])
+            hung = self.hungarian(projection_id,i,i+1)
             self.data[i+1] = self.data[i+1][hung[1]]
             #self.data[i+1].X = self.data[i+1].X[hung[1]]
-
             # loop over projections
             for x in range(len(self.projections)):
                 self.projections[x][i+1] = self.projections[x][i+1][hung[1]]
-
+    #
+    def hungarian(self,data_fld,data_id, data_id2):
+            hung, _ = u.hungarian(self.projections[data_fld][data_id],self.projections[data_fld][data_id2])
+            return hung
 
 
     def preprocess(self, selector, selectgenes, selectorargs, savescores = False):

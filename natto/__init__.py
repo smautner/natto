@@ -1,24 +1,27 @@
+
+
+
+
 import matplotlib
-matplotlib.use('module://matplotlib-sixel')
-
 from natto import input
-#a,b = input.loadimmune(pathprefix = '/home/ubuntu/repos/HungarianClustering/',subsample=250)
-a,b = input.load3k6k(subsample=300,seed =3,pathprefix='/home/ubuntu/repos/HungarianClustering')
-
 from natto import process
-data  = process.Data().fit([a,b], visual_ftsel=False)
-data.sort_cells()
-
 from natto.process import cluster
-y = cluster.gmm_1(data.d10[0])
-
-
 from natto.process.cluster import k2means
-y,e, labels, probas = k2means.multitunnelclust(data.d10,y)
-
 from natto.out import draw
-draw.cmp2(y,y,*data.d2)
 
+if __name__ == "__main__":
+    matplotlib.use('module://matplotlib-sixel')
+
+    a,b = input.load3k6k(subsample=300,seed =3,pathprefix='/home/ubuntu/repos/HungarianClustering')
+
+    data  = process.Data().fit([a,b], visual_ftsel=False)
+    data.sort_cells(1)
+
+    y = cluster.gmm_1(data.d10[0])
+
+    y,e, labels, probas = k2means.multitunnelclust(data.d10,y)
+
+    draw.cmp2(y,y,*data.d2)
 
 
 

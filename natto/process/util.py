@@ -23,7 +23,10 @@ def cleanlabels(asd):
 
 def hungarian(X1, X2, debug = False,metric='euclidean'):
     # get the matches:
+    #import time
+    #now = time.time()
     distances = pairwise_distances(X1,X2, metric=metric)
+    #print(f" distcalc: {time.time() -now}")
     #distances = ed(X1, X2)
 
     #if solver != 'scipy':

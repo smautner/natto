@@ -29,13 +29,13 @@ def transform( means, var,plot, stepsize=.5, ran=3, minbin=0 ):
     return x, y, y_std
 
 
-def get_expected_values(x, y, x_all):
+def get_expected_values(x, y, x_all, firstbinchoice = max):
     mod = sklearn.linear_model.HuberRegressor()
     mod.fit(x, y)
     res = mod.predict(x_all.reshape(-1, 1))
     firstbin = y[0]
     firstbin_esti = mod.predict([x[0]])
-    res[x_all < x[0]] = max(firstbin, firstbin_esti)
+    res[x_all < x[0]] = firstbinchoice(firstbin, firstbin_esti)
     return res
 
 
@@ -45,7 +45,7 @@ def getgenes_natto(adata, selectgenes, title,
         plot=True):
 
     matrix= adata.to_df().to_numpy()
-    
+
     a = np.expm1(matrix)
     var = np.var(a, axis=0)
     meanex = np.mean(a, axis=0)
@@ -67,7 +67,7 @@ def getgenes_natto(adata, selectgenes, title,
         plt.suptitle(f"gene selection: {title}", size=20, y=1.07)
         ax = plt.subplot(121)
         plt.scatter(X[mask], Y[mask], alpha=.2, s=3, label='all genes')
-    
+
 
 
     x_bin, y_bin, ystd_bin = transform(X[mask].reshape(-1, 1),
@@ -77,7 +77,7 @@ def getgenes_natto(adata, selectgenes, title,
                                             minbin=bins[1] )
 
 
-    
+
     y_predicted = get_expected_values(x_bin, y_bin, X[mask])
     std_predicted = get_expected_values(x_bin, ystd_bin, X[mask])
     Y[mask] -= y_predicted
@@ -110,9 +110,9 @@ def getgenes_natto(adata, selectgenes, title,
         print(f"ft selected:{sum(accept)}")
 
 
-    
+
     raw = np.zeros(len(mask))
-    raw[mask] = Y[mask] 
+    raw[mask] = Y[mask]
 
 
     mask[mask] = np.array(accept)
@@ -124,6 +124,7 @@ def getgenes_natto(adata, selectgenes, title,
 ###################
 def basic_filter(data, min_counts=3, min_genes=200):
     # filter cells
+    shapesL = [d.shape for d in data]
     [sc.pp.filter_cells(d, min_genes=min_genes, inplace=True) for d in data]
 
     # filter genes
@@ -131,6 +132,11 @@ def basic_filter(data, min_counts=3, min_genes=200):
     geneab = np.any(np.array(genef), axis=0)
     for i, d in enumerate(data):
         data[i] = d[:, geneab]
+
+    for i,(a,b) in enumerate(zip(shapesL,[d.shape for d in data])):
+        if b[1] < 4000 or b[0]/a[0] < .5 or b[0] < 200: # less than 4k genes active or many cells removed
+            print(f"BASIC FILTER for dataset {i}: {a} -> {b}")
+
     return data
 
 def make_even(data):
@@ -160,3 +166,4 @@ def normlog(data):
 def unioncut(gene_lists, data):
     genes = np.any(np.array(gene_lists), axis=0)
     return [d[:, genes].copy() for d in data]
+

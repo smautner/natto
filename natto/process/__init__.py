@@ -4,9 +4,8 @@ from natto.process import dimensions
 from natto.process import util as u
 from lmz import *
 
-
 class Data():
-    def fit(self,adatas,
+    def fit(self,adataList,
             selector='natto',
             selectgenes=800,
 
@@ -22,7 +21,7 @@ class Data():
             make_even=True,
             sortfield=-1):
 
-        self.data= adatas
+        self.data= adataList
         self.titles = titles
         self.even = make_even
 
@@ -39,9 +38,9 @@ class Data():
         if pca:
             self.PCA = self.projections[0]
 
-        if sortfield >=0: 
+        if sortfield >=0:
             self.sort_cells(sortfield)
-        
+
 
         if umaps:
             for x,d in zip(umaps,self.projections[int(pca==True):]):
@@ -66,6 +65,8 @@ class Data():
 
     def preprocess(self, selector, selectgenes, selectorargs, savescores = False):
 
+        shapeofdataL = [x.shape for x in self.data]
+
         self.data = preprocess.basic_filter(self.data)  # min_counts min_genes
         self.data = preprocess.normlog(self.data)
 
@@ -81,6 +82,10 @@ class Data():
         self.genes=genes
         self.data = preprocess.make_even(self.data)
 
+        print("preprocess:")
+        for a,b in zip(shapeofdataL, self.data):
+            print(f"{a} -> {b.shape}")
+
 
 
 
@@ -94,6 +99,10 @@ class Data():
 
 import numpy as np
 class Data_DELME():
+    """
+        so we set the number of genes to 800,
+        this guy selects more than 1 gene-set.
+    """
     def fit(self,adatas,
             selector='natto',
             selectgenes=2000,
@@ -121,7 +130,7 @@ class Data_DELME():
 
         # do dimred
         self.projections = [ dimensions.dimension_reduction(d,scale,False,PCA=pca,umaps=umaps) for d in self.data]
-  
+
         return self
 
 
@@ -150,11 +159,11 @@ class Data_DELME():
 
         self.data = [preprocess.unioncut(genes, self.data) for genes in genelist]
         self.data = [ preprocess.make_even(d) for d in self.data]
-    
+
     def select(self,num, genes, scores):
-       # there is a gene array and a score array.. 
-       
-       scores[np.logical_not(genes)] = -2 
+       # there is a gene array and a score array..
+
+       scores[np.logical_not(genes)] = -2
        selecthere = np.argsort(scores)[:num]
        r=np.full(len(genes), 0)
        r[selecthere] = 1

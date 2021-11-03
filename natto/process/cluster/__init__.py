@@ -58,7 +58,11 @@ def random_2(a,b,nc = 15):
 
 
 def spec_1(X,nc=15):
-     return SpectralClustering(n_clusters=nc).fit_predict(X)
+     print(f" STARTING SPECTRAL")
+     r = SpectralClustering(n_clusters=nc,affinity = 'nearest_neighbors', n_neighbors = 10).fit_predict(X)
+     print(f" SPECTRAL DONE")
+     return r
+     #return SpectralClustering(n_clusters=nc, affinity='cosine').fit_predict(X)
 
 
 def spec_2(a,b, nc =15):
@@ -130,3 +134,4 @@ def coclust(X1,X2,algo=lambda x: leiden_1(x,resolution=.5)):
     y= algo(X)
     l1 = X1.shape[0]
     return y[:l1], y[l1:]
+

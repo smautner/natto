@@ -12,16 +12,27 @@ from natto import input
 
 d2,d10,pc,o = [],[],[],[]
 x = Range(20,100,5)
+pca_var = Range(70,90,5)
 
 
 # 3k6k
 loader = lambda: input.load3k6k(pathprefix= '/home/ubuntu/repos/HungarianClustering',subsample = 1000, seed = 3)
 labels = 'labels'
+
 # 100 DATASET
-names = input.get71names()
-loader1 = lambda seed: input.load100(names[4],subsample=1000,path='/home/ubuntu/repos/natto/natto/data',seed=seed, remove_unlabeled=True)
-loader = lambda: [loader1(4), loader1(10)]
-labels = 'true'
+if True:
+	datasetname = input.get71names()[4]
+	loader1 = lambda seed: input.load100(datasetname,subsample=1000,path='/home/ubuntu/repos/natto/natto/data',seed=seed, remove_unlabeled=True)
+	loader = lambda: [loader1(5), loader1(11)]
+	labels = 'true'
+
+
+
+
+
+#data = loader()
+#zomg = process.Data().fit(list(data), visual_ftsel=False,umaps = [], pca = 300, make_even=True)
+#exit()
 
 for pca in x:
     # load data

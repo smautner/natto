@@ -61,6 +61,18 @@ def similarity(stra, strb, rep):
                 umaps=[2,10] if debugOUT else [10] ,
                 make_even=True # adjusted to new preproc but untested, sortfield default -1 might be a problem
             )
+
+    import anndata as ad
+    rr = ad.concat(scelldata.data)
+
+    rr.obs_names_make_unique()
+    #breakpoint()
+    rr.X= rr.X.todense()
+    rr.write_h5ad("exporttest.h5ad")
+
+
+
+
     #print("clustering..",end='')
 
     # cluster

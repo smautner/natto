@@ -36,7 +36,6 @@ data = na.prepare(adata_1,adata_2)
 # similarity measure
 print("similarity:",na.similarity(data))
 
-
 # EM algorithm  and plotting
 na.tunnelclust(data)
 na.drawpair(data, tunnellabels = True)

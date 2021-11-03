@@ -43,7 +43,7 @@ class Data():
 
 
         if umaps:
-            for x,d in zip(umaps,self.projections[int(pca==True):]):
+            for x,d in zip(umaps,self.projections[int(pca>0):]):
                 self.__dict__[f"d{x}"] = d
 
 

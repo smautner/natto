@@ -34,7 +34,7 @@ class Data():
 
 
         # do dimred
-        self.projections =[self.data]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
+        self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
 
 
         if pca:

@@ -15,7 +15,7 @@ if __name__ == "__main__":
     a,b = input.load3k6k(subsample=300,seed =3,pathprefix='/home/ubuntu/repos/HungarianClustering')
 
     data  = process.Data().fit([a,b], visual_ftsel=False)
-    data.sort_cells(1)
+    data.sort_cells(0)
 
     y = cluster.gmm_1(data.d10[0])
 

@@ -24,9 +24,9 @@ def dimension_reduction(adatas, scale, zero_center, PCA,umaps):
         dx = [ pca.transform(e) for e in dx  ]
         res.append(dx)
 
-    for umap in umaps:
-        assert 0 < umap < PCA
-        res.append(umapify(dx,umap))
+    for dim in umaps:
+        assert 0 < dim < PCA
+        res.append(umapify(dx,dim))
 
     return res
 

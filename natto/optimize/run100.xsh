@@ -2,15 +2,29 @@ $MKL_NUM_THREADS =1
 $NUMBA_NUM_THREADS =1
 $OMP_NUM_THREADS =1
 $OPENBLAS_NUM_THREADS =1
+
+
 import sys
 args = sys.argv[1:]
 what = args[0]
+dataset = args[1]
+
+import natto.input as input
+alldatasets  = input.get71names()
+
+
+if dataset == 'all':
+    for target in alldatasets:
+        xonsh run.xsh @(what) @(target)
+    exit()
+
+
 import matplotlib
 matplotlib.use('module://matplotlib-sixel')
 import matplotlib.pyplot as plt
+
 from lmz import *
 import basics as ba
-
 
 
 debug = False # also set sim_mtx debug manualy ...
@@ -25,6 +39,33 @@ if what == "run":
         parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 13) ::: @$(seq 0 13) ::: @$(seq 0 1)
     else:
         parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 70) ::: @$(seq 0 70) ::: @$(seq 0 4)
+
+
+
+
+if what == "runNN":
+    $numcells = 1000
+    datapath = '/home/ubuntu/repos/natto/data/'
+    datapath2 = '/home/ubuntu/repos/natto/natto/data/'
+    mkdir -p NNTMP
+    for data in alldatasets[:4]:
+        #parallel -j 32 --bar --jl job.log $(which python) sim_NN.py @(dataset) @(data) $numcells
+        python simNN.py @(datapath+dataset) @(datapath2+data) $numcells
+
+
+
+elif what == 'trainNN':
+    '''
+    PLAN:
+        - cellvgae on all -> Xd
+        - then subsample -> run $mod $other $mod-src
+            - get Xd
+            - run natto on that
+    Note:
+        cellvgae/__main__.py:60 ;; i subsample to 5k cells, just to make things even and save time
+    '''
+    python -m cellvgae --input_gene_expression_path @(f"/home/ubuntu/repos/natto/natto/data/{dataset}.h5") --hvg 1000 --khvg 250 --graph_type "KNN Scanpy" --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 100 --model_save_path @(f'/home/ubuntu/repos/natto/data/{dataset}')
+
 
 
 elif what == "plot":
@@ -93,6 +134,7 @@ elif what == 'preprocstats':
     plt.scatter(cells, feat)
     plt.show()
     plt.close()
+
 elif what == 'preprocfilter':
     '''
     - load stats.dmp and remove datasets that leave less than 200 cells ...

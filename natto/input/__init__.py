@@ -256,7 +256,6 @@ def load100addtruthAndWrite(adata,item, path='../data/100/data'):
     fname = f"{path}/{item}.cluster.txt"
     lol = open(fname,'r').readlines()
 
-
     barcode_cid={}
     for line in lol:
         bc,cl =  line.strip().split()

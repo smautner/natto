@@ -12,47 +12,60 @@ PLAN:
 '''
 
 
-# python sim_NN.py @(datapath+dataset) @(datapath+data) $numcells
 
 
+import basics as ba
 import sys
-_, nnpath, pathtodata, numcells = sys.argv
-numcells = int(numcells)
-#print(nnpath,pathtodata, numcells)
-
-
-
-# 1.
 import ubergauss.tools as t
-emb = t.nloadfile(nnpath+'/cellvgae_node_embeddings.npy')
 from sklearn.utils import resample
-emb = resample(emb,replace = False,n_samples=numcells)
-#print(f"{ emb.shape=}")
-
-# 2.1 DUMP SUBSAMPLED TARGET
 import anndata
 import scanpy as sc
 import uuid
-target=anndata.read_h5ad(pathtodata+'.h5')
-sc.pp.subsample(target, n_obs = numcells,copy=False)
-TMPFILE = 'NNTMP/'+str(uuid.uuid4())
-target.write(TMPFILE+".h5ad")
-
-# 2.2 run run run
-import basics as ba
-ba.shexec(f'mkdir {TMPFILE}')
-z=f'python -m cellvgae --input_gene_expression_path "{TMPFILE}.h5ad" --hvg 1000 --khvg 250 --graph_type "KNN Scanpy" --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3 --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --load_model_path "{nnpath}/cellvgae_model.pt" --model_save_path "{TMPFILE}" '
-ba.shexec(z)
-
-targetemb = t.nloadfile(f"{TMPFILE}/cellvgae_test_node_embeddings.npy")
-
-
 from natto.process.cluster import gmm_2, spec_2, kmeans_2
 from natto.out.quality import rari_score
 
-datapair  = [emb, targetemb]
-r=rari_score(*gmm_2(*datapair,nc=15, cov='full'), *datapair)
-r2=rari_score(*gmm_2(*datapair,nc=15, cov='tied'), *datapair)
 
-print("distance:",r,r2)
-#t.dumpfile([r,r2],"NNTMP/{writeto}")
+print(sys.argv)
+
+_, nnpath, pathtodata, numcells, repeats, id1, id2 = sys.argv
+numcells = int(numcells)
+repeats = int(repeats)
+#print(nnpath,pathtodata, numcells)
+
+import natto.input as input
+alldatasets  = input.get71names()
+nnpath += alldatasets[int(id1)]
+pathtodata += alldatasets[int(id2)]
+
+
+
+def doit(repeat):
+    # 1.
+    emb = t.nloadfile(nnpath+'/cellvgae_node_embeddings.npy')
+    emb = resample(emb,replace = False,n_samples=numcells, random_state = repeat)
+    #print(f"{ emb.shape=}")
+
+    # 2.1 DUMP SUBSAMPLED TARGET
+    target=anndata.read_h5ad(pathtodata+'.h5')
+    sc.pp.subsample(target, n_obs = numcells,copy=False,random_state = i+31337)
+    TMPFILE = 'NNTMP/'+str(uuid.uuid4())
+    target.write(TMPFILE+".h5ad")
+
+    # 2.2 run run run
+    ba.shexec(f'mkdir {TMPFILE}')
+    z=f'python -m cellvgae --input_gene_expression_path "{TMPFILE}.h5ad" --hvg 1000 --khvg 250 --graph_type "KNN Scanpy" --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3 --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --load_model_path "{nnpath}/cellvgae_model.pt" --model_save_path "{TMPFILE}" --genesaveload load --genesaveloadpath  "{nnpath}/selected_genes" '
+    if False:
+        z=f'python -m cellvgae --input_gene_expression_path "{TMPFILE}.h5ad" --hvg 1000 --khvg 250 --graph_type "KNN Scanpy" --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3 --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --load_model_path "{nnpath}/cellvgae_model.pt" --model_save_path "{TMPFILE}"'
+    ba.shexec(z)
+
+    targetemb = t.nloadfile(f"{TMPFILE}/cellvgae_test_node_embeddings.npy")
+    datapair  = [emb, targetemb]
+    r=rari_score(*gmm_2(*datapair,nc=15, cov='full'), *datapair)
+    r2=rari_score(*gmm_2(*datapair,nc=15, cov='tied'), *datapair)
+
+    print("distance:",r,r2)
+    t.dumpfile([r,r2],f"NNOUT/{id1}_{id2}_{repeat}")
+
+
+for i in range(repeats):
+    doit(i)

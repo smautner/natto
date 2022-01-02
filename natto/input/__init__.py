@@ -53,7 +53,9 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15, seed = None, pathpre
     return adata
 
 def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None, pathprefix = '..')-> 'anndata object':
-    adata =  sc.read_10x_mtx(   pathprefix+'/data/6k/hg19/',
+    adata =  sc.read_10x_mtx(
+    pathprefix+'/data/6k/hg19/',
+
     var_names='gene_symbols', cache=True)
 
     adata.obs['labels']= loadlabels(load( pathprefix+"/data/6k/pbmc.6k.labels"), load( pathprefix+"/data/6k/hg19/barcodes.tsv"))
@@ -73,7 +75,7 @@ def loadGSM(path=None, subsample=None, seed=None, cellLabels=None):
         adata.obs['labels'] = pd.read_csv(path+'theirLabels.csv', usecols=["cluster"])['cluster'].to_numpy()
     adata = do_subsample(adata, subsample,seed)
     return adata
-
+  
 def load3k6k(subsample=False,seed=None, pathprefix = '..'):
     return load3k(subsample=subsample, seed=seed, pathprefix = pathprefix), load6k(subsample=subsample,seed=seed, pathprefix = pathprefix)
 

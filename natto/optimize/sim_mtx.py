@@ -31,10 +31,10 @@ Testis_10xchromium_SRA645804-SRS2823408_4306.h5"""
 dnames = [d[:-3] for d in dnames.split()]
 
 from natto.process import Data, Data_DELME
-from natto.out.quality import rari_score
 from natto import input
 from natto import process
 from natto.process.cluster import gmm_2, spec_2, kmeans_2
+from natto.out.quality import rari_score
 from umap import UMAP
 from natto.optimize.util import sim as neighborssim
 

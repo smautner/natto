@@ -2,16 +2,29 @@ $MKL_NUM_THREADS =1
 $NUMBA_NUM_THREADS =1
 $OMP_NUM_THREADS =1
 $OPENBLAS_NUM_THREADS =1
+
 import sys
 args = sys.argv[1:]
 what = args[0]
+dataset = args[1]
+
+import natto.input as input
+alldatasets  = input.get71names()
+from lmz import Map,Zip,Filter,Grouper,Range,Transpose
+
+
+if dataset == 'all':
+    for target in alldatasets:
+        xonsh run.xsh @(what) @(target)
+    exit()
+
+
 import matplotlib
 matplotlib.use('module://matplotlib-sixel')
 import matplotlib.pyplot as plt
+
 from lmz import *
 import basics as ba
-
-
 
 debug = False # also set sim_mtx debug manualy ...
 directory = 'res3k'
@@ -26,6 +39,54 @@ if what == "run":
     else:
         parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 70) ::: @$(seq 0 70) ::: @$(seq 0 4)
 
+elif what == "runNN":
+    $numcells = 1000
+    datapath = '/home/ubuntu/repos/natto/data/'
+    datapath2 = '/home/ubuntu/repos/natto/natto/data/'
+    mkdir -p NNTMP
+
+    alldatasets = [ a for a in alldatasets if a.startswith("Testi")]
+    for data in alldatasets[:4]:
+        # !!!!!!!! args changed !!!!!!!!!!
+        #        python simNN.py @(datapath+dataset) @(datapath2+data) $numcells @(writeto)
+        pass
+
+elif what == "runNNALL":
+    $numcells = 1000
+    $repeats = 5
+    datapath = '/home/ubuntu/repos/natto/data/'
+    datapath2 = '/home/ubuntu/repos/natto/natto/data/'
+    mkdir -p NNOUT
+
+    parallel -j 30 --bar --jl runn.log $(which python) simNN.py @(datapath) @(datapath2) $numcells $repeats '{1}' '{2}' ::: @(Range(alldatasets)) ::: @(Range(alldatasets))
+
+
+
+elif what == 'trainNN':
+    '''
+    PLAN:
+        - cellvgae on all -> Xd
+        - then subsample -> run $mod $other $mod-src
+            - get Xd
+            - run natto on that
+    Note:
+        cellvgae/__main__.py:60 ;; i subsample to 5k cells, just to make things even and save time
+    '''
+    python -m cellvgae --input_gene_expression_path @(f"/home/ubuntu/repos/natto/natto/data/{dataset}.h5") --hvg 1000 --khvg 250 --graph_type "KNN Scanpy" --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path @(f'/home/ubuntu/repos/natto/data/{dataset}') --genesaveload save --genesaveloadpath  @(f'/home/ubuntu/repos/natto/data/{dataset}/selected_genes')
+
+elif what == 'trainNNall':
+    '''
+    PLAN:
+        - cellvgae on all -> Xd
+        - then subsample -> run $mod $other $mod-src
+            - get Xd
+            - run natto on that
+    Note:
+        cellvgae/__main__.py:60 ;; i subsample to 5k cells, just to make things even and save time
+    '''
+    for e in alldatasets:
+        mkdir -p @(f'/home/ubuntu/repos/natto/data/{e}')
+    parallel -j 30 $(which python) -m cellvgae --input_gene_expression_path @("/home/ubuntu/repos/natto/natto/data/{1}.h5") --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path @('/home/ubuntu/repos/natto/data/{1}') --genesaveload save --genesaveloadpath  @('/home/ubuntu/repos/natto/data/{1}/selected_genes') ::: @(alldatasets)
 
 elif what == "plot":
     import loadblock3
@@ -93,6 +154,7 @@ elif what == 'preprocstats':
     plt.scatter(cells, feat)
     plt.show()
     plt.close()
+
 elif what == 'preprocfilter':
     '''
     - load stats.dmp and remove datasets that leave less than 200 cells ...

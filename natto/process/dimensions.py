@@ -5,7 +5,9 @@ import scanpy as sc
 import numpy as np
 from sklearn import decomposition
 
+
 def dimension_reduction(adatas, scale, zero_center, PCA, umaps, joint_space=True):
+
 
     # get a (scaled) dx
     if scale or PCA:

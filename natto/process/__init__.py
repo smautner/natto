@@ -38,6 +38,7 @@ class Data():
         self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps, joint_space=joint_space)
 
 
+
         if pca:
             self.PCA = self.projections[1]
 

@@ -16,6 +16,7 @@ class Data():
             umaps=[10,2],
             scale=False,
             pca = 20,
+            joint_space = True,
 
             titles = "ABCDEFGHIJK",
             make_even=True,
@@ -34,7 +35,8 @@ class Data():
 
 
         # do dimred
-        self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps)
+        self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps, joint_space=joint_space)
+
 
 
         if pca:

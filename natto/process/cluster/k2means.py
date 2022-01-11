@@ -12,12 +12,12 @@ from sklearn.mixture import GaussianMixture as gmm
 def assign(x1,x2,c1,c2):
     r = ed(x1,c1)
     r2 = ed(x2,c2)
-    r3=np.concatenate((r,r2), axis=1)
-    z = np.argmin(r3, axis = 1)
-    res = np.array( [zz if zz < c1.shape[0] else zz-c1.shape[0]  for zz in z] )
+    r3=np.concatenate((r,r2), axis=1) #euclidean distances of points
+    z = np.argmin(r3, axis = 1) # cluster with minimal euclidean distance
+    res = np.array( [zz if zz < c1.shape[0] else zz-c1.shape[0]  for zz in z] ) # y
 
 
-    return res,  np.argmin(r, axis = 1) !=  np.argmin(r2, axis = 1)
+    return res,  np.argmin(r, axis = 1) !=  np.argmin(r2, axis = 1) 
 
 
 def centers(y,X):
@@ -34,10 +34,36 @@ def optimize_kmeans(X1,X2,y):
     return y,e
 
 
+#######
+# Multi input KMEANS
+#######
+def multi_assign(X, c):
+    listOfRs = []
+    r_n = ed(X[0], c[0])
+
+    listOfEDs = [np.argmin(r_n, axis=1)]
+    for i in range(1,len(X)):
+        r_i = ed(X[i],c[i])
+        r_n = np.concatenate((r_n, r_i), axis=1)
+        listOfEDs.append(np.argmin(r_i, axis=1)) # Used to find error
+
+    clustersByX = np.stack(listOfEDs, axis=0)
+
+    z = np.argmin(r_n, axis=1)
+    res = np.array( [zz if zz < c[0].shape[0] else zz-(zz//c[0].shape[0])*c[0].shape[0]  for zz in z] )
+
+    e = np.all(clustersByX == clustersByX[0,:], axis=0)
+#    e = np.argmin(ed(X[0],c[0]), axis = 1) !=  np.argmin(ed(X[1], c[1]), axis = 1) 
+
+    return res, e
 
 
-
-
+def optimize_multi_kmeans(XList, y):
+    cList = []
+    for x in XList:
+        cList.append(centers(y, x))
+    y,e = multi_assign(XList, cList)
+    return y,e
 
 
 

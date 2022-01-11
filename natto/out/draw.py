@@ -385,7 +385,8 @@ def tinyumap(X,Y,
         alpha = None, 
         legend = False, 
         size=None):
-        
+#    print(X)
+#    print(Y)
     plt.title(title, size=title_size)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
@@ -426,7 +427,7 @@ class tinyUmap():
 
 
 
-def auto_tiny(X,Y,wrap = 'auto',grad= False ): 
+def auto_tiny(X,Y, wrap = 'auto', grad= False): 
     
     # how should we wrap:
     if wrap == 'auto':
@@ -435,7 +436,7 @@ def auto_tiny(X,Y,wrap = 'auto',grad= False ):
         print ('not implemented, the idea is to put $wrap many in a row')
         # this means initializiung tinyUmap with another dim
 
-    if not grad: 
+    if not grad:
         for x,y in zip(X,Y): 
             d.draw(x,y, title=None) 
         plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
@@ -446,10 +447,7 @@ def auto_tiny(X,Y,wrap = 'auto',grad= False ):
             plt.scatter(x[:,0], x[:,1], c=y, s=1)
 
     plt.show()
-
-
-
-
+    
 
 import natto.process.util as util
 def distance_debug(m):

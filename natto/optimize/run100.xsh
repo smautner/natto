@@ -42,28 +42,14 @@ if what == "run":
         parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 70) ::: @$(seq 0 70) ::: @$(seq 0 4)
 
 
-
-
-elif what == "runNN":
-    $numcells = 1000
-    datapath = '/home/ubuntu/repos/natto/data/'
-    datapath2 = '/home/ubuntu/repos/natto/natto/data/'
-    mkdir -p NNTMP
-
-    alldatasets = [ a for a in alldatasets if a.startswith("Testi")]
-    for data in alldatasets[:4]:
-        # !!!!!!!! args changed !!!!!!!!!!
-        #        python simNN.py @(datapath+dataset) @(datapath2+data) $numcells @(writeto)
-        pass
-
 elif what == "runNNALL":
     $numcells = 1000
-    $repeats = 5
+    $repeats = 3
     datapath = '/home/ubuntu/repos/natto/data/'
     datapath2 = '/home/ubuntu/repos/natto/natto/data/'
     mkdir -p NNOUT
 
-    parallel -j 30 --bar --jl runn.log $(which python) simNN.py @(datapath) @(datapath2) $numcells $repeats '{1}' '{2}' ::: @(Range(alldatasets)) ::: @(Range(alldatasets))
+    parallel -j 25 --bar --jl runn.log $(which python) simNN.py @(datapath) @(datapath2) $numcells $repeats '{1}' '{2}' $(which python) ::: @(Range(alldatasets)) ::: @(Range(alldatasets))
 
 
 
@@ -86,31 +72,32 @@ elif what == 'trainNNall':
         - then subsample -> run $mod $other $mod-src
             - get Xd
             - run natto on that
-    Note:
         cellvgae/__main__.py:60 ;; i subsample to 5k cells, just to make things even and save time
     '''
     for e in alldatasets:
         mkdir -p @(f'/home/ubuntu/repos/natto/data/{e}')
-    parallel -j 30 $(which python) -m cellvgae --input_gene_expression_path @("/home/ubuntu/repos/natto/natto/data/{1}.h5") --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path @('/home/ubuntu/repos/natto/data/{1}') --genesaveload save --genesaveloadpath  @('/home/ubuntu/repos/natto/data/{1}/selected_genes') ::: @(alldatasets)
+    parallel -j 30 -jl trainlog.log -- $(which python) -m cellvgae --input_gene_expression_path @("/home/ubuntu/repos/natto/natto/data/{1}.h5") --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path @('/home/ubuntu/repos/natto/data/{1}') --genesaveload save --genesaveloadpath  @('/home/ubuntu/repos/natto/data/{1}/selected_genes') ::: @(alldatasets)
 
 elif what == "plot":
     import loadblock3
     import numpy as np
     import plot.dendro as dendro
     import natto.input as input
-    fdim = 5
+    directory = 'NNOUT'
+    fdim = 3
     labels = input.get71names()
     if debug:
         res = loadblock3.make_matrix(dim = [14,14,2], fdim = fdim, dir = directory)
         labels = labels[:14]
         unilabels = range(2,5)
     else:
-        res = loadblock3.make_matrix(dim = [71,71,5], fdim = fdim, dir = directory)
+        res = loadblock3.make_matrix(dim = [71,71,3], fdim = fdim, dir = directory, mir=False)
         unilabels = Range(5,20)
 
     for fd in range(fdim):
         print(f" starting plot: {fd}")
         distancematrix = np.nanmean(res[:,:,:,fd],axis=2)
+
         if fd >= 3:
             # convert to similarity between 0 and 1
             distancematrix *=-1

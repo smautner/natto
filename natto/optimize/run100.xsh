@@ -3,7 +3,6 @@ $NUMBA_NUM_THREADS =1
 $OMP_NUM_THREADS =1
 $OPENBLAS_NUM_THREADS =1
 
-
 import sys
 args = sys.argv[1:]
 what = args[0]
@@ -27,7 +26,6 @@ import matplotlib.pyplot as plt
 from lmz import *
 import basics as ba
 
-
 debug = False # also set sim_mtx debug manualy ...
 directory = 'res3k'
 $directory = directory
@@ -41,6 +39,17 @@ if what == "run":
     else:
         parallel -j 32 --bar --jl job.log ./sim_mtx.py $directory ::: @$(seq 0 70) ::: @$(seq 0 70) ::: @$(seq 0 4)
 
+elif what == "runNN":
+    $numcells = 1000
+    datapath = '/home/ubuntu/repos/natto/data/'
+    datapath2 = '/home/ubuntu/repos/natto/natto/data/'
+    mkdir -p NNTMP
+
+    alldatasets = [ a for a in alldatasets if a.startswith("Testi")]
+    for data in alldatasets[:4]:
+        # !!!!!!!! args changed !!!!!!!!!!
+        #        python simNN.py @(datapath+dataset) @(datapath2+data) $numcells @(writeto)
+        pass
 
 elif what == "runNNALL":
     $numcells = 1000

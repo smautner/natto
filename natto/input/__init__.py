@@ -1,9 +1,11 @@
 import scanpy as sc
 from scipy.sparse import csr_matrix
+from sklearn.mixture import GaussianMixture
 import pandas as pd
 from lmz import *
 import anndata as ad
 import numpy as np
+import random
 
 
 ####
@@ -53,6 +55,7 @@ def load3k(cells: 'mito all seurat' ='mito', subsample=.15, seed = None, pathpre
 def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None, pathprefix = '..')-> 'anndata object':
     adata =  sc.read_10x_mtx(
     pathprefix+'/data/6k/hg19/',
+
     var_names='gene_symbols', cache=True)
 
     adata.obs['labels']= loadlabels(load( pathprefix+"/data/6k/pbmc.6k.labels"), load( pathprefix+"/data/6k/hg19/barcodes.tsv"))
@@ -61,13 +64,18 @@ def load6k(cells: 'mito all seurat' ='mito', subsample=.25, seed=None, pathprefi
     adata = do_subsample(adata, subsample, seed)
     return adata
 
-
-
 def loadpbmc(path=None, subsample=None, seed=None):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
     adata = do_subsample(adata, subsample,seed)
     return adata
 
+def loadGSM(path=None, subsample=None, seed=None, cellLabels=None):
+    adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
+    if cellLabels:
+        adata.obs['labels'] = pd.read_csv(path+'theirLabels.csv', usecols=["cluster"])['cluster'].to_numpy()
+    adata = do_subsample(adata, subsample,seed)
+    return adata
+  
 def load3k6k(subsample=False,seed=None, pathprefix = '..'):
     return load3k(subsample=subsample, seed=seed, pathprefix = pathprefix), load6k(subsample=subsample,seed=seed, pathprefix = pathprefix)
 
@@ -255,6 +263,7 @@ def load100(item, path='../data/100/data', seed= None, subsample=None, remove_un
 def load100addtruthAndWrite(adata,item, path='../data/100/data'):
     fname = f"{path}/{item}.cluster.txt"
     lol = open(fname,'r').readlines()
+
 
     barcode_cid={}
     for line in lol:

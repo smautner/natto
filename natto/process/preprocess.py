@@ -61,7 +61,6 @@ def getgenes_natto(adata, selectgenes, title,
     #plt.show()
 
     mask = np.array([not np.isnan(y) and me > mean[0] and me < mean[1] for y, me in zip(disp, X)])
-
     if plot:
         plt.figure(figsize=(11, 4))
         plt.suptitle(f"gene selection: {title}", size=20, y=1.07)

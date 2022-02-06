@@ -57,7 +57,7 @@ elif what == 'trainNNall':
     alldatasets= alldatasets[:2]
     alltheargs = ' '.join(alldatasets)
 
-    `parallel -j 30 --jl trainlog.log  {python}  -m cellvgae --input_gene_expression_path /home/ubuntu/repos/natto/natto/data/{{1}}.h5 --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path /home/ubuntu/repos/natto/data/{{1}} --genesaveload save --genesaveloadpath  /home/ubuntu/repos/natto/data/{{1}}/selected_genes ::: {alltheargs}
+    `parallel -j 30 --jl trainlog.log  {python}  -m cellvgae --lr 0.001 --input_gene_expression_path /home/ubuntu/repos/natto/natto/data/{{1}}.h5 --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path /home/ubuntu/repos/natto/data/{{1}} --genesaveload save --genesaveloadpath  /home/ubuntu/repos/natto/data/{{1}}/selected_genes ::: {alltheargs}
 
 """
 if what == "run":

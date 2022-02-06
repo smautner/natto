@@ -1,10 +1,7 @@
 
-
-
 '''
 PLAN:
     - we ran CELLVGAE on a dataset.. now we
-
     1. load the embedding and subsample n cells
     2. load from another dataset n calls and run it through the network
     3. we calculate the simmilarity

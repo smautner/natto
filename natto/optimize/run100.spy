@@ -1,36 +1,65 @@
-$MKL_NUM_THREADS =1
-$NUMBA_NUM_THREADS =1
-$OMP_NUM_THREADS =1
-$OPENBLAS_NUM_THREADS =1
+`export MKL_NUM_THREADS=1
+`export NUMBA_NUM_THREADS=1
+`export OMP_NUM_THREADS=1
+`export OPENBLAS_NUM_THREADS=1
+
+
+
 
 import sys
 args = sys.argv[1:]
 what = args[0]
 dataset = args[1]
-
 import natto.input as input
 alldatasets  = input.get71names()
 from lmz import Map,Zip,Filter,Grouper,Range,Transpose
-
-
 if dataset == 'all':
     for target in alldatasets:
-        xonsh run.xsh @(what) @(target)
+        `shellpy run100.spy {what} {target}
     exit()
-
-
 import matplotlib
 matplotlib.use('module://matplotlib-sixel')
 import matplotlib.pyplot as plt
-
-from lmz import *
 import basics as ba
 
 debug = False # also set sim_mtx debug manualy ...
 directory = 'res3k'
-$directory = directory
+python = `which python
 
+if what == 'trainNN':
+    pass
+    '''
+    PLAN:
+        - cellvgae on all -> Xd
+        - then subsample -> run $mod $other $mod-src
+            - get Xd
+            - run natto on that
+    Note:
+        cellvgae/__main__.py:60 ;;
+        i subsample to 5k cells, just to make things even and save time
+    '''
+    """
+    python -m cellvgae --input_gene_expression_path @(f"/home/ubuntu/repos/natto/natto/data/{dataset}.h5") --hvg 1000 --khvg 250 --graph_type "KNN Scanpy" --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path @(f'/home/ubuntu/repos/natto/data/{dataset}') --genesaveload save --genesaveloadpath  @(f'/home/ubuntu/repos/natto/data/{dataset}/selected_genes')
+    """
 
+elif what == 'trainNNall':
+    '''
+    PLAN:
+        - cellvgae on all -> Xd
+        - then subsample -> run $mod $other $mod-src
+            - get Xd
+            - run natto on that
+        cellvgae/__main__.py:60 ;; i subsample to 5k cells, just to make things even and save time
+    '''
+    for e in alldatasets:
+        `mkdir -p /home/ubuntu/repos/natto/data/{e}
+
+    alldatasets= alldatasets[:2]
+    alltheargs = ' '.join(alldatasets)
+
+    `parallel -j 30 --jl trainlog.log  {python}  -m cellvgae --input_gene_expression_path /home/ubuntu/repos/natto/natto/data/{{1}}.h5 --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path /home/ubuntu/repos/natto/data/{{1}} --genesaveload save --genesaveloadpath  /home/ubuntu/repos/natto/data/{{1}}/selected_genes ::: {alltheargs}
+
+"""
 if what == "run":
     mkdir $directory
     rm $directory/*
@@ -60,32 +89,6 @@ elif what == "runNNALL":
 
     parallel -j 25 --bar --jl runn.log $(which python) simNN.py @(datapath) @(datapath2) $numcells $repeats '{1}' '{2}' $(which python) ::: @(Range(alldatasets)) ::: @(Range(alldatasets))
 
-
-
-elif what == 'trainNN':
-    '''
-    PLAN:
-        - cellvgae on all -> Xd
-        - then subsample -> run $mod $other $mod-src
-            - get Xd
-            - run natto on that
-    Note:
-        cellvgae/__main__.py:60 ;; i subsample to 5k cells, just to make things even and save time
-    '''
-    python -m cellvgae --input_gene_expression_path @(f"/home/ubuntu/repos/natto/natto/data/{dataset}.h5") --hvg 1000 --khvg 250 --graph_type "KNN Scanpy" --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path @(f'/home/ubuntu/repos/natto/data/{dataset}') --genesaveload save --genesaveloadpath  @(f'/home/ubuntu/repos/natto/data/{dataset}/selected_genes')
-
-elif what == 'trainNNall':
-    '''
-    PLAN:
-        - cellvgae on all -> Xd
-        - then subsample -> run $mod $other $mod-src
-            - get Xd
-            - run natto on that
-        cellvgae/__main__.py:60 ;; i subsample to 5k cells, just to make things even and save time
-    '''
-    for e in alldatasets:
-        mkdir -p @(f'/home/ubuntu/repos/natto/data/{e}')
-    parallel -j 30 -jl trainlog.log -- $(which python) -m cellvgae --input_gene_expression_path @("/home/ubuntu/repos/natto/natto/data/{1}.h5") --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path @('/home/ubuntu/repos/natto/data/{1}') --genesaveload save --genesaveloadpath  @('/home/ubuntu/repos/natto/data/{1}/selected_genes') ::: @(alldatasets)
 
 elif what == "plot":
     import loadblock3
@@ -178,6 +181,8 @@ elif what == 'preprocfilter':
 else:
     print("arg should be run or plot")
 
+
+"""
 
 """
 for i in (seq 0 874)

@@ -26,6 +26,12 @@ debug = False # also set sim_mtx debug manualy ...
 directory = 'res3k'
 python = `which python
 
+AEdatapath = '/home/ubuntu/repos/natto/data/'
+h5datapath = '/home/ubuntu/repos/natto/natto/data/'
+
+
+
+
 if what == 'trainNN':
     pass
     '''
@@ -54,10 +60,17 @@ elif what == 'trainNNall':
     for e in alldatasets:
         `mkdir -p /home/ubuntu/repos/natto/data/{e}
 
-    alldatasets= alldatasets[:2]
+    alldatasets= alldatasets[:10]
     alltheargs = ' '.join(alldatasets)
 
-    `parallel -j 30 --jl trainlog.log  {python}  -m cellvgae --lr 0.001 --input_gene_expression_path /home/ubuntu/repos/natto/natto/data/{{1}}.h5 --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path /home/ubuntu/repos/natto/data/{{1}} --genesaveload save --genesaveloadpath  /home/ubuntu/repos/natto/data/{{1}}/selected_genes ::: {alltheargs}
+    `parallel -j 30 --jl trainlog.log  {python}  -m cellvgae --lr 0.001 --input_gene_expression_path {h5datapath}{{1}}.h5 --hvg 1000 --khvg 250 --graph_type KNNSCANPY --k 10 --graph_metric "euclidean" --save_graph --graph_convolution "GAT" --num_hidden_layers 2 --hidden_dims 128 128 --num_heads 3 3 3 3  --dropout 0.4 0.4 0.4 0.4 --latent_dim 10 --epochs 1000 --model_save_path {AEdatapath}{{1}} --genesaveload save --genesaveloadpath {AEdatapath}{{1}}/selected_genes ::: {alltheargs}
+
+elif what == "runNNALL":
+    numcells = 1000
+    repeats = 3
+    mkdir -p NNOUT
+    dataset_names = ' '.join(Range(alldatasets))
+    `parallel -j 25 --bar --jl runn.log {python} simNN.py {AEdatapath} {h5datapath} {numcells} {repeats} {{1}} {{2}} {python} ::: {dataset_names} ::: {dataset_names}
 
 """
 if what == "run":
@@ -79,15 +92,6 @@ elif what == "runNN":
         # !!!!!!!! args changed !!!!!!!!!!
         #        python simNN.py @(datapath+dataset) @(datapath2+data) $numcells @(writeto)
         pass
-
-elif what == "runNNALL":
-    $numcells = 1000
-    $repeats = 3
-    datapath = '/home/ubuntu/repos/natto/data/'
-    datapath2 = '/home/ubuntu/repos/natto/natto/data/'
-    mkdir -p NNOUT
-
-    parallel -j 25 --bar --jl runn.log $(which python) simNN.py @(datapath) @(datapath2) $numcells $repeats '{1}' '{2}' $(which python) ::: @(Range(alldatasets)) ::: @(Range(alldatasets))
 
 
 elif what == "plot":

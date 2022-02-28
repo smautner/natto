@@ -1,11 +1,12 @@
+from lmz import Map,Zip,Filter,Grouper,Range,Transpose
 from natto.optimize import util  as d
 from natto.input import load
 
 '''gets data for a dendroram'''
 
-import numpy as np 
+
+import numpy as np
 from functools import partial
-from lmz import *
 import basics.sgexec as exe
 import matplotlib
 matplotlib.use('Agg')
@@ -52,7 +53,7 @@ print(rr)
 #import LOADOLDSHIT
 #rr = [exe.collectresults(jid, NUMREPS,True) for jid in LOADOLDSHIT.load()]
 
-def lol(block, s=0): 
+def lol(block, s=0):
     return np.array(block).mean(axis=0)[s]
 
 
@@ -61,7 +62,7 @@ rr_index=0
 mtx = np.zeros((len(dnames),len(dnames)))
 for i in Range(dnames):
     for j in range(i+1, len(dnames)):
-        avg_value =  lol(rr[rr_index]) 
+        avg_value =  lol(rr[rr_index])
         mtx[i,j]= avg_value
         mtx[j,i]=  avg_value
         #print(i,j, np.array(rr[rr_index]).mean(axis=0)[0], avg_value)
@@ -108,10 +109,10 @@ for z in range(NUMREPS):
 
 '''
 
-def lol(block, i =0): 
+def lol(block, i =0):
     return 1 - np.array(block).mean(axis=0)[i]
 
-def lolstd(block, i =0): 
+def lolstd(block, i =0):
     return np.array(block).std(axis=0)[i]
 
 rr_index=0
@@ -149,7 +150,7 @@ for scale in SCALEPARAMS:
 
 '''
 '''
-for ix, nc in enumerate(NC): 
+for ix, nc in enumerate(NC):
     rr_index=0
     mtx = np.zeros((len(dnames),len(dnames)))
     for i in Range(dnames):

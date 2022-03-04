@@ -1,4 +1,6 @@
 from natto.process import Data
+import natto.process.util as hutil
+import numpy as np
 from scipy.sparse import csr_matrix
 import time
 from natto.out import quality as Q
@@ -21,7 +23,7 @@ def rundist(arg):
                        titles=("3", "6"),
                        make_even=True)
     clust = lambda ncc : Q.rari_score(*p.gmm_2(*m.dx,nc=ncc,cov='full'), *m.dx)[0]
-    return [clust(ncc) for ncc in nc] 
+    return [clust(ncc) for ncc in nc]
 
 
 
@@ -77,7 +79,7 @@ def samplenum(arg):
 
 
 #######################
-# BASEKLINE 
+# BASEKLINE
 ########################
 
 
@@ -87,9 +89,25 @@ def onn(a,b):
     mod.fit(b)
     _,d  = mod.kneighbors(a)
     return d.mean()
-    
+
 def sim(a,b):
     return (onn(a,b)+onn(b,a))/2
+
+
+#####################
+# BASELINE, processeddata object
+######################
+def baseline_raw(data):
+    return sim(*data.projections[0])
+def baseline_pca(data):
+    return sim(*data.projections[1])
+def baseline_umap(data):
+    return sim(*data.projections[2])
+
+def baseline_hung(data, pid):
+    (a,b), dis = hutil.hungarian(*data.projections[pid])
+    return np.mean(dis[a,b])
+
 
 
 def rundist_1nn_2loaders(arg):
@@ -98,7 +116,7 @@ def rundist_1nn_2loaders(arg):
     m =  Data().fit(l1(),l2(),
                     debug_ftsel=False,
                     quiet=True,
-                    scale=scale, 
+                    scale=scale,
                     pca = pca,
                     titles=("3", "6"),
                     make_even=True)
@@ -109,7 +127,7 @@ def rundist_1nn_2loaders(arg):
 def get_noise_run_moar(args):
     loader, cluster, level, metrics = args
     if level == 0:
-        return [1]*len(cluster)*len(metrics) # should be as long a a normal return 
+        return [1]*len(cluster)*len(metrics) # should be as long a a normal return
 
     adat = loader()
     if type(adat.X) != csr_matrix:

@@ -32,6 +32,9 @@ def natto_distance(data,pid = -2):
     return Q.rari_score(*cluster.gmm_2(*data.projections[pid],cov='tied',n_init=20), *data.projections[pid])
 
 
+def clusterAndRari(data,pid = -2, cluster=None,clusterArgs={}):
+    labels = [cluster(**clusterArgs).fit_predict(data.projections[pid][i]) for i in range(2)]
+    return Q.rari_score(*labels, *data.projections[pid])
 
 def rundist_2loaders(arg):
     l1,l2,nc = arg

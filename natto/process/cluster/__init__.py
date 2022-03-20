@@ -8,15 +8,14 @@ from lmz import Range
 from sklearn.cluster import SpectralClustering, KMeans, Birch, AffinityPropagation, DBSCAN, MeanShift, OPTICS
 
 
-def gmm_2(X1, X2, nc=None, cov ='full'):
-    return gmm_1(X1, nc, cov), gmm_1(X2, nc, cov)
+def gmm_2(X1, X2, nc=None, cov ='full', n_init =0):
+    return gmm_1(X1, nc, cov, n_init), gmm_1(X2, nc, cov, n_init)
 
-
-def gmm_1(X, nc=None, cov ='full'):
+def gmm_1(X, nc=None, cov ='full', n_init = 0):
     if nc:
-        d= {"nclust_min":nc, "nclust_max":nc, "n_init": 40, "covariance_type":cov} # using init 20 introduces variability
+        d = {"nclust_min":nc, "nclust_max":nc, "n_init":n_init or 40, "covariance_type":cov} # using init 20 introduces variability
     else:
-        d= {"nclust_min":5, "nclust_max":20, "n_init": 20, 'covariance_type':cov}
+        d = {"nclust_min":5, "nclust_max":20, "n_init":n_init or 20, 'covariance_type':cov}
     return ug.get_model(X, **d).predict(X)
 
 

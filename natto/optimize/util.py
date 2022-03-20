@@ -9,6 +9,7 @@ from sklearn.neighbors import NearestNeighbors as NN
 import matplotlib
 from natto.process import noise
 matplotlib.use('Agg')
+from natto import cluster
 
 """many functions to calculate distances between data sets"""
 
@@ -24,6 +25,11 @@ def rundist(arg):
                        make_even=True)
     clust = lambda ncc : Q.rari_score(*p.gmm_2(*m.dx,nc=ncc,cov='full'), *m.dx)[0]
     return [clust(ncc) for ncc in nc]
+
+
+def natto_distance(data,pid = -2):
+    #return Q.rari_score(*cluster.gmm_2(*data.projections[pid],nc=15,cov='full'), *data.projections[pid])
+    return Q.rari_score(*cluster.gmm_2(*data.projections[pid],cov='tied',n_init=20), *data.projections[pid])
 
 
 

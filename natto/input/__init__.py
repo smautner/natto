@@ -69,10 +69,10 @@ def loadpbmc(path=None, subsample=None, seed=None):
     adata = do_subsample(adata, subsample,seed)
     return adata
 
-def loadGSM(path=None, subsample=None, seed=None, cellLabels=None):
+def loadGSM(path=None, subsample=None, seed=None, cellLabels=None, labelFile='theirLabels.csv'):
     adata = sc.read_10x_mtx( path,  var_names='gene_symbols', cache=True)
     if cellLabels:
-        adata.obs['labels'] = pd.read_csv(path+'theirLabels.csv', usecols=["cluster"])['cluster'].to_numpy()
+        adata.obs['labels'] = pd.read_csv(path+labelFile, usecols=["cluster"])['cluster'].to_numpy()
     adata = do_subsample(adata, subsample,seed)
     return adata
   

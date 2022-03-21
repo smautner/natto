@@ -28,6 +28,8 @@ class Data():
         self.titles = titles
         self.even = make_even
 
+        if selector == 'preselected':
+            self.preselected_genes = self.data[0].preselected_genes
 
         # preprocess
         self.preprocess(selector, selectgenes,
@@ -79,6 +81,8 @@ class Data():
                      for d,title in zip(self.data, self.titles)])
             if savescores:
                 self.genescores = scores
+        elif selector == 'preselected':
+            genes = np.array([[True if gene in self.preselected_genes else False for gene in x.var_names] for x in self.data])
         else:
             genes = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes) for d in self.data]
 

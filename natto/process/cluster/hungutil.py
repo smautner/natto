@@ -4,11 +4,11 @@ import tabulate
 from collections import Counter
 import numpy as np
 from collections import  defaultdict
-#from lapsolver import solve_dense
+from lapsolver import solve_dense
 
-from natto.input.hungarian import hungarian
+from natto.process.util import hungarian
 from natto.out import draw
-import natto.process.copkmeans as CKM
+import natto.process.cluster.copkmeans as CKM
 from sklearn.neighbors import KNeighborsClassifier as KNC
 
 
@@ -16,7 +16,7 @@ from sklearn.neighbors import KNeighborsClassifier as KNC
 #####
 # first some utils
 ######
-from natto.process import gmm_1
+from natto.process.cluster import gmm_1
 from natto.process.util import spacemap
 
 
@@ -200,7 +200,7 @@ def recluster_hungmatch_aware(data, Y, problemclusters, n_clust=2, rnlog=None, d
 
     rnlog.log(problemclusters, np.unique(yh) + maxy + 1)
     if debug or 'renaming' in showset:
-        print('ranaming: set%s' % rnlog.dataset, problemclusters, np.unique(yh) + maxy + 1)
+        print('renaming: set%s' % rnlog.dataset, problemclusters, np.unique(yh) + maxy + 1)
     return Y
 
 
@@ -211,8 +211,11 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                    maxerror=.15,
                    rn=None,
                    saveheatmap=None,
-                   showset=None, 
-                   distmatrix=None,do_splits=True):
+                   showset={}, 
+                   distmatrix=None,
+                   algo = 'knn',
+                   n_clust = 2,
+                   do_splits=True):
     '''
     rn is for the renaming log
     '''
@@ -262,6 +265,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                                 roind=hungmatch[0],
                                 coind=hungmatch[1],
                                 target_cls= target_classes,
+                                algo=algo,
                                 Y2=Y2)
             
             done = False
@@ -279,6 +283,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                             roind=hungmatch[1],
                             coind=hungmatch[0],
                             target_cls=target_classes,
+                            algo=algo,
                             Y2=Y1)
             
             done = False

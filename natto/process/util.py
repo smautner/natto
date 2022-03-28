@@ -23,7 +23,7 @@ def cleanlabels(asd):
 def make_readcounts_even(datas):
     meansize = np.mean([d.X.sum() for d in datas])
     for d in datas:
-        d.X = d.X * (meansize/d.X.size())
+        d.X = d.X * (meansize/d.X.sum())
 
 
 def hungarian(X1, X2, debug = False,metric='euclidean'):

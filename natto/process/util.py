@@ -20,6 +20,11 @@ def cleanlabels(asd):
 
     return [[s.getint[e] for e in li  ] for li in asd]
 
+def make_readcounts_even(datas):
+    meansize = np.mean([d.X.sum() for d in datas])
+    for d in datas:
+        d.X = d.X * (meansize/d.X.size())
+
 
 def hungarian(X1, X2, debug = False,metric='euclidean'):
     # get the matches:

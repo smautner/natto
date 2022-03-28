@@ -18,8 +18,10 @@ class Data():
             pca = 20,
             joint_space = True,
 
+
             titles = "ABCDEFGHIJK",
             make_even=True,
+            make_readcounts_even = False,
             sortfield=-1):
         '''
         sortfield = 0  -> use adata -> TODO one should test if the cell reordering works when applied to anndata
@@ -33,6 +35,9 @@ class Data():
         self.preprocess(selector, selectgenes,
                         {'mean': meanexp, 'bins':bins,'plot': visual_ftsel}, savescores=True)
 
+
+        if make_readcounts_even:
+            u.make_readcounts_even(self.data)
 
         # do dimred
         self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps, joint_space=joint_space)

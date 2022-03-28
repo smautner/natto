@@ -31,7 +31,7 @@ class Data():
 
         # preprocess
         self.preprocess(selector, selectgenes,
-                        {'mean': meanexp, 'bins':bins,'plot': visual_ftsel})
+                        {'mean': meanexp, 'bins':bins,'plot': visual_ftsel}, savescores=True)
 
 
         # do dimred
@@ -49,6 +49,7 @@ class Data():
         if umaps:
             for x,d in zip(umaps,self.projections[int(pca>0)+1:]):
                 self.__dict__[f"d{x}"] = d
+        self.data=None
         return self
 
 
@@ -82,7 +83,7 @@ class Data():
             genes = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes) for d in self.data]
 
         self.data = preprocess.unioncut(genes, self.data)
-        self.genes=genes
+        self.genes =genes
         self.data = preprocess.make_even(self.data)
 
         print("preprocess:")

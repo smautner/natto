@@ -86,6 +86,21 @@ def samplenum(arg):
 
 
 
+########################
+#
+########################
+from sklearn.metrics.pairwise import cosine_similarity as cos
+def cosine(data):
+    scr1, scr2 = data.genescores
+    return cos([scr1],[scr2]).item()
+
+def jaccard(data):
+    # intersect/union
+    asd = np.array(data.genes)
+    union = np.sum(np.any(asd, axis=0))
+    intersect = np.sum(np.sum(asd, axis=0) ==2)
+    return intersect/union
+
 
 #######################
 # BASEKLINE

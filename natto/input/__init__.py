@@ -254,7 +254,10 @@ def load100(item, path='../data/100/data', seed= None, subsample=None, remove_un
 
     i = adata.X.shape
     if subsample:
-        sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=seed, copy=False)
+        try:
+            sc.pp.subsample(adata, fraction=None, n_obs=subsample, random_state=seed, copy=False)
+        except:
+            raise Exception(f"COULD NOT SUBSAMPLE {subsample} items {path} {item}")
     print(f"LOADING: SHAPE {i} (subsample)-> {adata.X.shape}")
     return adata
 

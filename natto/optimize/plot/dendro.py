@@ -45,6 +45,7 @@ def drawclustermap(data, intlabels, labeldict, ncol = 5):
     g.ax_heatmap.set(yticklabels=[])
     # possition of legend
     g.ax_col_dendrogram.legend( ncol=ncol, bbox_to_anchor=(1,-4.1), fontsize= 18)
+    return g
 
 
 def plot(data,labels = [], save ='not implemented'):

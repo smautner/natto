@@ -8,6 +8,7 @@ class Data():
     def fit(self,adataList,
             selector='natto',
             selectgenes=800,
+            selectslice='all',
 
             meanexp = (0.015,4),
             bins = (.25,1),
@@ -27,6 +28,7 @@ class Data():
         self.data= adataList
         self.titles = titles
         self.even = make_even
+        self.selectslice = selectslice
 
         if selector == 'preselected':
             self.preselected_genes = self.data[0].preselected_genes
@@ -77,8 +79,13 @@ class Data():
         self.data = preprocess.normlog(self.data)
 
         if selector == 'natto':
-            genes,scores = Transpose([preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
-                     for d,title in zip(self.data, self.titles)])
+            if self.selectslice=='last':
+                #genes,scores = Transpose([preprocess.getgenes_natto(self.data[-1], selectgenes,title, **selectorargs)
+                         #for d,title in zip(self.data, self.titles)])     
+                genes, scores = Transpose([preprocess.getgenes_natto(self.data[-1],selectgenes, self.titles[-1], **selectorargs)]*len(self.data))           
+            else:
+                genes,scores = Transpose([preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
+                         for d,title in zip(self.data, self.titles)])
             if savescores:
                 self.genescores = scores
         elif selector == 'preselected':

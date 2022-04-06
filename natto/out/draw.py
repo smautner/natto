@@ -427,11 +427,13 @@ class tinyUmap():
 
 
 
-def auto_tiny(X,Y, wrap = 'auto', grad= False): 
+def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5)): 
     
     # how should we wrap:
     if wrap == 'auto':
         d = tinyUmap(dim = (1,len(X)))  # default is a row
+    elif wrap == 'test':
+        d = tinyUmap(dim=dim)
     else: 
         print ('not implemented, the idea is to put $wrap many in a row')
         # this means initializiung tinyUmap with another dim

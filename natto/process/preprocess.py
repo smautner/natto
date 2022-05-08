@@ -161,6 +161,16 @@ def normlog(data):
     [sc.pp.log1p(d) for d in data]
     return data
 
+def normbetween(data):
+    print(type(data[0]))
+    #meanex = np.mean(a, axis=0)
+    #matrix= adata.to_df().to_numpy()
+
+    data_mean = np.mean([np.mean(x.X) for x in data])
+    for d in data:
+        d.X = d.X * (data_mean/np.mean(d.X))
+    return data
+
 
 def unioncut(gene_lists, data):
     genes = np.any(np.array(gene_lists), axis=0)

@@ -32,12 +32,15 @@ def calc(d1,d2,meth):
     return meth(data)
 
 if what == 'fag':
-    alldatasets = input.
+    '''
+    no idea what we do here... 
+    '''
+    alldatasets = input.get57names()
     l= len(alldatasets)
     distances  = np.ones((l,l))
     for i in range(l):
         for j in range(i+1,j):
-            r = calc(alldatasets[i], alldatasets[j], meth= lambda x: d.cosine(x,600))
+            r = calc(alldatasets[i], alldatasets[j], meth= lambda x: d.cosine(x,300))
             distances[i,j]= r
             distances[j,i]= r
     so.heatmap(distances)
@@ -46,10 +49,9 @@ if what == 'fag':
 
 
 def preprocess( repeats =7, ncells = 1500, numgenes= 800):
+
     datasets = input.get57names()
     random.seed(43)
-
-
     loaders =  [ partial( input.load100,
                           data,
                           path = "/home/ubuntu/repos/natto/natto/data",
@@ -57,6 +59,7 @@ def preprocess( repeats =7, ncells = 1500, numgenes= 800):
                  for data in datasets]
 
     it = [ [loaders[i],loaders[j]] for i in Range(datasets) for j in range(i+1, len(datasets))]
+
     def f(loadme):
         a,b = loadme
         print('#'*80)
@@ -69,6 +72,7 @@ def preprocess( repeats =7, ncells = 1500, numgenes= 800):
             umaps=[10],
             sortfield = -1,
             make_even=True) for i in range(repeats)]
+
     return tools.xmap(f,it,32)
 
 

@@ -29,7 +29,6 @@ def preprocess( repeats =7, ncells = 1500):
     datasets = input.get57names()
     random.seed(43)
 
-
     loaders =  [ partial( input.load100,
                           data,
                           path = "/home/ubuntu/repos/natto/natto/data",
@@ -54,10 +53,14 @@ def preprocess( repeats =7, ncells = 1500):
 
 
 if what == 'preprocess':
-    #res = preprocess()
-    #tools.dumpfile(res,'data.dmp')
     res = preprocess(repeats=5, ncells = 2000)
     tools.dumpfile(res,'data_pcaUmap_ballanced.dmp')
+
+if what == 'preprocess-varcell':
+    jug = range(200,1601,200)
+    for nc in jug:
+        res = preprocess(repeats=5, ncells = nc)
+        tools.dumpfile(res,f'varycell/{nc}.dmp')
 
 ###############################
 ###############################

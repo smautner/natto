@@ -57,15 +57,17 @@ if what == 'preprocess':
     tools.dumpfile(res,'data_pcaUmap_ballanced.dmp')
 
 if what == 'preprocess-varcell':
-    jug = range(200,1601,200)
+    jug = range(400,1601,200)
     for nc in jug:
         res = preprocess(repeats=5, ncells = nc)
         tools.dumpfile(res,f'varycell/{nc}.dmp')
 
-###############################
-###############################
-
-
+#########################################################################################3
+#########################################################################################3
+#########################################################################################3
+#########################################################################################3
+#########################################################################################3
+#########################################################################################3
 
 def calc_mp20(method_label, fname='data_pcaUmap.dmp', shape=(57,57,5)):
         # label is the name that we give to the plot.
@@ -148,13 +150,20 @@ if what == 'cosine2':
         r=calc_mp20(ml)
 
 
-
 if what == 'makeblob':
     alldistances=[]
     alldistances = [tools.loadfile()]
     tools.dumpfile(alldistaces,'uneven.dmp')
 
 
+if what == 'score-varycells':
+    jug = range(400,1601,200)
+
+    labels = [f"varycell/{j} cells" for j in jug]
+    methods = [partial(d.cosine,numgenes=300) for j in jug]
+    #tools.xmap(calc_sp, zip(methods, labels),processes=5)
+    for  ml in zip(methods,labels):
+        r=calc_mp20(ml)
 
 
 
@@ -182,10 +191,12 @@ if what == 'distclust':
         calc_mp20(ml,'testdata.dmp',(9,9,3))
 
 
-###############################3
-#
-###############################
 
+############################################################################
+############################################################################
+############################################################################
+############################################################################
+############################################################################
 
 def score_matrix_rand(X,class_labels,n_clust= 5):
         pred=  AgglomerativeClustering(n_clusters=n_clust,

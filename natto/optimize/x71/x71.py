@@ -43,9 +43,9 @@ def preprocess( repeats =7, ncells = 1500):
         print(a,b)
         return [Data().fit([a(),b()],
             visual_ftsel=False,
-            pca = 20,
+            pca = 0,
             make_readcounts_even=True,
-            umaps=[10],
+            umaps=[],
             sortfield = -1,
             make_even=True) for i in range(repeats)]
     return tools.xmap(f,it,32)
@@ -56,7 +56,7 @@ if what == 'preprocess':
     res = preprocess(repeats=5, ncells = 2000)
     tools.dumpfile(res,'data_pcaUmap_ballanced.dmp')
 
-if what == 'preprocess-varcell':
+if what == 'preprocess-varycell':
     jug = range(400,1601,200)
     for nc in jug:
         res = preprocess(repeats=5, ncells = nc)
@@ -158,12 +158,10 @@ if what == 'makeblob':
 
 if what == 'score-varycells':
     jug = range(400,1601,200)
-
-    labels = [f"varycell/{j} cells" for j in jug]
-    methods = [partial(d.cosine,numgenes=300) for j in jug]
-    #tools.xmap(calc_sp, zip(methods, labels),processes=5)
-    for  ml in zip(methods,labels):
-        r=calc_mp20(ml)
+    input = [f'varycell/{nc}.dmp' for nc in jug]
+    method = partial(d.cosine,numgenes=300)
+    for  data in input:
+        r=calc_mp20((method,data),fname=data)
 
 
 
@@ -280,7 +278,6 @@ if what == 'plot':
             res+=[(ml,score)]
         except:
             print(ml)
-
     for meth,score in res:
         print (meth,'\t',score)
 
@@ -329,8 +326,6 @@ if what == 'evaljacc':
             for i,e in enumerate(scoress):
                 plt.plot(jug,e, linestyle = ':',label = f'{i+1} neighbors -- 600 cosine decreases')
 
-
-
     plt.title('jaccard DE gene overlap')
     plt.ylabel('score f1-x neighbors 57datasets')
     plt.xlabel('number of genes')
@@ -344,3 +339,65 @@ if what == 'fck':
     class_labels, _ = process_labels()
     from collections import Counter
     print(Counter(class_labels))
+
+
+if what == 'plotvarycell':
+
+    if what == 'score-varycells':
+        jug = range(400, 1601, 200)
+        input = [f'varycell/{nc}.dmp' for nc in jug]
+        method = partial(d.cosine, numgenes=300)
+        for data in input:
+            r = calc_mp20((method, data), fname=data)
+
+    jug = Range(50,1400,50)
+    labels = [f"jacc/{j} genes" for j in jug]
+    class_labels, _ = process_labels()
+
+
+    more_labels = [f"cosi/{j} genes" for j in jug]
+
+    ###
+    # pl
+    ####
+    def plot_numgene(labels):
+        allscores = []
+        neighborvalues = [1,2,3]
+        for neigh in neighborvalues:
+            scores = []
+            for f in labels:
+                m= tools.loadfile(f'{f}.ddmp')
+                if neigh == 3:
+                    so.heatmap(m)
+                scores.append( score_matrix_f1_affinity(np.array(m),class_labels,n_neigh=neigh))
+            allscores.append(scores)
+        allscores = np.array(allscores)
+        for i,row in enumerate(allscores):
+            plt.plot(jug,row, label = f'{i+1} neighbors {labels[0][:4]}')
+
+    plot_numgene(labels)
+    plot_numgene(more_labels)
+
+
+    if False: # add cosine sim
+        m= tools.loadfile(f'cosi/cosine.ddmp')
+        scoress = [ score_matrix_f1_affinity(np.array(m),class_labels,n_neigh=neigh) for neigh in [1,2,3]]
+        for i,e in enumerate(scoress):
+            plt.scatter([0],[e], label = f'{i+1} neighbors -- cosine')
+
+    if True: # add cosine sim, but mix in percentage wise
+        mcos= tools.loadfile(f'cosi/cosine.ddmp')
+        mjac= tools.loadfile(f'jacc/600 genes.ddmp')
+        mcos = mcos*(mjac.sum()/mcos.sum())
+        jug = [0]+jug
+        scoress = [ [score_matrix_f1_affinity(mjac*j + mcos*(1-j),class_labels,n_neigh=neigh) for j in [j/max(jug) for j in jug] ] for neigh in [1,2,3]]
+        for i,e in enumerate(scoress):
+            plt.plot(jug,e, linestyle = ':',label = f'{i+1} neighbors -- 600 cosine decreases')
+
+    plt.title('jaccard DE gene overlap')
+    plt.ylabel('score f1-x neighbors 57datasets')
+    plt.xlabel('number of genes')
+    plt.legend()
+    picname = 'evaljacXXX'
+    plt.savefig(f"{picname}.png")
+    print(f"{picname}.png saved")

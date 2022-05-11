@@ -92,7 +92,7 @@ def plot(xnames, folder, cleanname):
 
 
     for k in [1,2,3]: # neighbors
-        y =
+        y =None
         plt.plot(jug, y, label=f'{k} neighbors {cleanname}')
 
     jug = Range(50,1400,50)

@@ -13,6 +13,7 @@ from ubergauss import tools
 import random
 from sklearn.metrics import adjusted_rand_score, f1_score
 from sklearn.cluster import SpectralClustering,KMeans, AgglomerativeClustering
+from sklearn.metrics import precision_score
 
 
 def preprocess( repeats =7, ncells = 1500):
@@ -88,44 +89,29 @@ if __name__ == "__main__":
     plt.savefig(f"numgenes.png")
 
 
+def process_labels():
+    shortnames = [n[:5] for n in input.get40names()]
+    sm = tools.spacemap(list(set(shortnames)))
+    class_labels = [sm.getint[n] for n in shortnames]
+    labeldict = sm.getitem
+    return class_labels, labeldict
+
 def plot(xnames, folder, cleanname):
 
+    labels = [f"{folder}/{j}.dmp" for j in xnames]
+    xdata = map(tools.loadfile, labels)
+    xdata = map(lambda x: np.median(x,axis=2), xdata)
+    labels,_ = process_labels()
+    labels = np.array(labels)
+
+    def score(m,k):
+        true = np.hstack([labels for i in range(k)])
+        srt = np.argsort(X, axis=1)
+        pred = labels[ [ srt[i,-j] for i in range(labels) for j in range(k)] ]
+        return  precision_score(true, pred, average='micro')
 
     for k in [1,2,3]: # neighbors
-        y =None
+        y = Map( lambda x: score(x,k) , xdata)
         plt.plot(jug, y, label=f'{k} neighbors {cleanname}')
 
-    jug = Range(50,1400,50)
-    labels = [f"jacc/{j} genes" for j in jug]
-    class_labels, _ = process_labels()
-    more_labels = [f"cosi/{j} genes" for j in jug]
-
-    ###
-    # pl
-    ####
-    def plot_numgene(labels):
-        allscores = []
-        neighborvalues = [1,2,3]
-        for neigh in neighborvalues:
-            scores = []
-            for f in labels:
-                m= tools.loadfile(f'{f}.ddmp')
-                if neigh == 3:
-                    so.heatmap(m)
-                scores.append( score_matrix_f1_affinity(np.array(m),class_labels,n_neigh=neigh))
-            allscores.append(scores)
-        allscores = np.array(allscores)
-        for i,row in enumerate(allscores):
-            plt.plot(jug,row, label = f'{i+1} neighbors {labels[0][:4]}')
-    plot_numgene(labels)
-    plot_numgene(more_labels)
-
-    if True: # add cosine sim, but mix in percentage wise
-        mcos= tools.loadfile(f'cosi/cosine.ddmp')
-        mjac= tools.loadfile(f'jacc/600 genes.ddmp')
-        mcos = mcos*(mjac.sum()/mcos.sum())
-        jug = [0]+jug
-        scoress = [ [score_matrix_f1_affinity(mjac*j + mcos*(1-j),class_labels,n_neigh=neigh) for j in [j/max(jug) for j in jug] ] for neigh in [1,2,3]]
-        for i,e in enumerate(scoress):
-            plt.plot(jug,e, linestyle = ':',label = f'{i+1} neighbors -- 600 cosine decreases')
 

@@ -69,9 +69,63 @@ def calc_mp20(meth,out = 'calc.dmp', infile='data.dmp', shape=(40, 40, 5)):
     tools.dumpfile(m, out)
 
 
+
 if __name__ == "__main__":
-    preprocess(5,2000)
+    #preprocess(5,2000)
     jug = Range(50, 1400, 50)
     for numgenes in jug:
         calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
-        calc_mp20(partial(d.cosine, ngenes=numgenes),out=f"cosi/{numgenes}.dmp")
+        calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")
+
+    plot(jug,"cosi","cosine")
+    plot(jug,"jacc","jaccard")
+
+
+    plt.title('Searching for similar datasets')
+    plt.ylabel('precision on neighbors 40 datasets')
+    plt.xlabel('number of genes')
+    plt.legend()
+    plt.savefig(f"numgenes.png")
+
+
+def plot(xnames, folder, cleanname):
+
+
+    for k in [1,2,3]: # neighbors
+        y =
+        plt.plot(jug, y, label=f'{k} neighbors {cleanname}')
+
+    jug = Range(50,1400,50)
+    labels = [f"jacc/{j} genes" for j in jug]
+    class_labels, _ = process_labels()
+    more_labels = [f"cosi/{j} genes" for j in jug]
+
+    ###
+    # pl
+    ####
+    def plot_numgene(labels):
+        allscores = []
+        neighborvalues = [1,2,3]
+        for neigh in neighborvalues:
+            scores = []
+            for f in labels:
+                m= tools.loadfile(f'{f}.ddmp')
+                if neigh == 3:
+                    so.heatmap(m)
+                scores.append( score_matrix_f1_affinity(np.array(m),class_labels,n_neigh=neigh))
+            allscores.append(scores)
+        allscores = np.array(allscores)
+        for i,row in enumerate(allscores):
+            plt.plot(jug,row, label = f'{i+1} neighbors {labels[0][:4]}')
+    plot_numgene(labels)
+    plot_numgene(more_labels)
+
+    if True: # add cosine sim, but mix in percentage wise
+        mcos= tools.loadfile(f'cosi/cosine.ddmp')
+        mjac= tools.loadfile(f'jacc/600 genes.ddmp')
+        mcos = mcos*(mjac.sum()/mcos.sum())
+        jug = [0]+jug
+        scoress = [ [score_matrix_f1_affinity(mjac*j + mcos*(1-j),class_labels,n_neigh=neigh) for j in [j/max(jug) for j in jug] ] for neigh in [1,2,3]]
+        for i,e in enumerate(scoress):
+            plt.plot(jug,e, linestyle = ':',label = f'{i+1} neighbors -- 600 cosine decreases')
+

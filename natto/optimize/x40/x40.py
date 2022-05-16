@@ -16,7 +16,7 @@ from sklearn.cluster import SpectralClustering,KMeans, AgglomerativeClustering
 from sklearn.metrics import precision_score
 import structout as so
 
-def preprocess( repeats =7, ncells = 1500):
+def preprocess( repeats =7, ncells = 1500, out = 'data.dmp'):
     datasets = input.get40names()
     random.seed(43)
     loaders =  [ partial( input.load100,
@@ -24,7 +24,6 @@ def preprocess( repeats =7, ncells = 1500):
                           path = "/home/ubuntu/repos/natto/natto/data",
                           subsample=ncells)
                  for data in datasets]
-
     it = [ [loaders[i],loaders[j]] for i in Range(datasets) for j in range(i+1, len(datasets))]
     def f(loadme):
         a,b = loadme
@@ -39,7 +38,7 @@ def preprocess( repeats =7, ncells = 1500):
             sortfield = -1,
             make_even=True) for i in range(repeats)]
     res =  tools.xmap(f,it,32)
-    tools.dumpfile(res,'data.dmp')
+    tools.dumpfile(res,out)
 
 def calc_mp20(meth,out = 'calc.dmp', infile='data.dmp', shape=(40, 40, 5)):
     # label is the name that we give to the plot.
@@ -81,7 +80,8 @@ def plot(xnames, folder, cleanname):
 
     labels = [f"{folder}/{j}.dmp" for j in xnames]
     xdata = map(tools.loadfile, labels)
-    xdata = Map(lambda x: np.median(x,axis=2), xdata)
+    # xdata = Map(lambda x: np.median(x,axis=2), xdata)
+    xdata = Map(lambda x: x[:,:,0], xdata)
     labels,_ = process_labels()
     labels = np.array(labels)
 

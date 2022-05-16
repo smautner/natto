@@ -43,6 +43,7 @@ def plot(xnames, folder, cleanname):
 if __name__ == "__main__":
 
     jug = Range(200,3001,400)
+    np.seterr(divide='ignore', invalid='ignore')
     for j in jug:
         preprocess(3,j, f'vcell/{j}.dmp')
 

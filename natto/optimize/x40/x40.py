@@ -27,9 +27,6 @@ def preprocess( repeats =7, ncells = 1500, out = 'data.dmp'):
     it = [ [loaders[i],loaders[j]] for i in Range(datasets) for j in range(i+1, len(datasets))]
     def f(loadme):
         a,b = loadme
-        print('#'*80)
-        print('#'*80)
-        print(a,b)
         return [Data().fit([a(),b()],
             visual_ftsel=False,
             pca = 0,

@@ -25,6 +25,23 @@ we do the grid, and then present the results as table.
 or that was the plan long ago.. :(
 '''
 
+if what == 'cellhist':
+
+    datasets = input.get57names()
+    data =  [input.load100(
+                          data,
+                          path = "/home/ubuntu/repos/natto/natto/data",
+                          subsample=1000)
+                 for data in datasets]
+    for d,n in zip(data,datasets):
+        cellsum= d.X.sum(axis=1)
+        plt.hist(cellsum, bins = 50)
+        plt.title(n)
+        plt.savefig(f'cellcnt/{n}.png')
+        plt.close()
+    
+
+    
 def preprocess( repeats =7, ncells = 1500):
     datasets = input.get57names()
     random.seed(43)
@@ -326,8 +343,8 @@ if what == 'evaljacc':
             for i,e in enumerate(scoress):
                 plt.plot(jug,e, linestyle = ':',label = f'{i+1} neighbors -- 600 cosine decreases')
 
-    plt.title('jaccard DE gene overlap')
-    plt.ylabel('score f1-x neighbors 57datasets')
+    plt.title('cosine similarity')
+    plt.ylabel('precision k neighbors 57datasets')
     plt.xlabel('number of genes')
     plt.legend()
     picname = 'evaljacXXX'

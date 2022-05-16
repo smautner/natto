@@ -14,7 +14,7 @@ import random
 from sklearn.metrics import adjusted_rand_score, f1_score
 from sklearn.cluster import SpectralClustering,KMeans, AgglomerativeClustering
 from sklearn.metrics import precision_score
-
+import structout as so
 
 def preprocess( repeats =7, ncells = 1500):
     datasets = input.get40names()
@@ -70,25 +70,6 @@ def calc_mp20(meth,out = 'calc.dmp', infile='data.dmp', shape=(40, 40, 5)):
     tools.dumpfile(m, out)
 
 
-
-if __name__ == "__main__":
-    #preprocess(5,2000)
-    jug = Range(50, 1400, 50)
-    for numgenes in jug:
-        calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
-        calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")
-
-    plot(jug,"cosi","cosine")
-    plot(jug,"jacc","jaccard")
-
-
-    plt.title('Searching for similar datasets')
-    plt.ylabel('precision on neighbors 40 datasets')
-    plt.xlabel('number of genes')
-    plt.legend()
-    plt.savefig(f"numgenes.png")
-
-
 def process_labels():
     shortnames = [n[:5] for n in input.get40names()]
     sm = tools.spacemap(list(set(shortnames)))
@@ -100,18 +81,35 @@ def plot(xnames, folder, cleanname):
 
     labels = [f"{folder}/{j}.dmp" for j in xnames]
     xdata = map(tools.loadfile, labels)
-    xdata = map(lambda x: np.median(x,axis=2), xdata)
+    xdata = Map(lambda x: np.median(x,axis=2), xdata)
     labels,_ = process_labels()
     labels = np.array(labels)
 
     def score(m,k):
         true = np.hstack([labels for i in range(k)])
-        srt = np.argsort(X, axis=1)
-        pred = labels[ [ srt[i,-j] for i in range(labels) for j in range(k)] ]
+        srt = np.argsort(m, axis=1)
+        #pred = labels[ [ srt[i,-j] for i in Range(labels) for j in range(k)] ]
+        pred = labels[ [ srt[i,-j]  for j in range(k) for i in Range(labels)] ]
         return  precision_score(true, pred, average='micro')
 
     for k in [1,2,3]: # neighbors
-        y = Map( lambda x: score(x,k) , xdata)
+        y = [score(x,k) for x in xdata]
         plt.plot(jug, y, label=f'{k} neighbors {cleanname}')
+
+
+
+if __name__ == "__main__":
+    #preprocess(5,2000)
+    jug = Range(50, 1400, 50)
+    # for numgenes in jug:
+    #     calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
+    #     calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")
+    plot(jug,"cosi","cosine")
+    plot(jug,"jacc","jaccard")
+    plt.title('Searching for similar datasets')
+    plt.ylabel('precision on neighbors 40 datasets')
+    plt.xlabel('number of genes')
+    plt.legend()
+    plt.savefig(f"numgenes.png")
 
 

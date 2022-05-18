@@ -39,7 +39,7 @@ def plot(xnames, folder, cleanname):
         y = [score(x,k) for x in xdata2]
         plt.plot(jug, y, label=f'{k} cells {cleanname}')
 
-        if k == 99:
+        if k == 0:
             # optionally plitting without averaging, this changes nothing :)
             # just reveals a bug somewhere, probably harmless so we dont track it now
             repeats = xdata[0].shape[2]

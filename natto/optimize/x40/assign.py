@@ -27,30 +27,16 @@ data = process.Data().fit(zedata,
             pca = 20,
             make_readcounts_even=True,
             umaps=[10,2],
-            sortfield = 0,
+            sortfield = -1,# real labels need to follow the sorting i think...
             make_even=True)
 
+# plot adata.obs['true']
 
-def preprocess( repeats =7, ncells = 1500, out = 'data.dmp'):
-    datasets = input.get40names()
-    random.seed(43)
-    loaders =  [ partial( input.load100,
-                          data,
-                          path = "/home/ubuntu/repos/natto/natto/data",
-                          subsample=ncells)
-                 for data in datasets]
-    it = [ [loaders[i],loaders[j]] for i in Range(datasets) for j in range(i+1, len(datasets))]
-    def f(loadme):
-        a,b = loadme
-        return [Data().fit([a(),b()],
-            visual_ftsel=False,
-            pca = 0,
-            make_readcounts_even=True,
-            umaps=[],
-            sortfield = -1,
-            make_even=True) for i in range(repeats)]
-    res =  tools.xmap(f,it,32)
-    tools.dumpfile(res,out)
+import matplotlib
+matplotlib.use('module://matplotlib-sixel')
+import natto.out.draw as draw
+draw.cmp2(*[data.data[x].obs['true'] for x in [0,1]],*data.d2)
+
 
 
 

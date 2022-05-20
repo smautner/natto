@@ -18,16 +18,16 @@ def getzedata(li,neighs=1,numcells=1500, seed = 31337):
     return [input.load100(x,
                           path = "/home/ubuntu/repos/natto/natto/data",
                           seed = seed,
-                          subsample=numcells) for x in li]
+                          subsample=numcells) for x in li[:neighs+1]]
 
-zedata = getzedata(neighbors[1], neighs = 1, cells = 1500)
+zedata = getzedata(neighbors[1], neighs = 1, numcells = 1500)
 
 data = process.Data().fit(zedata,
             visual_ftsel=False,
             pca = 20,
             make_readcounts_even=True,
             umaps=[10,2],
-            sortfield = -1,# real labels need to follow the sorting i think...
+            sortfield = 0,# real labels need to follow the sorting i think...
             make_even=True)
 
 # plot adata.obs['true']
@@ -38,6 +38,7 @@ import natto.out.draw as draw
 draw.cmp2(*[data.data[x].obs['true'] for x in [0,1]],*data.d2)
 
 
+#
 
 
 

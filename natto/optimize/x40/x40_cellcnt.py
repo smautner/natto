@@ -52,7 +52,7 @@ def plot(xnames, folder, cleanname):
 if __name__ == "__main__":
 
     jug = Range(400,5001,400)
-    np.seterr(divide='ignore', invalid='ignore')
+    #np.seterr(divide='ignore', invalid='ignore')
     for j in jug:
         file = f'vcell/{j}.dmp'
         if not os.path.exists(file):

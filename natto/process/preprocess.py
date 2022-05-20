@@ -50,9 +50,9 @@ def getgenes_natto(adata, selectgenes, title,
     var = np.var(a, axis=0)
     meanex = np.mean(a, axis=0)
 
-    # NOTE "disp= var/mean might produce a warning but we will catch that later"
-    # np.seterr(divide='ignore', invalid='ignore')
-    disp = var / meanex
+    with np.errstate(divide='ignore', invalid='ignore'):
+        # error will happen but we catch it later..
+        disp = var / meanex
 
     Y = np.log(disp)
     X = np.log1p(meanex)

@@ -17,7 +17,8 @@ from sklearn.metrics import precision_score
 import structout as so
 import os
 from x40 import preprocess, calc_mp20, process_labels
-
+import matplotlib
+matplotlib.use('module://matplotlib-sixel')
 
 def plot(xnames, folder, cleanname):
 
@@ -72,4 +73,5 @@ if __name__ == "__main__":
     plt.xlabel('number of cells sampled')
     plt.legend()
     plt.savefig(f"numcells.png")
+    plt.show()
 

@@ -15,6 +15,13 @@ from sklearn.metrics import adjusted_rand_score, f1_score
 from sklearn.cluster import SpectralClustering,KMeans, AgglomerativeClustering
 from sklearn.metrics import precision_score
 import structout as so
+import matplotlib
+matplotlib.use('module://matplotlib-sixel')
+
+'''
+
+'''
+
 
 def preprocess( repeats =7, ncells = 1500, out = 'data.dmp'):
     datasets = input.get40names()
@@ -107,6 +114,7 @@ if __name__ == "__main__":
     plt.ylabel('precision on neighbors 40 datasets')
     plt.xlabel('number of genes')
     plt.legend()
-    plt.savefig(f"numgenes.png")
+    #plt.savefig(f"numgenes.png")
+    plt.show()
 
 

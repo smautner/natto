@@ -68,8 +68,10 @@ class Data():
 
     def sort_cells(self,projection_id = 0):
         # loop over data sets
+        self.hungdist =[]
         for i in range(len(self.data)-1):
-            hung = self.hungarian(projection_id,i,i+1)
+            hung, dist = self.hungarian(projection_id,i,i+1)
+            self.hungdist.append(dist)
             #self.data[i+1] = self.data[i+1][hung[1]]
             #self.data[i+1].X = self.data[i+1].X[hung[1]]
             for x in range(len(self.projections)):
@@ -78,8 +80,8 @@ class Data():
                     self.data[i+1]= self.data[i+1][hung[1]]
     #
     def hungarian(self,data_fld,data_id, data_id2):
-            hung, _ = u.hungarian(self.projections[data_fld][data_id],self.projections[data_fld][data_id2])
-            return hung
+            hung, dist = u.hungarian(self.projections[data_fld][data_id],self.projections[data_fld][data_id2])
+            return hung, dist[hung]
 
 
     def preprocess(self, selector, selectgenes, selectorargs, savescores = False):

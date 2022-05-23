@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.cluster import AgglomerativeClustering as agg 
+from sklearn.cluster import AgglomerativeClustering as agg
 import matplotlib.pyplot as plt
 import numpy as np
 from pandas import DataFrame
@@ -8,12 +8,12 @@ import seaborn as sns
 from sklearn.neighbors import NearestNeighbors
 
 '''
-# make a list of colors 
+# make a list of colors
 colors = list(permutations([0,.25,.5,.75,1],3))
 random.seed(5) #making shuffle consistent
 random.shuffle(colors)
 f = lambda cm: [cm.colors[i] for i in range(len(cm.colors))]
-#colors = f(plt.cm.get_cmap('tab20b')) +f(plt.cm.get_cmap('tab20c')) 
+#colors = f(plt.cm.get_cmap('tab20b')) +f(plt.cm.get_cmap('tab20c'))
 colors = f(plt.cm.get_cmap('tab20'))
 colors += f(plt.cm.get_cmap("tab20b"))
 colors += f(plt.cm.get_cmap("tab20c"))
@@ -22,30 +22,30 @@ col = { i-2:e for i,e in enumerate(colors)}
 col.update( {a+100:b for a,b in col.items()}  )
 '''
 
-col = plt.cm.get_cmap('tab20').colors 
+col = plt.cm.get_cmap('tab20').colors
 col = col+col+col+ ((0,0,0),)
 
 def umap(X,Y,
         title="No title",
-        acc : "y:str_description"={}, 
-        black = None, 
+        acc : "y:str_description"={},
+        black = None,
         show=True,
         markerscale=4,
         getmarker = lambda color: {"marker":'o'},
         size=None):
-        
+
     plt.title(title, size=20)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
-    
-    if type(black) != type(None): 
+
+    if type(black) != type(None):
         embed = black
         plt.scatter(embed[:, 0],
                     embed[:, 1],
-                    c=[(0,0,0) for e in range(black.shape[0])], 
+                    c=[(0,0,0) for e in range(black.shape[0])],
                     s=size,
                     label='del',marker='X')
-    
+
     embed = X
     for cla in np.unique(Y):
         plt.scatter(embed[Y==cla, 0],
@@ -59,23 +59,23 @@ def umap(X,Y,
 
     plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
     if show: plt.show()
-        
-        
-        
+
+
+
 def umap_gradient(X,Y,
         title="No title",
         show=True,
         markerscale=4,
         cmap='gist_rainbow',
         size=None):
-    
+
     # Y is
     plt.title(title, size=20)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
-    
+
     embed = X
-   
+
     plt.scatter(embed[:, 0],
                 embed[:, 1],
                 c= Y,
@@ -85,21 +85,21 @@ def umap_gradient(X,Y,
     plt.ylabel('UMAP 1')
     #plt.legend(markerscale=markerscale,ncol=5,bbox_to_anchor=(1, -.12) )
     if show: plt.show()
-        
-        
-        
+
+
+
 def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}], noshow=False):
 
     sns.set(font_scale=1.2,style='white')
-    plt.figure(figsize=(16,8))    
+    plt.figure(figsize=(16,8))
 
     same_limit=True
     if same_limit:
         X  = np.concatenate((X1, X2), axis=0)
-        xmin,ymin = X.min(axis = 0) 
-        xmax,ymax = X.max(axis = 0) 
+        xmin,ymin = X.min(axis = 0)
+        xmax,ymax = X.max(axis = 0)
 
-    #plt.tight_layout()    
+    #plt.tight_layout()
     ax=plt.subplot(121)
     if same_limit:
         plt.xlim(xmin,xmax)
@@ -117,12 +117,30 @@ def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}], noshow=Fal
         plt.show()
 
 
+def cmpmany(Y,X,title='ABCDEFGHIJKLMNO'):
+
+    sns.set(font_scale=1.2,style='white')
+    plt.figure(figsize=(10,8))
+
+    same_limit=True
+    if same_limit:
+        tmp  = np.concatenate(X, axis=0)
+        xmin,ymin = tmp.min(axis = 0)
+        xmax,ymax = tmp.max(axis = 0)
+
+    for i,(x,y) in enumerate(zip(X,Y)):
+        plt.xlim(xmin,xmax)
+        plt.ylim(ymin,ymax)
+        umap(x,y,show=False,title=title[0],size=False,markerscale=4)
+        plt.show()
+
+
 
 def cmp2_genes(data,X1,X2,gene, cmap = 'viridis'):
     Y1 = data.a[:,data.a.var['gene_ids'].index == gene].X.T.todense()
     Y2 = data.b[:,data.b.var['gene_ids'].index == gene].X.T.todense()
     cmp2_grad(Y1,Y2, X1,X2,[f'{title}[{gene}]' for title in data.titles], cmap=cmap)
-    
+
 
 
 
@@ -133,10 +151,10 @@ def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
         cmap ='autumn',noshow=False):
 
     sns.set(font_scale=1.2,style='white')
-    plt.figure(figsize=(16,8))    
-    
-    
-    #plt.tight_layout()    
+    plt.figure(figsize=(16,8))
+
+
+    #plt.tight_layout()
     ax=plt.subplot(121)
     umap_gradient(X1,Y1,show=False,title=title[0],size=size,markerscale=4, cmap = cmap)
     ax=plt.subplot(122)
@@ -147,16 +165,16 @@ def cmp2_grad(Y1,Y2,X1,X2,title=('1','2'),
     plt.colorbar()
     if not noshow:
         plt.show()
-    
-def plot_blobclust(Y1,X1,X2,red=None, save=None):    
+
+def plot_blobclust(Y1,X1,X2,red=None, save=None):
     sns.set(font_scale=1.2,style='white')
     if not red:
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
-    plt.figure(figsize=(12,12))    
-    #plt.tight_layout()     old markers.. 
+    plt.figure(figsize=(12,12))
+    #plt.tight_layout()     old markers..
     #umap(X1,Y1[:X1.shape[0]],red,show=False,title="combined clustering",size=30,markerscale=4,marker='_')
-    #umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,marker='|') 
+    #umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,marker='|')
     fill = lambda col: {"marker":'o'}
     empty = lambda col: {'facecolors':'none', 'edgecolors':col  }
     #fill = lambda col: {"marker": "o"}
@@ -164,22 +182,22 @@ def plot_blobclust(Y1,X1,X2,red=None, save=None):
 
 
     umap(X1,Y1[:X1.shape[0]],red,show=False,title="combined clustering",size=30,markerscale=4,getmarker= fill)
-    umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,getmarker=empty) 
+    umap(X2,Y1[X1.shape[0]:],red,show=False,title="combined clustering",size=30,markerscale=4,getmarker=empty)
     if save:
         plt.tight_layout()
         plt.savefig(save, dpi=300)
     plt.show()
 
-def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):    
+def cmp3(Y1,Y2,X1,X2,title=('1','2'),red=None, save=None):
     '''add a comparison, where all labels are kept'''
 
     sns.set(font_scale=1.2,style='white')
     if not red:
         red = UMAP()
         red.fit(np.vstack((X1,X2)))
-    plt.figure(figsize=(24,8))    
+    plt.figure(figsize=(24,8))
 
-    #plt.tight_layout()    
+    #plt.tight_layout()
     ax=plt.subplot(131)
     umap(X1,Y1,red,show=False,title=title[0],size=4,markerscale=4)
     ax=plt.subplot(132)
@@ -209,18 +227,18 @@ def venn(one,two: 'boolean array', labels :"string tupple"):
 def simpleheatmap(canvas):
         df = DataFrame(canvas)
         sns.heatmap(df, annot=True)
-        
+
         #df = DataFrame(canvas[:y1map.len,:y2map.len])
         #s= lambda y,x: [ y.getitem[k] for k in x]
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
         plt.show()
 
-def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols, save=None):    
+def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols, save=None):
 
     sns.set(font_scale=1.2,style='white')
-    plt.figure(figsize=(12,5))    
+    plt.figure(figsize=(12,5))
 
-    #plt.tight_layout()    
+    #plt.tight_layout()
     ax=plt.subplot(121)
     plt.title('Normalized Matches',size=20)
     heatmap(canvas,y1map,y2map,rows,cols, show=False)
@@ -232,11 +250,11 @@ def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols, save=None):
         plt.savefig(save, dpi=300)
     plt.show()
 
-def quickdoubleheatmap(comp1,comp2, save=None):    
+def quickdoubleheatmap(comp1,comp2, save=None):
 
     sns.set(font_scale=1.2,style='white')
-    plt.figure(figsize=(12,5))    
-    #plt.tight_layout()    
+    plt.figure(figsize=(12,5))
+    #plt.tight_layout()
     ax=plt.subplot(121)
     plt.title('Clustering1',size=20)
     heatmap(*comp1,show=False)
@@ -248,10 +266,10 @@ def quickdoubleheatmap(comp1,comp2, save=None):
         plt.savefig(save, dpi=300)
     plt.show()
 
-    
-    
 
-from lmz import grouper 
+
+
+from lmz import grouper
 def radviz_sort_features(matrix, reduce=4):
 
     Agg = agg(n_clusters=None,distance_threshold=0)
@@ -263,28 +281,28 @@ def radviz_sort_features(matrix, reduce=4):
     return matrix[:, sorted_ft]
 
 def radviz(matrix,classes, sort_ft= True, reduce=4):
-    if sort_ft: 
+    if sort_ft:
         matrix= radviz_sort_features(matrix, reduce=reduce)
     df = pd.DataFrame(matrix)
     #df.boxplot()
-    
+
     df['class']=classes
     size=10 # default is too large
     pd.plotting.radviz(df,'class',s=size, colormap=plt.cm.get_cmap('tab20'))
     plt.show()
 
 def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):
-        # there is a version that sorts the hits to the diagonal in util/bad... 
+        # there is a version that sorts the hits to the diagonal in util/bad...
         paper = True
-        
+
         sorting = sorted(zip(col_ind, row_ind))
         col_ind, row_ind= list(zip(*sorting))
-        
+
         # some rows are unused by the matching,but we still want to show them:
         order= list(row_ind) + list(set(y1map.integerlist)-set(row_ind) )
         canvas = canvas[order]
 
-        xlabels = y2map.itemlist 
+        xlabels = y2map.itemlist
         ylabels = [y1map.getitem[r]for r in order]
 
         df = DataFrame(-canvas)
@@ -300,9 +318,9 @@ def heatmap(canvas,y1map,y2map,row_ind,col_ind, show=True):
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
         if show:
             plt.show()
-            
+
 def distrgrid(distances,Y1,Y2,hungmatch):
-    # we should make a table first... 
+    # we should make a table first...
     row_ind, col_ind = hungmatch
     rows=[ (Y1[r],Y2[c],distances[r,c]) for r,c in zip(row_ind,col_ind)]
     #g = sns.FacetGrid(DataFrame(rows,columns=['set1','set2','dist'] ), row="set1",col="set2")
@@ -338,7 +356,7 @@ def sankey(canvasbackup ,y1map, y2map):
         rightWeight=df['matches'],
         #leftLabels = y1map.itemlist,
         #rightLabels = y2map.itemlist,
-        leftWeight=df['matches'], 
+        leftWeight=df['matches'],
         aspect=20,
         fontsize=20,
         figureName="Matching",
@@ -346,12 +364,12 @@ def sankey(canvasbackup ,y1map, y2map):
     )
 
 
-def dreibeidrei(bins,cnt=3): 
+def dreibeidrei(bins,cnt=3):
     for i,e in enumerate(bins):
             plt.subplot(cnt,cnt,i+1)
             plt.bar(list(range(len(e))),e)
     plt.show()
-    
+
 
 #import pprint
 def get_centers(zy,cnt=3):
@@ -364,26 +382,26 @@ def get_centers(zy,cnt=3):
     #pprint.pprint(search)
     distances, indices = mod.kneighbors(search)
     return indices.flatten()
-            
-            
+
+
 def get_centers_1d(li,cnt = 3):
     dist = li.max()-li.min()
     dist/=  cnt*2
     #print("asd",li.min(),li.max(), dist)
     return [(li.min()+(a*2+1)*dist) for a in range(cnt)]
-    
+
 
 
 def tinyumap(X,Y,
         title="No title",
         title_size=10,
-        acc : "y:str_description"={}, 
+        acc : "y:str_description"={},
         markerscale=4,
         getmarker = lambda cla: {"marker":'o'},
         col=col,
         label=None,
-        alpha = None, 
-        legend = False, 
+        alpha = None,
+        legend = False,
         size=None):
 #    print(X)
 #    print(Y)
@@ -399,15 +417,15 @@ def tinyumap(X,Y,
                     color= col[cla],
                     s=size,
                     edgecolors = 'none',
-                    alpha = alpha, 
+                    alpha = alpha,
                     label=str(cla), **getmarker(cla)) #str(cla)+" "+acc.get(cla,''),**getmarker(col[cla]))
     #plt.axis('off')
     #plt.xlabel('UMAP 2')
     #plt.ylabel('UMAP 1')
-    if legend: 
+    if legend:
         plt.legend(markerscale=2,ncol=2,bbox_to_anchor=(1, -.12) )
 
-class tinyUmap(): 
+class tinyUmap():
 
     def __init__(self, dim=(3,3), size= 2):
         figs = (size*dim[1], size*dim[0])
@@ -415,41 +433,41 @@ class tinyUmap():
         plt.figure( figsize=figs, dpi=300)
         self.i =0
         self.dim = dim
-    
 
-    def next(self): 
-        self.i= self.i+1 
+
+    def next(self):
+        self.i= self.i+1
         plt.subplot(*self.dim,self.i)
 
-    def draw(self, *a, **b): 
+    def draw(self, *a, **b):
         self.next()
         tinyumap(*a,**b)
 
 
 
-def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5)): 
-    
+def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5)):
+
     # how should we wrap:
     if wrap == 'auto':
         d = tinyUmap(dim = (1,len(X)))  # default is a row
     elif wrap == 'test':
         d = tinyUmap(dim=dim)
-    else: 
+    else:
         print ('not implemented, the idea is to put $wrap many in a row')
         # this means initializiung tinyUmap with another dim
 
     if not grad:
-        for x,y in zip(X,Y): 
-            d.draw(x,y, title=None) 
+        for x,y in zip(X,Y):
+            d.draw(x,y, title=None)
         plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
 
-    if grad: 
-        for x,y in zip(X,Y): 
+    if grad:
+        for x,y in zip(X,Y):
             d.next()
             plt.scatter(x[:,0], x[:,1], c=y, s=1)
 
     plt.show()
-    
+
 
 import natto.process.util as util
 def distance_debug(m):
@@ -465,10 +483,10 @@ def dendro(mat, title, fname='none'):
     links = squareform(mat)
     Z = hierarchy.linkage(links, 'single')
     plt.figure()
-    hierarchy.dendrogram(Z) # there is a labels = [] parameter here :) 
+    hierarchy.dendrogram(Z) # there is a labels = [] parameter here :)
     plt.xticks(rotation=45)
     plt.title(title)
-    if fname != 'none': 
+    if fname != 'none':
         plt.savefig(fname, dpi=300)
         plt.close()
     return Z

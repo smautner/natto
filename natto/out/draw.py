@@ -419,7 +419,10 @@ class tinyUmap():
 
     def next(self): 
         self.i= self.i+1 
-        plt.subplot(*self.dim,self.i)
+        if self.i == 80:
+            self.ax = plt.subplot(*self.dim,self.i)
+        else:
+            plt.subplot(*self.dim, self.i)
 
     def draw(self, *a, **b): 
         self.next()

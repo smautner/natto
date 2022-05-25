@@ -9,7 +9,9 @@ from natto.out import draw
 from natto import input
 import seaborn as sns
 from lmz import *
-
+from ubergauss import tools
+from scipy.spatial.distance import squareform
+from scipy.cluster.hierarchy import linkage
 # %%
 # 100 DATA..
 #######################
@@ -30,6 +32,9 @@ def get_labels(labelpath, names = []):
 
 
 def drawclustermap(data, intlabels, labeldict, ncol = 5):
+    '''
+    see better clustermap
+    '''
     # draw
     colz = [draw.col[x] for x in intlabels]
     g=sns.clustermap(data,row_colors = colz, col_colors = colz)
@@ -46,6 +51,43 @@ def drawclustermap(data, intlabels, labeldict, ncol = 5):
     # possition of legend
     g.ax_col_dendrogram.legend( ncol=ncol, bbox_to_anchor=(1,-4.1), fontsize= 18)
     return g
+
+def betterclustermap(distances, labels, ncol = 5):
+    '''
+    why? compared to drawclustermap:
+        - make squareform so we dont see the warning -> no way
+        - do spacemap stuff internally so we can just pass a list of labels -> ok
+        - *maybe* remove one dendro trees :) -> also not as easy
+    '''
+
+    mysm = tools.spacemap(labels)
+    intlabels, labeldict = [mysm.getint[x] for x in labels],mysm.getitem
+
+
+    # draw
+    colz = [draw.col[x] for x in intlabels]
+    '''
+    tried to suppress the warning,, but its no good :/
+    #sq = squareform(distances)
+    #link = linkage(1-sq, method='average')
+    #g=sns.clustermap(distances,row_colors = colz, col_colors = colz, row_linkage = link, col_linkage= link)
+    '''
+    g=sns.clustermap(distances,row_colors = colz, col_colors = colz)
+
+
+    # ???
+    for label in labeldict.keys():
+        g.ax_col_dendrogram.bar(0, 0, color=draw.col[label],
+                                label=labeldict[label], linewidth=0)
+
+    # remove annoying ticks
+    g.ax_heatmap.tick_params(right=False, bottom=False)
+    g.ax_heatmap.set(xticklabels=[])
+    g.ax_heatmap.set(yticklabels=[])
+    # possition of legend
+    g.ax_col_dendrogram.legend( ncol=ncol, bbox_to_anchor=(1,-4.1), fontsize= 18)
+    return g
+
 
 
 def plot(data,labels = [], save ='not implemented'):

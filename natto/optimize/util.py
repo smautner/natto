@@ -10,6 +10,7 @@ import matplotlib
 from natto.process import noise
 matplotlib.use('Agg')
 from natto import cluster
+from ubergauss import tools
 
 """many functions to calculate distances between data sets"""
 
@@ -30,6 +31,9 @@ def rundist(arg):
 def natto_distance(data,pid = -2):
     #return Q.rari_score(*cluster.gmm_2(*data.projections[pid],nc=15,cov='full'), *data.projections[pid])
     return Q.rari_score(*cluster.gmm_2(*data.projections[pid],cov='tied',n_init=20), *data.projections[pid])
+
+
+
 
 
 def clusterAndRari(data,pid = -2, cluster=None,clusterArgs={}):
@@ -90,15 +94,30 @@ def samplenum(arg):
 #
 ########################
 from sklearn.metrics.pairwise import cosine_similarity as cos
-def cosine(data):
+
+def cosine(data, numgenes = 0):
     scr1, scr2 = data.genescores
+    if numgenes:
+        mask = scr1+scr2
+        mask = tools.binarize(mask,numgenes).astype(np.bool)
+        scr1 = scr1[mask]
+        scr2 = scr2[mask]
+
     return cos([scr1],[scr2]).item()
 
-def jaccard(data):
+def booltopx(ar,num):
+    srt = np.sort(ar)
+    return np.array(ar) >=srt[-num]
+
+def jaccard(data,ngenes= False):
     # intersect/union
-    asd = np.array(data.genes)
+    if not ngenes:
+        asd = np.array(data.genes)
+    else:
+        asd = np.array([ booltopx(d,ngenes)  for d in data.genescores])
+
     union = np.sum(np.any(asd, axis=0))
-    intersect = np.sum(np.sum(asd, axis=0) ==2)
+    intersect = np.sum(np.sum(asd, axis=0) ==2) # np.sum(np.logicaland(asd[0] , asd[1])
     return intersect/union
 
 

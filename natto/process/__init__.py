@@ -55,26 +55,31 @@ class Data():
         if sortfield >=0:
             self.sort_cells(sortfield)
 
-
         if umaps:
             for x,d in zip(umaps,self.projections[int(pca>0)+1:]):
                 self.__dict__[f"d{x}"] = d
-        #self.data=None
+
+
+
         return self
 
 
     def sort_cells(self,projection_id = 0):
         # loop over data sets
+        self.hungdist =[]
         for i in range(len(self.data)-1):
-            hung = self.hungarian(projection_id,i,i+1)
+            hung, dist = self.hungarian(projection_id,i,i+1)
+            self.hungdist.append(dist)
             #self.data[i+1] = self.data[i+1][hung[1]]
             #self.data[i+1].X = self.data[i+1].X[hung[1]]
             for x in range(len(self.projections)):
                 self.projections[x][i+1] = self.projections[x][i+1][hung[1]]
+                if x == 0:
+                    self.data[i+1]= self.data[i+1][hung[1]]
     #
     def hungarian(self,data_fld,data_id, data_id2):
-            hung, _ = u.hungarian(self.projections[data_fld][data_id],self.projections[data_fld][data_id2])
-            return hung
+            hung, dist = u.hungarian(self.projections[data_fld][data_id],self.projections[data_fld][data_id2])
+            return hung, dist[hung]
 
 
     def preprocess(self, selector, selectgenes, selectorargs, savescores = False):
@@ -86,7 +91,7 @@ class Data():
 
         if selector == 'natto':
             if self.selectslice == 'last':
-                genes, scores = Transpose([preprocess.getgenes_natto(self.data[-1],selectgenes, self.titles[-1], **selectorargs)]*len(self.data))           
+                genes, scores = Transpose([preprocess.getgenes_natto(self.data[-1],selectgenes, self.titles[-1], **selectorargs)]*len(self.data))
             else:
                 genes,scores = Transpose([preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
                          for d,title in zip(self.data, self.titles)])

@@ -10,10 +10,9 @@ def neighs(fname = 'jacc/500.dmp', k = 2, draw = False):
 
     if draw:
         shortnames = [n[:5] for n in names]
-        mysm = tools.spacemap(shortnames)
-        print(shortnames)
-        dendro.drawclustermap(np.median(m, axis =2),mysm.integerlist,mysm.getitem)
-
+        g = dendro.betterclustermap(np.median(m, axis =2),shortnames)
+        g.savefig("TEST2.png")
+        g.show()
 
     codes = getnn(m,k)
     res = [[sm.getitem[z] for z in a] for a in codes]
@@ -27,7 +26,12 @@ def getnn(m,n):
 
 
 if __name__ == "__main__":
-    print(neighs())
-
+    import matplotlib
+    matplotlib.use('module://matplotlib-sixel')
+    import matplotlib.pyplot as plt
+    print(neighs(draw=True))
+    plt.tight_layout()
+    plt.savefig("TEST.png")
+    plt.show()
 
 

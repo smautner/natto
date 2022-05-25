@@ -16,28 +16,22 @@ from sklearn.cluster import SpectralClustering,KMeans, AgglomerativeClustering
 from sklearn.metrics import precision_score
 import structout as so
 import os
-from x40 import preprocess, calc_mp20, process_labels
+from x40 import preprocess, calc_mp20, process_labels, precissionK
 import matplotlib
 matplotlib.use('module://matplotlib-sixel')
 
 def plot(xnames, folder, cleanname):
 
-    labels = [f"{folder}/varcell{j}.dmp" for j in xnames]
-    xdata = Map(tools.loadfile, labels)
+    filenames = [f"{folder}/varcell{j}.dmp" for j in xnames]
+    xdata = Map(tools.loadfile, filenames)
     xdata2 = Map(lambda x: np.median(x,axis=2), xdata)
     #xdata2 = Map(lambda x: x[:,:,0], xdata)
     labels,_ = process_labels()
     labels = np.array(labels)
 
-    def score(m,k):
-        true = np.hstack([labels for i in range(k)])
-        srt = np.argsort(m, axis=1)
-        #pred = labels[ [ srt[i,-j] for i in Range(labels) for j in range(k)] ]
-        pred = labels[ [ srt[i,-j]  for j in range(k) for i in Range(labels)] ]
-        return  precision_score(true, pred, average='micro')
-
     for k in [1,2,3]: # neighbors
-        y = [score(x,k) for x in xdata2]
+        y = [precissionK(x,k,labels) for x in xdata2]
+        print(f"{ y=}")
         plt.plot(jug, y, label=f'{k} cells {cleanname}')
 
         if k == 0:

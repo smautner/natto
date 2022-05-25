@@ -80,6 +80,15 @@ def process_labels():
     labeldict = sm.getitem
     return class_labels, labeldict
 
+def precissionK(m,k,truth):
+    true = np.hstack([truth for i in range(k)])
+    srt = np.argsort(m, axis=1)
+    #pred = labels[ [ srt[i,-j] for i in Range(labels) for j in range(k)] ]
+    ########
+    # range 1,k+1 should work FOUND ZE BUG
+    pred = truth[ [ srt[i,-j]  for j in range(1,k+1) for i in Range(truth)] ]
+    return  precision_score(true, pred, average='micro')
+
 def plot(xnames, folder, cleanname):
 
     labels = [f"{folder}/{j}.dmp" for j in xnames]
@@ -89,15 +98,9 @@ def plot(xnames, folder, cleanname):
     labels,_ = process_labels()
     labels = np.array(labels)
 
-    def score(m,k):
-        true = np.hstack([labels for i in range(k)])
-        srt = np.argsort(m, axis=1)
-        #pred = labels[ [ srt[i,-j] for i in Range(labels) for j in range(k)] ]
-        pred = labels[ [ srt[i,-j]  for j in range(k) for i in Range(labels)] ]
-        return  precision_score(true, pred, average='micro')
 
     for k in [1,2,3]: # neighbors
-        y = [score(x,k) for x in xdata]
+        y = [precissionK(x,k,labels) for x in xdata]
         plt.plot(jug, y, label=f'{k} neighbors {cleanname}')
 
 

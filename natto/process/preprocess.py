@@ -3,7 +3,7 @@ import scanpy as sc
 import matplotlib.pyplot as plt
 from lmz import *
 import sklearn
-
+import seaborn as sns
 from anndata import AnnData
 
 ####
@@ -65,6 +65,7 @@ def getgenes_natto(adata, selectgenes, title,
 
     mask = np.array([not np.isnan(y) and me > mean[0] and me < mean[1] for y, me in zip(disp, X)])
     if plot:
+        sns.set_style("whitegrid")
         plt.figure(figsize=(11, 4))
         plt.suptitle(f"gene selection: {title}", size=20, y=1.07)
         ax = plt.subplot(121)

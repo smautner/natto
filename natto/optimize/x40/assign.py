@@ -27,7 +27,7 @@ def getzedata(li,neighs=1,numcells=1500, seed = 31337):
                           subsample=numcells) for x in datasetnames]
 
     zedata =  process.Data().fit(zedata,
-            visual_ftsel=True,
+            visual_ftsel=False,
             pca = 20,
             make_readcounts_even=True,
             umaps=[2],

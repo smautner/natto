@@ -434,7 +434,6 @@ class tinyUmap():
         self.i =0
         self.dim = dim
 
-
     def next(self):
         self.i= self.i+1
         plt.subplot(*self.dim,self.i)
@@ -445,7 +444,7 @@ class tinyUmap():
 
 
 
-def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5)):
+def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True):
 
     # how should we wrap:
     if wrap == 'auto':
@@ -457,8 +456,16 @@ def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5)):
         # this means initializiung tinyUmap with another dim
 
     if not grad:
+        if same_limit:
+            concatX  = np.vstack(X)
+            xmin,ymin = concatX.min(axis = 0)
+            xmax,ymax = concatX.max(axis = 0)
         for x,y in zip(X,Y):
             d.draw(x,y, title=None)
+            if same_limit:
+                plt.xlim(xmin, xmax)
+                plt.ylim(ymin, ymax)
+            
         plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
 
     if grad:

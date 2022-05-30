@@ -7,8 +7,7 @@ from lmz import *
 class Data():
     def fit(self,adataList,
             selector='natto',
-            prenormalized=False,
-            normbetween=False,
+            donormalize=True,
             selectgenes=800,
             selectslice='all',
 
@@ -32,8 +31,7 @@ class Data():
         self.titles = titles
         self.even = make_even
         self.selectslice = selectslice
-        self.prenormalized=prenormalized
-        self.normbetween=normbetween
+        self.donormalize=donormalize
 
         if selector == 'preselected':
             self.preselected_genes = self.data[0].preselected_genes
@@ -88,27 +86,30 @@ class Data():
 
         shapeofdataL = [x.shape for x in self.data]
 
-        self.data = preprocess.basic_filter(self.data)  # min_counts min_genes
-        if not self.prenormalized:
-            self.data = preprocess.normlog(self.data)
-        if self.normbetween:
-            self.data = preprocess.normbetween(self.data)
+        ### Normalize and filter the data
+        self.data = preprocess.normfilter(self.data, self.donormalize)
+
         if selector == 'natto':
             if self.selectslice == 'last':
                 genes, scores = Transpose([preprocess.getgenes_natto(self.data[-1],selectgenes, self.titles[-1], **selectorargs)]*len(self.data))
             else:
                 genes,scores = Transpose([preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
                          for d,title in zip(self.data, self.titles)])
-            if savescores:
-                self.genescores = scores
-
+            self.genescores = scores
+        elif selector == 'test':
+            print("We are testing my dude")
+            genes, scores = Transpose([preprocess.getgenes_test(d, selectgenes,title, **selectorargs)
+                         for d,title in zip(self.data, self.titles)])
+            self.genescores = scores
         elif selector == 'preselected':
             genes = np.array([[True if gene in self.preselected_genes else False for gene in x.var_names] for x in self.data])
-
+            scores = genes.as_type(int)
         else:
             genes = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes) for d in self.data]
 
-        self.data = preprocess.unioncut(genes, self.data)
+
+        #self.data = preprocess.unioncut(genes, self.data)
+        self.data = preprocess.unioncut(scores, selectgenes, self.data)
         self.genes = genes
         if self.even:
             self.data = preprocess.make_even(self.data)

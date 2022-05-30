@@ -3,7 +3,7 @@ from ubergauss import tools
 from natto import input
 from natto.optimize.plot import dendro
 
-def neighs(fname = 'jacc/500.dmp', k = 2, draw = False):
+def neighs(fname = 'cosi/500.dmp', k = 2, draw = False):
     m  = tools.loadfile(fname)
     names = input.get40names()
     sm = tools.spacemap(names)
@@ -12,7 +12,6 @@ def neighs(fname = 'jacc/500.dmp', k = 2, draw = False):
         shortnames = [n[:5] for n in names]
         g = dendro.betterclustermap(np.median(m, axis =2),shortnames)
         g.savefig("TEST2.png")
-        g.show()
 
     codes = getnn(m,k)
     res = [[sm.getitem[z] for z in a] for a in codes]

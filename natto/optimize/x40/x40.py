@@ -148,12 +148,19 @@ def mkDfData(xnames, folder, cleanname):
 def plotsns(data):
     df = pd.DataFrame(data)
     sns.set_theme(style='whitegrid')
-    df.columns = 'neighbors method rep genes precision'.split()
-    sns.lineplot(data = df,x='genes', y = 'precision',
-            hue = 'neighbors',palette="flare", style = 'method', ci=68)
+    df.columns = 'neighbors±σ method rep genes precision'.split()
+    method = df['method'][0]
+    title = f'Searching for similar datasets via {method}'
+    sns.lineplot(data = df,x='genes', y = 'precision',style= 'neighbors±σ',
+            hue = 'neighbors±σ',palette="flare", ci=68)
 
-
-
+    plt.title(title, y=1.06, fontsize = 16)
+    plt.ylim([.75,1])
+    plt.ylabel('precision of neighbors (40 datasets)')
+    plt.xlabel('number of genes')
+    plt.savefig(f"numgenes{method}.png")
+    plt.show()
+    plt.clf()
 
 
 
@@ -165,15 +172,9 @@ if __name__ == "__main__":
     #     calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
     #     calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")
 
+    plotsns(mkDfData(jug,"cosi","Cosine similarity"))
+    plotsns(mkDfData(jug,"jacc","Jaccard similarity"))
 
-    plotsns(mkDfData(jug,"cosi","cosine") + mkDfData(jug,"jacc","jaccard"))
-    plt.show()
 
-    plt.title('Searching for similar datasets')
-    plt.ylabel('precision on neighbors 40 datasets')
-    plt.xlabel('number of genes')
-    plt.legend()
-    plt.savefig(f"numgenes.png")
-    plt.show()
 
 

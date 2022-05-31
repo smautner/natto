@@ -23,7 +23,24 @@ matplotlib.use('module://matplotlib-sixel')
 '''
 
 '''
+def preprocess_single_test( repeats =7, ncells = 1500, out = 'data.dmp', njobs = 27):
+    datasets = input.get40names()
+    random.seed(43)
+    loader = partial (input.load100, path = "/home/ubuntu/repos/natto/natto/data",
+                          subsample=ncells)
 
+    def f(fname):
+        return [Data().fit([loader(fname)],
+            visual_ftsel=False,
+            pca = 0,
+            make_readcounts_even=True,
+            umaps=[],
+            titles= [fname],
+            sortfield = -1,
+            make_even=True) for i in range(repeats)]
+
+    res =  tools.xmap(f,datasets,njobs)
+    tools.dumpfile(res,out)
 
 def preprocess( repeats =7, ncells = 1500, out = 'data.dmp', njobs = 27):
     datasets = input.get40names()
@@ -65,7 +82,11 @@ def calc_mp20(meth,out = 'calc.dmp', infile='data.dmp', shape=(40, 40, 5)):
     # execute
     def f(i):
         b, a, c, data = i
-        return b, a, c, meth(data)
+        try:
+            return b, a, c, meth(data)
+        except:
+            print("FAIL:",a,b,c)
+            return b,a,c,0
 
     for a, b, c, res in tools.xmap(f, it, 32):
         m[b, a, c] = np.median(res)
@@ -163,11 +184,10 @@ def plotsns(data):
     plt.clf()
 
 
-
-
 if __name__ == "__main__":
     #preprocess(5,2000)
-    jug = Range(50, 1400, 50)
+    jug = Range(50, 2000, 50)
+
     # for numgenes in jug:
     #     calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
     #     calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")

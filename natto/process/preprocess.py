@@ -268,8 +268,8 @@ def unioncut(gene_lists, data):
     print(genes)
     print(genes.shape)
     return [d[:, genes].copy() for d in data]
-
 '''
+
 def unioncut(scores, numGenes, data):
     indices = np.argpartition(scores, -numGenes)[:,-numGenes:]
     indices = np.unique(indices.flatten())

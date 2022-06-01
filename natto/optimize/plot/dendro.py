@@ -72,7 +72,11 @@ def betterclustermap(distances, labels, ncol = 5):
     #link = linkage(1-sq, method='average')
     #g=sns.clustermap(distances,row_colors = colz, col_colors = colz, row_linkage = link, col_linkage= link)
     '''
-    g=sns.clustermap(distances,row_colors = colz, col_colors = colz)
+    sq = distances
+    g=sns.clustermap(distances,row_colors = colz,
+                               col_colors = colz,
+                               col_linkage= sq,
+                               row_linkage= sq)
 
 
     # ???

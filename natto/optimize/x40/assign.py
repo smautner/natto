@@ -39,7 +39,7 @@ def getzedata(li,neighs=1,numcells=1500, seed = 31337):
 
 
 
-neighbors = dmp.neighs(draw=True)
+neighbors = dmp.neighs(draw=False)
 plt.show()
 
 for i in [10]:
@@ -47,6 +47,8 @@ for i in [10]:
     draw.cmp2(*truelabels,*zedata.d2)
     print(f"annotation score: {adjusted_rand_score(*truelabels)}")
     print(f"{names=}")
+
+    # 2x confusion
 
 
 

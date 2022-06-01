@@ -94,21 +94,31 @@ def betterclustermap(distances, labels, ncol = 5):
     return g
 
 
-def manualclustermap(distance, labels):
+def manualclustermap(similarity, labels):
     '''
         0. look at cmp2 and do subplot
         1. raw heatmap
         2. dendrogram with highlighted clusters
         3. return clustering..
     '''
-    plt.figure(figsize=(16,8))
-    ax=plt.subplot(121)
+    f=plt.figure(figsize=(16,8))
+
+    ax=plt.subplot(121,title='complete similarity matrix')
     # hope this works :)
-    sns.heatmap(distance, xticklabels = labels,yticklabels = False,  cmap="YlGnBu")
-    ax=plt.subplot(122)
-    Z = hira.squareform(distance)
-    Z = hira.linkage(sq,'single')
-    hira.dendrogram(Z)
+    sns.heatmap(similarity, xticklabels = labels,yticklabels = False,  cmap="YlGnBu")
+
+    # rotate labels
+    locs, labels = plt.xticks()
+    plt.setp(labels, rotation=90,size = 8)
+
+
+    ax=plt.subplot(122,title ='induced dendrogram (ward)')
+    #sns.set_theme(style = 'whitegrid') # dowsnt work
+    Z = squareform(similarity)
+    Z = hira.linkage(1-Z,'ward')
+    hira.dendrogram(Z, labels = labels, color_threshold=1)
+    locs, labels = plt.xticks()
+    plt.setp(labels, rotation=90,size = 8)
     return hira.fcluster(Z, t=7, criterion = 'maxclust')
 
 

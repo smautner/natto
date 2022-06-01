@@ -12,6 +12,7 @@ from lmz import *
 from ubergauss import tools
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage
+from scipy.cluster import hierarchy as hira
 # %%
 # 100 DATA..
 #######################
@@ -98,8 +99,20 @@ def manualclustermap(distance, labels):
         0. look at cmp2 and do subplot
         1. raw heatmap
         2. dendrogram with highlighted clusters
-        3. return score
+        3. return clustering..
     '''
+    plt.figure(figsize=(16,8))
+    ax=plt.subplot(121)
+    # hope this works :)
+    sns.heatmap(distance, xticklabels = labels,yticklabels = False,  cmap="YlGnBu")
+    ax=plt.subplot(122)
+    Z = hira.squareform(distance)
+    Z = hira.linkage(sq,'single')
+    hira.dendrogram(Z)
+    return hira.fcluster(Z, t=7, criterion = 'maxclust')
+
+
+
 
 
 

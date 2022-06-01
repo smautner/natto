@@ -95,22 +95,22 @@ class Data():
             else:
                 genes,scores = Transpose([preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
                          for d,title in zip(self.data, self.titles)])
-            self.genescores = scores
         elif selector == 'test':
             print("We are testing my dude")
             genes, scores = Transpose([preprocess.getgenes_test(d, selectgenes,title, **selectorargs)
                          for d,title in zip(self.data, self.titles)])
-            self.genescores = scores
         elif selector == 'preselected':
             genes = np.array([[True if gene in self.preselected_genes else False for gene in x.var_names] for x in self.data])
             scores = genes.as_type(int)
         else:
-            genes = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes) for d in self.data]
+            genes = [np.array(sc.pp.highly_variable_genes(d, n_top_genes=selectgenes, flavor=selector, inplace=False)['highly_variable']) for d in self.data]
+            scores = [g.astype(int) for g in genes]
 
 
         #self.data = preprocess.unioncut(genes, self.data)
         self.data = preprocess.unioncut(scores, selectgenes, self.data)
         self.genes = genes
+        self.genescores = scores
         if self.even:
             self.data = preprocess.make_even(self.data)
 

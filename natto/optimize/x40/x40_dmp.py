@@ -30,7 +30,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     print(neighs(draw=True))
     plt.tight_layout()
-    plt.savefig("TEST.png")
+    plt.savefig("TEST.png",  bbox_inches='tight')
+    plt.tight_layout()
     plt.show()
 
 

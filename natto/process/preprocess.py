@@ -3,7 +3,7 @@ import scanpy as sc
 import matplotlib.pyplot as plt
 from lmz import *
 import sklearn
-
+import seaborn as sns
 from anndata import AnnData
 
 ####
@@ -65,94 +65,7 @@ def getgenes_natto(adata, selectgenes, title,
 
     mask = np.array([not np.isnan(y) and me > mean[0] and me < mean[1] for y, me in zip(disp, X)])
     if plot:
-        plt.figure(figsize=(11, 4))
-        plt.suptitle(f"gene selection: {title}", size=20, y=1.07)
-        ax = plt.subplot(121)
-        plt.scatter(X[mask], Y[mask], alpha=.2, s=3, label='all genes')
-
-
-
-    x_bin, y_bin, ystd_bin = transform(X[mask].reshape(-1, 1),
-                                            Y[mask],plot,
-                                            stepsize=bins[0],
-                                            ran=mean[1],
-                                            minbin=bins[1] )
-
-
-
-    y_predicted = get_expected_values(x_bin, y_bin, X[mask])
-    std_predicted = get_expected_values(x_bin, ystd_bin, X[mask])
-    Y[mask] -= y_predicted
-    Y[mask] /= std_predicted
-
-    srt = np.argsort(Y[mask])
-    accept = np.full(Y[mask].shape, False)
-    accept[srt[-selectgenes:]] = True
-
-    if plot:
-        srt = np.argsort(X[mask])
-        plt.plot(X[mask][srt], y_predicted[srt], color='k', label='regression')
-        plt.plot(X[mask][srt], std_predicted[srt], color='g', label='regression of std')
-        plt.scatter(x_bin, ystd_bin, alpha=.4, label='Std of bins', color='g')
-        plt.legend(bbox_to_anchor=(.6, -.2))
-        plt.title("dispersion of genes")
-        plt.xlabel('log mean expression')
-        plt.ylabel('dispursion')
-        ax = plt.subplot(122)
-        plt.scatter(X[mask], Y[mask], alpha=.2, s=3, label='all genes')
-        g = X[mask]
-        d = Y[mask]
-        plt.scatter(g[accept], d[accept], alpha=.3, s=3, color='r', label='selected genes')
-        plt.legend(bbox_to_anchor=(.6, -.2))
-        plt.title("normalized dispersion of genes")
-        plt.xlabel('log mean expression')
-        plt.ylabel('dispursion')
-        plt.show()
-
-        print(f"ft selected:{sum(accept)}")
-
-
-
-    raw = np.zeros(len(mask))
-    raw[mask] = Y[mask]
-
-
-    mask[mask] = np.array(accept)
-    return mask, raw
-
-
-def getgenes_test(adata, selectgenes, title,
-        mean=(.015,4),
-        bins=(.25,1),
-        plot=True):
-
-    matrix= adata.to_df().to_numpy()
-
-    #a = matrix
-    a = np.exp(matrix)
-    a = (a/a.min())-1
-    a = sc.pp.normalize_total(AnnData(a), 1e4, inplace=False)['X']
-
-    #a = np.log1p(matrix)
-    print(a)
-    print(a.max())
-    print(a.min())
-    var = np.var(a, axis=0)
-    print(var)
-    meanex = np.mean(a, axis=0)
-
-    print("disp= var/mean might produce a warning but we will catch that later")
-    disp = var/(meanex)
-    #disp = var / meanex
-    #disp = var/np.logp1(meanex)
-
-    Y = disp
-    #Y = np.log(disp)
-    X = (meanex)
-    #X = np.log1p(meanex)
-
-    mask = np.array([not np.isnan(y) and me > mean[0] and me < mean[1] for y, me in zip(disp, X)])
-    if plot:
+        sns.set_style("whitegrid")
         plt.figure(figsize=(11, 4))
         plt.suptitle(f"gene selection: {title}", size=20, y=1.07)
         ax = plt.subplot(121)
@@ -267,8 +180,8 @@ def unioncut(gene_lists, data):
     print(genes)
     print(genes.shape)
     return [d[:, genes].copy() for d in data]
-
 '''
+
 def unioncut(scores, numGenes, data):
     indices = np.argpartition(scores, -numGenes)[:,-numGenes:]
     indices = np.unique(indices.flatten())

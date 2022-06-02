@@ -47,7 +47,10 @@ def confuse(y1,y2):
     _, new_order = lsa(-cm)
     cm = cm[new_order]
     # TODO reorder the matrix
-    ConfusionMatrixDisplay(cm).plot()#cmap="YlGnBu")
+
+    sns.heatmap(cm,xticklabels=xlabels,yticklabels=ylabels, annot=False ,linewidths=.5,cmap="YlGnBu" , square=True)
+    plt.xlabel('Clusters data set 2')
+    plt.ylabel('Clusters data set 1')
     plt.show()
 
 neighbors = dmp.neighs(draw=False)

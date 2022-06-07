@@ -47,7 +47,7 @@ def plot(xnames, folder, cleanname):
 
 
 def mkDfData(xnames, folder, cleanname):
-    filenames = [f"{folder}/500varcell{j}.dmp" for j in xnames]
+    filenames = [f"{folder}{j}.dmp" for j in xnames]
     xdata = Map(tools.loadfile, filenames)
     # xdata2 = Map(lambda x: np.median(x,axis=2), xdata)
     # xdata2 = Map(lambda x: x[:,:,0], xdata)
@@ -91,14 +91,13 @@ if __name__ == "__main__":
 
     for j in jug:
         infile =  f'vcell/{j}.dmp'
-        out = f"jacc/1000varcell{j}.dmp"
+        outjac = f"jacc/1000varcell{j}.dmp"
         outcos = f"cosi/500varcell{j}.dmp"
-        if not os.path.exists(out):
-            calc_mp20(partial(d.jaccard, ngenes=1000),out=out, infile=infile, shape = (40,40,7))
-            #calc_mp20(partial(d.cosine, numgenes=500),out=outcos,infile=infile,shape=(40,40,7))
+        #calc_mp20(partial(d.jaccard, ngenes=1000),out=outjac, infile=infile, shape = (40,40,7))
+        #calc_mp20(partial(d.cosine, numgenes=500),out=outcos,infile=infile,shape=(40,40,7))
 
-    plotsns(mkDfData(jug,"cosi","Cosine similarity"))
-    plotsns(mkDfData(jug,"jacc","Jaccard similarity"))
+    plotsns(mkDfData(jug,"cosi/500varcell","Cosine similarity"))
+    plotsns(mkDfData(jug,"jacc/1000varcell","Jaccard similarity"))
 
 
 

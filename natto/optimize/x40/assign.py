@@ -13,7 +13,7 @@ from scipy.optimize import linear_sum_assignment as lsa
 from sklearn import neighbors as nbrs, metrics
 from scipy.sparse.csgraph import dijkstra
 from ubergauss import tools
-
+from sklearn.semi_supervised import LabelSpreading
 
 '''
 1. load the dict a => b,c OK
@@ -40,7 +40,7 @@ def getzedata(li,neighs=1,numcells=1500, seed = 31337):
             pca = 20,
             make_readcounts_even=True,
             umaps=[10,2],
-            sortfield = 0,# real labels need to follow the sorting i think...
+            sortfield = 1,# real labels need to follow the sorting i think...
             make_even=True)
 
     truelabels = [np.array(zedata.data[x].obs['true']) for x in [0,1]]
@@ -107,10 +107,7 @@ def mykernel(x1len=False,neighbors = 3, X=None,_=None, return_graph = False):
 
     '''
     x1,x2 = np.split(X,[x1len])
-    print(f"{ x1.shape=}")
-    print(f"{ x2.shape=}")
     q2 = nbrs.kneighbors_graph(x1,neighbors).todense()
-    #q2 = nbrs.NearestNeighbors(n_neighbors=neighbors, algorithm='brute').fit(x1).kneighbors_graph().todense()
     q4 = nbrs.kneighbors_graph(x2,neighbors).todense()
     q1,q3 = hungmat(x1,x2)
 
@@ -124,22 +121,16 @@ def mykernel(x1len=False,neighbors = 3, X=None,_=None, return_graph = False):
     distances = -connect # invert
     distances -= distances.min() # longest = 4
     distances /= distances.max() # between 0 and 1 :)
+    distances[distances < np.median(np.unique(distances))] = 0
 
-    return distances
-
-def testkernel():
-    x1len = 4
-    neighbors = 1
-    X = np.array([[x,x] for x in Range(x1len)+Range(2)])
-    g,d = mykernel(x1len=x1len, neighbors=neighbors, X=X, _=X, return_graph=True)
-    print(g)
-    print(d)
-
+    return np.power(distances,2)
 
 def diffuse(data, y1, neighbors = 7):
-    from sklearn.semi_supervised import LabelSpreading
-    lp_model = LabelSpreading(kernel = lambda x,y: mykernel(data.projections[0][0].shape[0],neighbors,x,y) )
-    args = np.vstack(Map(tools.zehidense,data.projections[2])), y1
+    lp_model = LabelSpreading(kernel = lambda x,y: mykernel(data.projections[0][0].shape[0],neighbors,x,y),
+            alpha = .2,
+            max_iter = 30,
+            )
+    args = np.vstack(Map(tools.zehidense,data.projections[3])), y1
     lp_model.fit(*args)
     return  lp_model.transduction_
 
@@ -148,7 +139,7 @@ def diffuse(data, y1, neighbors = 7):
 if __name__=='__main__':
     for i in [10]:
 
-        names, zedata, truelabels = getzedata(neighbors[i], neighs = 1, numcells = 1000)
+        names, zedata, truelabels = getzedata(neighbors[i], neighs = 1, numcells = 500)
         draw.cmp2(*truelabels,*zedata.d2)
         plt.close()
         # print(f"annotation score: {adjusted_rand_score(*truelabels)}")
@@ -165,6 +156,8 @@ if __name__=='__main__':
         nula = diffuse(zedata, np.hstack((truelabels[0], np.full_like(truelabels[0],-1))))
         l1,l2  = np.split(nula,2)
         draw.cmp2(l1,l2,*zedata.d2)
+        plt.close()
+        draw.cmp2(l1,l1,*zedata.d2)
 
         # then we do it again and compare the rand scores
 

@@ -30,8 +30,7 @@ if __name__ == "__main__":
     matplotlib.use('module://matplotlib-sixel')
     import matplotlib.pyplot as plt
     print(neighs(draw=True))
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.savefig("similarity_matrix.png",  bbox_inches='tight')
     plt.show()
-
 

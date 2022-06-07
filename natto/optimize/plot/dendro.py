@@ -103,22 +103,30 @@ def manualclustermap(similarity, labels):
     '''
     f=plt.figure(figsize=(16,8))
 
-    ax=plt.subplot(121,title='complete similarity matrix')
+    ax=plt.subplot(121)
+    ax.set_title('complete similarity matrix', fontsize=20)
     # hope this works :)
-    sns.heatmap(similarity, xticklabels = labels,yticklabels = False,  cmap="YlGnBu")
+    sns.heatmap(similarity, xticklabels = False,
+            yticklabels = labels,  cmap="YlGnBu")
 
     # rotate labels
-    locs, labels = plt.xticks()
-    plt.setp(labels, rotation=90,size = 8)
+    locs, labels = plt.yticks()
+    plt.setp(labels,size = 8)
+    #plt.setp(labels, rotation=90,size = 8)
 
 
-    ax=plt.subplot(122,title ='induced dendrogram (ward)')
+    ax=plt.subplot(122)
+    ax.set_title('induced dendrogram (ward)', fontsize=20)
     #sns.set_theme(style = 'whitegrid') # dowsnt work
     Z = squareform(similarity)
     Z = hira.linkage(1-Z,'ward')
-    hira.dendrogram(Z, labels = labels, color_threshold=1)
+    hira.dendrogram(Z, labels = labels, color_threshold=1, orientation='right')
     locs, labels = plt.xticks()
     plt.setp(labels, rotation=90,size = 8)
+
+
+
+    plt.subplots_adjust(wspace = .4)
     return hira.fcluster(Z, t=7, criterion = 'maxclust')
 
 

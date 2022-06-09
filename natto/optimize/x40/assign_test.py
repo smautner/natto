@@ -41,7 +41,9 @@ def circles():
     n_samples = 200
     X, y = make_circles(n_samples=n_samples, shuffle=False)
     y[y==1] = -1
-    y[y==0] = binning(np.arange(sum(y==0)), 6, False)
+    # the zeros are in the begining so we manyally overwrite a few more
+    y[:30] = -1
+    y[y==0] = binning(np.arange(sum(y==0)), 5, False)
     plotc(X,y)
 
 

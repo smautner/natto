@@ -139,7 +139,9 @@ def diffuse(data, y1, neighbors = 7):
 if __name__=='__main__':
     for i in [10]:
 
-        names, zedata, truelabels = getzedata(neighbors[i], neighs = 1, numcells = 500)
+        names, zedata, truelabels = tools.loadfile('delme.dmp')#getzedata(neighbors[i], neighs = 1, numcells = 500)
+        #names, zedata, truelabels = getzedata(neighbors[i], neighs = 1, numcells = 500)
+        #tools.dumpfile([names,zedata,truelabels],'delme.dmp')
         draw.cmp2(*truelabels,*zedata.d2)
         plt.close()
         # print(f"annotation score: {adjusted_rand_score(*truelabels)}")
@@ -152,12 +154,12 @@ if __name__=='__main__':
         # plt.tight_layout()
         # plt.show()
 
-        # then we diffuse
-        nula = diffuse(zedata, np.hstack((truelabels[0], np.full_like(truelabels[0],-1))))
-        l1,l2  = np.split(nula,2)
-        draw.cmp2(l1,l2,*zedata.d2)
-        plt.close()
-        draw.cmp2(l1,l1,*zedata.d2)
+        # # then we diffuse
+        # nula = diffuse(zedata, np.hstack((truelabels[0], np.full_like(truelabels[0],-1))))
+        # l1,l2  = np.split(nula,2)
+        # draw.cmp2(l1,l2,*zedata.d2)
+        # plt.close()
+        # draw.cmp2(l1,l1,*zedata.d2)
 
         # then we do it again and compare the rand scores
 

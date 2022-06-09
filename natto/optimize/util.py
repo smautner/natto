@@ -1,3 +1,4 @@
+from lmz import Map,Zip,Filter,Grouper,Range,Transpose
 from natto.process import Data
 import natto.process.util as hutil
 import numpy as np
@@ -104,6 +105,58 @@ def cosine(data, numgenes = 0):
         scr2 = scr2[mask]
 
     return cos([scr1],[scr2]).item()
+
+
+def cosineGenBa(data, numgenes = 0):
+    '''
+    this is a version of cosine that selects genes evenly
+    '''
+    scr1, scr2 = data.genescores
+    if numgenes:
+        # top numgenes for both
+        m1 = tools.binarize(scr1,numgenes).astype(np.bool)
+        m2 = tools.binarize(scr2,numgenes).astype(np.bool)
+        # genes in common
+        mask = np.logical_and(m1,m2)
+
+        # now we need to select from the rest 'numgenes - |common| each
+        m1 = np.logical_xor(m1,mask)
+        m2 = np.logical_xor(m2,mask)
+        numgenes -= sum(mask)
+        numgenes /= 2
+        numgenes = int(numgenes)
+        m1[m1]= tools.binarize(scr1[m1],numgenes).astype(np.bool)
+        m2[m2] = tools.binarize(scr2[m2],numgenes).astype(np.bool)
+        mask = np.logical_or(mask,m1)
+        mask = np.logical_or(mask,m2)
+        scr1 = scr1[mask]
+        scr2 = scr2[mask]
+    return cos([scr1],[scr2]).item()
+
+def cosineTopEach(data, numgenes = 0):
+    '''
+    this is a version of cosine where we just go with the top ng in each set
+    '''
+    scr1, scr2 = data.genescores
+    if numgenes:
+        # top numgenes for both
+        m1 = tools.binarize(scr1,numgenes).astype(np.bool)
+        m2 = tools.binarize(scr2,numgenes).astype(np.bool)
+        # genes in common
+        mask = np.logical_or(m1,m2)
+        scr1 = scr1[mask]
+        scr2 = scr2[mask]
+    return cos([scr1],[scr2]).item()
+
+
+
+def test_cosineGenBa():
+    class omg:
+        pass
+    o = omg()
+    o.genescores = Map(np.array,[[0,0,0,1,1,2],[1,1,0,0,0,2]])
+    cosineGenBa(o,numgenes =3)
+    pass
 
 def booltopx(ar,num):
     srt = np.sort(ar)

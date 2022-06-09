@@ -9,9 +9,10 @@ def neighs(fname = 'cosi/500.dmp', k = 2, draw = False):
     sm = tools.spacemap(names)
 
     if draw:
-        shortnames = [n[:5] for n in names]
-        g = dendro.betterclustermap(np.median(m, axis =2),shortnames)
-        g.savefig("TEST2.png")
+        shortnames = [n[:n.find('_')] for n in names]
+        #g = dendro.betterclustermap(np.median(m, axis =2),shortnames)
+        g = dendro.manualclustermap(np.median(m, axis =2),shortnames)
+        #g.savefig("TEST2.png")
 
     codes = getnn(m,k)
     res = [[sm.getitem[z] for z in a] for a in codes]
@@ -29,8 +30,7 @@ if __name__ == "__main__":
     matplotlib.use('module://matplotlib-sixel')
     import matplotlib.pyplot as plt
     print(neighs(draw=True))
-    plt.tight_layout()
-    plt.savefig("TEST.png")
+    #plt.tight_layout()
+    plt.savefig("similarity_matrix.png",  bbox_inches='tight')
     plt.show()
-
 

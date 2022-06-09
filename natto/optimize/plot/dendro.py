@@ -12,6 +12,7 @@ from lmz import *
 from ubergauss import tools
 from scipy.spatial.distance import squareform
 from scipy.cluster.hierarchy import linkage
+from scipy.cluster import hierarchy as hira
 # %%
 # 100 DATA..
 #######################
@@ -58,6 +59,8 @@ def betterclustermap(distances, labels, ncol = 5):
         - make squareform so we dont see the warning -> no way
         - do spacemap stuff internally so we can just pass a list of labels -> ok
         - *maybe* remove one dendro trees :) -> also not as easy
+
+    THIS DOESNT WORK..  I WILL TRY DOING THIS WITHOUT SEABORN
     '''
 
     mysm = tools.spacemap(labels)
@@ -72,11 +75,9 @@ def betterclustermap(distances, labels, ncol = 5):
     #link = linkage(1-sq, method='average')
     #g=sns.clustermap(distances,row_colors = colz, col_colors = colz, row_linkage = link, col_linkage= link)
     '''
-    sq = distances
+    #sq = distances
     g=sns.clustermap(distances,row_colors = colz,
-                               col_colors = colz,
-                               col_linkage= sq,
-                               row_linkage= sq)
+                               col_colors = colz)
 
 
     # ???
@@ -91,6 +92,45 @@ def betterclustermap(distances, labels, ncol = 5):
     # possition of legend
     g.ax_col_dendrogram.legend( ncol=ncol, bbox_to_anchor=(1,-4.1), fontsize= 18)
     return g
+
+
+def manualclustermap(similarity, labels):
+    '''
+        0. look at cmp2 and do subplot
+        1. raw heatmap
+        2. dendrogram with highlighted clusters
+        3. return clustering..
+    '''
+    f=plt.figure(figsize=(16,8))
+
+    ax=plt.subplot(121)
+    ax.set_title('complete similarity matrix', fontsize=20)
+    # hope this works :)
+    sns.heatmap(similarity, xticklabels = False,
+            yticklabels = labels,  cmap="YlGnBu")
+
+    # rotate labels
+    locs, labels = plt.yticks()
+    plt.setp(labels,size = 8)
+    #plt.setp(labels, rotation=90,size = 8)
+
+
+    ax=plt.subplot(122)
+    ax.set_title('induced dendrogram (ward)', fontsize=20)
+    #sns.set_theme(style = 'whitegrid') # dowsnt work
+    Z = squareform(similarity)
+    Z = hira.linkage(1-Z,'ward')
+    hira.dendrogram(Z, labels = labels, color_threshold=1, orientation='right')
+    locs, labels = plt.xticks()
+    plt.setp(labels, rotation=90,size = 8)
+
+
+
+    plt.subplots_adjust(wspace = .4)
+    return hira.fcluster(Z, t=7, criterion = 'maxclust')
+
+
+
 
 
 

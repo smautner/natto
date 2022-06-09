@@ -22,7 +22,6 @@ class Data():
 
             titles = "ABCDEFGHIJK",
             make_even=True,
-            make_readcounts_even = False,
             sortfield=-1):
         '''
         sortfield = 0  -> use adata -> TODO one should test if the cell reordering works when applied to anndata
@@ -40,14 +39,8 @@ class Data():
         self.preprocess(selector, selectgenes,
                         {'mean': meanexp, 'bins':bins,'plot': visual_ftsel}, savescores=True)
 
-
-        if make_readcounts_even:
-            u.make_readcounts_even(self.data)
-
         # do dimred
         self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps, joint_space=joint_space)
-
-
 
         if pca:
             self.PCA = self.projections[1]
@@ -95,31 +88,24 @@ class Data():
             else:
                 genes,scores = Transpose([preprocess.getgenes_natto(d, selectgenes,title, **selectorargs)
                          for d,title in zip(self.data, self.titles)])
-            self.genescores = scores
         elif selector == 'preselected':
             genes = np.array([[True if gene in self.preselected_genes else False for gene in x.var_names] for x in self.data])
             scores = genes.as_type(int)
         else:
-            genes = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes) for d in self.data]
+            hvg_df = [np.array(sc.pp.highly_variable_genes(d, n_top_genes=selectgenes, flavor=selector, inplace=False)) for d in self.data]
+            genes = [x['highly_variable_genes'] for x in hvg_df]
+            if selector == 'seurat_v3':
+                scores = [x['variances_norm'] for x in hvg_df]
+            else:
+                scores = [x['dispersions_norm'] for x in hvg_df]
 
-
-        #self.data = preprocess.unioncut(genes, self.data)
         self.data = preprocess.unioncut(scores, selectgenes, self.data)
         self.genes = genes
+        self.genescores = scores
         if self.even:
             self.data = preprocess.make_even(self.data)
 
         print("preprocess:")
         for a,b in zip(shapeofdataL, self.data):
             print(f"{a} -> {b.shape}")
-
-
-
-
-
-
-
-
-
-
 

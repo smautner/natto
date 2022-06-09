@@ -463,8 +463,11 @@ def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True):
         for x,y in zip(X,Y):
             d.draw(x,y, title=None)
             if same_limit:
-                plt.xlim(xmin, xmax)
-                plt.ylim(ymin, ymax)
+                xdiff = np.abs(xmax-xmin)
+                ydiff = np.abs(ymax-ymin)
+                plt.xlim(xmin-0.1*xdiff, xmax+0.1*xdiff)
+                plt.ylim(ymin-0.1*ydiff, ymax+0.1*ydiff)
+            
 
         plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
 

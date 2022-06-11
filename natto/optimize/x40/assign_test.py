@@ -15,14 +15,17 @@ from structout.intlistV2 import binning
 
 
 
-
-def plotc(X,labels):
+from matplotlib.rcsetup import cycler
+def plotc(X,labels,fname=None):
+    plt.figure(figsize=(6,6))
+    mycycle = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#000']
     for l in np.unique(labels):
         plt.scatter(
             X[labels == l, 0],
             X[labels == l, 1],
             #color="navy",
             marker="s",
+            c = mycycle[l],
             lw=0,
             label=str(l),
             s=15,
@@ -30,6 +33,8 @@ def plotc(X,labels):
 
     plt.legend(scatterpoints=1, shadow=False, loc="upper right")
     plt.show()
+    if fname:
+        plt.savefig(fname)
     plt.close()
 
 
@@ -44,15 +49,14 @@ def circles():
     # the zeros are in the begining so we manyally overwrite a few more
     y[:30] = -1
     y[y==0] = binning(np.arange(sum(y==0)), 5, False)
-    plotc(X,y)
-
+    plotc(X,y,'circle_1.png')
 
     '''
     diffuse and vizualize
     '''
     lp_model = LabelSpreading(kernel = lambda x,y: mykernel(100,2,x,y))
     lp_model.fit(X,y)
-    plotc(X, lp_model.transduction_)
+    plotc(X, lp_model.transduction_,'circle_2.png')
 
 
 def testkernel():
@@ -68,5 +72,9 @@ def testkernel():
     lp_model = LabelSpreading(kernel = lambda x,y: mykernel(x1len,neighbors,x,y))
     lp_model.fit(X,[-1,-1,-1,-1,0,2])
     print(f"{lp_model.transduction_=}")
+
+
+
+
 
 

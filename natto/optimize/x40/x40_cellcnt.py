@@ -75,7 +75,7 @@ def plotsns(data):
     plt.ylim([.82,1])
     plt.ylabel('precision of neighbors (40 datasets)')
     plt.xlabel('number of cells')
-    plt.savefig(f"numcells{method}500genes.png")
+    plt.savefig(f"numcells{method}.png")
     plt.show()
     plt.clf()
 

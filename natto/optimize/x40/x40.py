@@ -82,6 +82,7 @@ def calc_mp20(meth,out = 'calc.dmp', infile='data.dmp', shape=(40, 40, 5)):
     # execute
     def f(i):
         b, a, c, data = i
+        return b,a,c, meth(data)
         try:
             return b, a, c, meth(data)
         except:
@@ -189,10 +190,14 @@ if __name__ == "__main__":
     jug = Range(50, 2000, 50)
 
     # for numgenes in jug:
-    #     calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
-    #     calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")
+    #      calc_mp20(partial(d.cosineTopEach, numgenes=numgenes),out=f"cositop/{numgenes}.dmp")
+    #      calc_mp20(partial(d.cosineGenBa, numgenes=numgenes),out=f"cosigenba/{numgenes}.dmp")
+    #      calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
+    #      calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")
 
+    plotsns(mkDfData(jug,"cositop","Cosine similarity"))
     plotsns(mkDfData(jug,"cosi","Cosine similarity"))
+    plotsns(mkDfData(jug,"cosigenba","Cosine similarity"))
     plotsns(mkDfData(jug,"jacc","Jaccard similarity"))
 
 

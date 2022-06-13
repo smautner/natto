@@ -90,7 +90,7 @@ def umap_gradient(X,Y,
 
 def cmp2(Y1,Y2,X1,X2,title=('1','2'), save=None, labelappend=[{},{}], noshow=False):
 
-    sns.set(font_scale=1.2,style='white')
+    sns.set(font_scale=1.2,style='whitegrid')
     plt.figure(figsize=(16,8))
 
     same_limit=True
@@ -468,6 +468,7 @@ def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True):
                 plt.xlim(xmin-0.1*xdiff, xmax+0.1*xdiff)
                 plt.ylim(ymin-0.1*ydiff, ymax+0.1*ydiff)
             
+
         plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
 
     if grad:

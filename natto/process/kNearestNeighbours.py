@@ -91,7 +91,14 @@ def main():
 
 
 
-def timeSliceNearestNeighbor(Data, k_from_neighbors=6, k_from_same=15, sort=True, metric='nn', neighbor_distance='max', verbose=False):
+def timeSliceNearestNeighbor(Data, 
+        k_from_neighbors=6, 
+        k_from_same=15, 
+        sort=True, 
+        metric='nn', 
+        neighbor_distance='max', 
+        dist_coeff=1.5,
+        verbose=False):
         ### Calculates nearest neighbors of input data between time slices.
 
         if len(Data) <= 2: assert("More data plz")
@@ -131,7 +138,8 @@ def timeSliceNearestNeighbor(Data, k_from_neighbors=6, k_from_same=15, sort=True
                                 knn_r_dists, knn_r_ind = nn.fit(nextData).kneighbors(dataset) 
                                 knn_r_ind[:,:] = np.add(knn_r_ind[:,:], np.full((knn_r_ind.shape), nextIndex))
 
-                        knn_neighbor_ind = np.column_stack([l for l in [knn_l_ind, knn_r_ind] if l is not None])
+                        #knn_neighbor_ind = np.column_stack([l for l in [knn_l_ind, knn_r_ind] if l is not None])
+                        knn_neighbor_ind = np.column_stack([l for l in [knn_l_ind, knn_ind, knn_r_ind] if l is not None])
 
 ##########################################################################################
 ##########################################################################################
@@ -157,31 +165,36 @@ def timeSliceNearestNeighbor(Data, k_from_neighbors=6, k_from_same=15, sort=True
                         else:
                                 knn_r_ind = np.empty((dataset.shape[0], 0), int)
 
-                        knn_neighbor_ind = np.column_stack([l for l in [knn_l_ind, knn_r_ind] if l is not None])
+                        #knn_neighbor_ind = np.column_stack([l for l in [knn_l_ind, knn_r_ind] if l is not None])
+                        knn_neighbor_ind = np.column_stack([l for l in [knn_l_ind, knn_ind, knn_r_ind] if l is not None])
 
 ##########################################################################################
 ##########################################################################################
 ##########################################################################################
 ########## TEST HOW TO MAKE HUNGARIAN TAKE EQUAL NEIGHBORS FROM ALL OTHER SLICES ##########
 
-                elif metric == 'hungarian_all':
+                elif metric == 'hungarian_all' or metric=='hungarian_all_testnewdistances':
                         ### Use hungarian algorithm to find k nearest neighbors between ALL time slices
                         
                         knn_l_ind = None
                         knn_r_ind = None
 
                         ### Gets 'k_from_same' nearest neighbors from within the same timeslice
-                        distances = pairwise_distances(dataset, dataset)
-                        knn_ind, knn_dists = findSliceNeighbors(dataset, distances, k_from_same, indexStart)
+                        hung_distances = pairwise_distances(dataset, dataset)
+                        knn_ind, knn_dists = findSliceNeighbors(dataset, hung_distances, k_from_same, indexStart)
 
                         ### Get the list of neighbor cells from between timeslices
                         indList = []
                         for index2, otherData in enumerate(Data):
                                 otherPrevIndex = 0
                                 if index != index2:
-                                        distances = pairwise_distances(dataset, otherData)
-                                        knn_other_ind, knn_other_dists = findSliceNeighbors(dataset, distances, k_from_neighbors, otherPrevIndex)
+                                        other_distances = pairwise_distances(dataset, otherData)
+                                        knn_other_ind, knn_other_dists = findSliceNeighbors(dataset, other_distances, k_from_neighbors, otherPrevIndex)
                                         indList.append(knn_other_ind)
+                                ### New Part
+                                else:
+                                        indList.append(knn_ind)
+                                ### New Part End
                                         
                                 otherPrevIndex += len(otherData)
                         knn_neighbor_ind = np.column_stack(indList)
@@ -198,18 +211,41 @@ def timeSliceNearestNeighbor(Data, k_from_neighbors=6, k_from_same=15, sort=True
                 neighbor_dists = calc_neighbor_dists(dataset, knn_dists, k_from_neighbors, metric, neighbor_distance, len(Data))
 
                 if metric == "hungarian_all":
-                        distlist = [neighbor_dists[:, 0:(k_from_neighbors)] for x in range(len(Data)-1)] + knn_dists
+                        '''
+                        distlist = [neighbor_dists[:, 0:(k_from_neighbors)] for x in range(len(Data)-1)]
+                        distlist.append(knn_dists)
+                        '''
+                        distlist = [neighbor_dists[:, 0:(k_from_neighbors)] if x!= index else knn_dists for x in range(len(Data))]
+                        tempDistance = np.column_stack(distlist)
+
+                elif metric == 'hungarian_all_testnewdistances':
+                        distlist = [neighbor_dists[:, 0:(k_from_neighbors)] if x!= index else knn_dists for x in range(len(Data))]
+                        for i, timeSlice in enumerate(distlist):
+                                distlist[i] = timeSlice*(dist_coeff*(np.abs(index-i)+1))
+
                         #distlist.append(knn_dists)
                         tempDistance = np.column_stack(distlist)
                 elif knn_l_ind is not None and knn_r_ind is not None:
+                        #tempDistance = np.column_stack([neighbor_dists[:, 0:(k_from_neighbors//2)], 
+                        #        neighbor_dists[:, 0:(k_from_neighbors//2)], knn_dists])
+                        ###NEW
                         tempDistance = np.column_stack([neighbor_dists[:, 0:(k_from_neighbors//2)], 
-                                neighbor_dists[:, 0:(k_from_neighbors//2)], knn_dists])
+                                knn_dists,
+                                neighbor_dists[:, 0:(k_from_neighbors//2)]])
+                        ###NEW
                 else:
-                        tempDistance = np.column_stack([neighbor_dists, knn_dists])
+                        #tempDistance = np.column_stack([neighbor_dists, knn_dists])
+                        ###NEW
+                        if knn_l_ind is not None:
+                                tempDistance = np.column_stack([neighbor_dists, knn_dists])
+                        elif knn_r_ind is not None:
+                                tempDistance = np.column_stack([knn_dists, neighbor_dists])
+                        ###NEW
 
-                tempIndices = np.column_stack([knn_neighbor_ind, knn_ind])
+                #tempIndices = np.column_stack([knn_neighbor_ind, knn_ind])
+                tempIndices = knn_neighbor_ind
                 if index == 0:
-                        if metric=='hungarian_all':
+                        if metric=='hungarian_all' or metric=='hungarian_all_testnewdistances':
                                 distances = np.empty((0, k_from_same+(len(Data)-1)*k_from_neighbors), int)
                                 indices = np.empty((0, k_from_same+(len(Data)-1)*k_from_neighbors), int)
                         else:
@@ -217,10 +253,8 @@ def timeSliceNearestNeighbor(Data, k_from_neighbors=6, k_from_same=15, sort=True
                                 indices = np.empty((0, k_from_same+k_from_neighbors), int)
 
 
-
                 distances = np.vstack((distances, tempDistance))
                 indices = np.vstack((indices, tempIndices))
-
 
                 ### Updates variables for next iteration
                 prevData = dataset
@@ -251,6 +285,7 @@ def timeSliceNearestNeighbor(Data, k_from_neighbors=6, k_from_same=15, sort=True
                 distances = np.asarray(sortedDistances)
                 indices = np.asarray(sortedIndices)
                 '''
+                
 
         if verbose:
                 print((distances))

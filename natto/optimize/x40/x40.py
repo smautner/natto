@@ -195,10 +195,10 @@ if __name__ == "__main__":
     #      calc_mp20(partial(d.jaccard, ngenes=numgenes),out=f"jacc/{numgenes}.dmp")
     #      calc_mp20(partial(d.cosine, numgenes=numgenes),out=f"cosi/{numgenes}.dmp")
 
-    plotsns(mkDfData(jug,"cositop","Cosine similarity"))
+    #plotsns(mkDfData(jug,"cositop","Cosine similarity"))
     plotsns(mkDfData(jug,"cosi","Cosine similarity"))
-    plotsns(mkDfData(jug,"cosigenba","Cosine similarity"))
-    plotsns(mkDfData(jug,"jacc","Jaccard similarity"))
+    #plotsns(mkDfData(jug,"cosigenba","Cosine similarity"))
+    #plotsns(mkDfData(jug,"jacc","Jaccard similarity"))
 
 
 

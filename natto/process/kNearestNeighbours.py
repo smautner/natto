@@ -7,13 +7,15 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import pairwise_distances
 from scipy.optimize import linear_sum_assignment
+from sklearn import neighbors as nbrs, metrics
+from scipy.sparse.csgraph import dijkstra
 
 
 
 def __init__():
         pass
 
-
+'''
 def main():
         ### Calculates the k nearest neighbors for data 
 
@@ -88,7 +90,7 @@ def main():
 
         t1 = time.time()
         print(f"Time Elapsed: {t1-t0}")
-
+'''
 
 
 def timeSliceNearestNeighbor(Data, 
@@ -116,7 +118,6 @@ def timeSliceNearestNeighbor(Data,
 ##########################################################################################
 ##########################################################################################
 ##########################################################################################
-
         for index, dataset in enumerate(Data):
 
                 if metric == 'nn':
@@ -203,6 +204,32 @@ def timeSliceNearestNeighbor(Data,
 ##########################################################################################
 ##########################################################################################
 
+                elif metric == 'mykernel':
+                        ### NOT FUNCTIONAL
+                        knn_l_ind = None
+                        knn_r_ind = None
+
+                        hung_distances = mykernel(X=[dataset,dataset], neighbors = k_from_same)
+                        print(hung_distances)
+                        knn_ind, knn_dists = findSliceNeighbors(dataset, hung_distances, k_from_same, indexStart)
+
+                        indList = []
+                        for index2, otherData in enumerate(Data):
+                                otherPrevIndex = 0
+                                if index != index2:
+                                        other_distances = mykernel(X=[dataset, otherData], neighbors=k_from_neighbors)
+                                        knn_other_ind, knn_other_dists = findSliceNeighbors(dataset, other_distances, k_from_neighbors, otherPrevIndex)
+                                        indList.append(knn_other_ind)
+                                        print(distances)
+                                else:
+                                        indList.append(knn_ind)
+                                otherPrevIndex += len(otherData)
+                        knn_neighbor_ind = np.column_stack(indList)
+
+##########################################################################################
+##########################################################################################
+##########################################################################################
+
 
                 ### Add data and indices to overall list
                 ### Also adjusts distances of neighbors from alternate time slices in order to prevent
@@ -222,6 +249,7 @@ def timeSliceNearestNeighbor(Data,
                         distlist = [neighbor_dists[:, 0:(k_from_neighbors)] if x!= index else knn_dists for x in range(len(Data))]
                         for i, timeSlice in enumerate(distlist):
                                 distlist[i] = timeSlice*(dist_coeff*(np.abs(index-i)+1))
+                                #distlist[i] = timeSlice + dist_coeff*np.abs(index-i)
 
                         #distlist.append(knn_dists)
                         tempDistance = np.column_stack(distlist)
@@ -358,7 +386,46 @@ def sortDistsAndInds(distances, indices):
         return distances, indices
 
 
+def hungmat(x1,x2):
+        x= metrics.euclidean_distances(x1,x2)
+        r = np.zeros_like(x)
+        a,b = linear_sum_assignment(x)
+        r[a,b] = 1
 
+        r2 = np.zeros((x.shape[1], x.shape[0]))
+        r2[b,a] = 1 # rorated :)
+        return r,r2
+
+
+def mykernel(x1len=False, neighbors = 3, X=[], _=None, return_graph = False):
+    '''
+    X is list containing 2 datasets
+    - we do neighbors to get quadrant 2 and 4
+    - we do hungarian to do quadrants 1 and 3
+    - we do dijkstra to get a complete distance matrix
+
+    '''
+    x1,x2 = X[0], X[1]
+    q2 = nbrs.kneighbors_graph(x1,neighbors).todense()
+    q4 = nbrs.kneighbors_graph(x2,neighbors).todense()
+    q1,q3 = hungmat(x1,x2)
+
+    graph = np.hstack((np.vstack((q2,q3)),np.vstack((q1,q4))))
+
+
+    connect = dijkstra(graph,unweighted = True, directed = False)
+
+    if return_graph:
+        return graph, connect
+    distances = -connect # invert
+    distances -= distances.min() # longest = 4
+    distances /= distances.max() # between 0 and 1 :)
+    distances[distances < np.median(np.unique(distances))] = 0
+
+    return np.power(distances,2)
+
+
+'''
 run_btnn_test = False
 dataset = 'Waterston' #sim or Waterston
 if run_btnn_test:
@@ -390,4 +457,5 @@ if run_btnn_test:
         print(list(distances[3300]))
         print(list(indices[5]))
         print(list(indices[3300]))
+'''
 

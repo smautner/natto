@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 from natto.process import preprocess
 import scanpy as sc
 from natto.process import dimensions
@@ -93,12 +95,14 @@ class Data():
             genes = np.array([[True if gene in self.preselected_genes else False for gene in x.var_names] for x in self.data])
             scores = genes.as_type(int)
         else:
-            hvg_df = [np.array(sc.pp.highly_variable_genes(d, n_top_genes=selectgenes, flavor=selector, inplace=False)) for d in self.data]
-            genes = [x['highly_variable_genes'] for x in hvg_df]
+            hvg_df = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes, flavor=selector, inplace=False) for d in self.data]
+            genes = [np.array(x['highly_variable']) for x in hvg_df]
             if selector == 'seurat_v3':
-                scores = [x['variances_norm'] for x in hvg_df]
+                ### Best used for raw_count data
+                scores = [np.array(x['variances_norm'].fillna(0)) for x in hvg_df]
             else:
-                scores = [x['dispersions_norm'] for x in hvg_df]
+                scores = [np.array(x['dispersions_norm'].fillna(0)) for i, x in enumerate(hvg_df)]
+
 
         self.data = preprocess.unioncut(scores, selectgenes, self.data)
         self.genes = genes

@@ -39,6 +39,7 @@ class Data():
         self.preprocess(selector, selectgenes,
                         {'mean': meanexp, 'bins':bins,'plot': visual_ftsel}, savescores=True)
 
+
         # do dimred
         self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps, joint_space=joint_space)
 

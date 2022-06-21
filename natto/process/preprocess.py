@@ -133,10 +133,10 @@ def basic_filter(data, min_counts=3, min_genes=200):
 
     # filter genes
     genef = [sc.pp.filter_genes(d, min_counts=min_counts, inplace=False)[0] for d in data]
-    geneab = np.any(np.array(genef), axis=0)
+    geneab = np.all(np.array(genef), axis=0)
     for i, d in enumerate(data):
         data[i] = d[:, geneab]
-
+    
     for i,(a,b) in enumerate(zip(shapesL,[d.shape for d in data])):
         if b[1] < 4000 or b[0]/a[0] < .5 or b[0] < 200: # less than 4k genes active or many cells removed
             print(f"BASIC FILTER for dataset {i}: {a} -> {b}")

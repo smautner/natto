@@ -167,7 +167,7 @@ def hungmat(x1,x2):
 
 
 
-def mykernel(x1len=False,neighbors = 3, X=None,_=None, return_graph = False):
+def mykernel(x1len=False, neighbors = 3, X=None, _=None, return_graph = False):
     assert x1len, 'need to know how large the first dataset ist :)'
     '''
     X are the stacked projections[0] (normalized read matrices)
@@ -197,6 +197,7 @@ def mykernel(x1len=False,neighbors = 3, X=None,_=None, return_graph = False):
     distances[distances < np.median(np.unique(distances))] = 0
 
     return np.power(distances,2)
+
 
 def diffuse(data, y1, neighbors = 7):
     lp_model = LabelSpreading(kernel = lambda x,y: mykernel(data.projections[0][0].shape[0],neighbors,x,y),

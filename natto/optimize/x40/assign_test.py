@@ -39,9 +39,10 @@ def plotc(X,labels,fname=None):
 
 
 def circles():
-
     '''
-    build testdata and vizualize
+    this tests the diffusion on a 2 circles.. outer and inner each representin a SC dataset
+
+    ...build testdata and vizualize
     '''
     n_samples = 200
     X, y = make_circles(n_samples=n_samples, shuffle=False)

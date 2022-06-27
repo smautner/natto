@@ -238,12 +238,7 @@ def mykernel(x1len=False, neighbors = 3, X=None, _=None, return_graph = False):
 
     return np.power(distances,2)
 
-<<<<<<< HEAD
-
-def diffuse(data, y1, neighbors = 7):
-=======
 def diffuse(data, y1, neighbors = 7,pid=2):
->>>>>>> 380b19ace9c42489afd0c8b19381670ac668297a
     lp_model = LabelSpreading(kernel = lambda x,y: mykernel(data.projections[0][0].shape[0],neighbors,x,y),
             alpha = .2,
             max_iter = 30,

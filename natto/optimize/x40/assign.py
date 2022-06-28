@@ -110,6 +110,7 @@ def getzedata(li,neighs=1,numcells=1500, seed = 31337, selector = 'natto'):
                           subsample=numcells) for x in datasetnames]
 
     zedata =  process.Data().fit(zedata,
+            selector = 'selector',
             visual_ftsel=False,
             pca = 20,
             umaps=[10,2],
@@ -265,18 +266,16 @@ def doone2(i):
     flv  = ['seurat', 'cell_ranger', 'seurat_v3', 'natto']
     neighbors = dmp.neighs(draw=False)
     scores= []
-    try:
-        for selector in flv:
-            names, zedata, truelabels = getzedata(neighbors[i], neighs = 1, numcells = 1000,selector = selector)
 
-            nula = confuserecluster(zedata, truelabels[0], norm = norm)
-            l1,l2  = np.split(nula,2)
-            scr= adjusted_rand_score(l1,l2)
-            print(f"rand:{scr}  i:{i} {selector=}")
-            r = [scr, i, selector]
-            scores.append(r)
-    except:
-        return []
+    for selector in flv:
+        names, zedata, truelabels = getzedata(neighbors[i], neighs = 1, numcells = 1000,selector = selector)
+        nula = confuserecluster(zedata, truelabels[0], norm = norm)
+        l1,l2  = np.split(nula,2)
+        scr= adjusted_rand_score(l1,l2)
+        print(f"rand:{scr}  i:{i} {selector=}")
+        r = [scr, i, selector]
+        scores.append(r)
+
 
     return scores
 

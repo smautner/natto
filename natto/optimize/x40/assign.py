@@ -208,8 +208,7 @@ def hungmat(x1,x2):
         r2[b,a] = 1 # rorated :)
         return r,r2
 
-
-def mykernel(x1len=False,neighbors = 3, X=None,_=None, return_graph = False):
+def mykernel(x1len=False, neighbors = 3, X=None, _=None, return_graph = False):
     assert x1len, 'need to know how large the first dataset ist :)'
     '''
     X are the stacked projections[0] (normalized read matrices)

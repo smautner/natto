@@ -23,13 +23,8 @@ def timeSliceNearestNeighbor(Data,
         distCoeff=0,
         verbose=False):
 
-        ### Calculates nearest neighbors of input data between time slices.
-        if len(Data) <= 2: assert("More data plz")
-        if type(Data[0]) != np.ndarray:
-                Data = [data.to_df().to_numpy() for data in Data]
-
         ### Initialize variables
-        intraSliceNeighbors, interSliceNeighbors, indices, distances = initializeValues(Data, intraSliceNeighbors, interSliceNeighbors, kFromSame, kFromNeighbors)
+        Data, intraSliceNeighbors, interSliceNeighbors, indices, distances = initialize(Data, intraSliceNeighbors, interSliceNeighbors, kFromSame, kFromNeighbors)
         prevData = None
         prevIndex = 0
         nextData = Data[1]
@@ -204,7 +199,11 @@ def applyDistances(timeSlice, neighborDists, nnMetric, kFromNeighbors, sliceInde
         return sliceDistance
 
 
-def initializeValues(Data, interSliceNeighbors, kFromSame, kFromNeighbors):
+def initialize(Data, intraSliceNeighbors, interSliceNeighbors, kFromSame, kFromNeighbors):
+
+        if len(Data) <= 2: assert("More data plz")
+        if type(Data[0]) != np.ndarray:
+                Data = [data.to_df().to_numpy() for data in Data]
         intraSliceNeighbors = eval(intraSliceNeighbors)
         if interSliceNeighbors is None:
                 interSliceNeighbors = intraSliceNeighbors
@@ -217,7 +216,7 @@ def initializeValues(Data, interSliceNeighbors, kFromSame, kFromNeighbors):
         else:
                 distances = np.empty((0, kFromSame+kFromNeighbors), int)
                 indices = np.empty((0, kFromSame+kFromNeighbors), int)
-        return (intraSliceNeighbors, interSliceNeighbors, indices, distances)
+        return (Data, intraSliceNeighbors, interSliceNeighbors, indices, distances)
 
 
 def sortDistsAndInds(distances, indices):

@@ -35,7 +35,16 @@ def timeSliceNearestNeighbor(Data,
         
         for index, timeSlice in enumerate(Data):
                 ### Find indices and distances for all Neighbors at each 'timeSlice'
-                sliceIndices, sliceDistances = globalNN(Data, index, kFromSame, kFromNeighbors, intraSliceNeighbors, interSliceNeighbors, distanceMetric, indexStart, distCoeff, adjacentData)
+                sliceIndices, sliceDistances = globalNN(Data, 
+                        index, 
+                        kFromSame, 
+                        kFromNeighbors, 
+                        intraSliceNeighbors, 
+                        interSliceNeighbors, 
+                        distanceMetric, 
+                        indexStart, 
+                        distCoeff, 
+                        adjacentData)
                 indices = np.vstack((indices, sliceIndices))
                 distances = np.vstack((distances, sliceDistances))
 

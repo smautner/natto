@@ -25,7 +25,7 @@ col.update( {a+100:b for a,b in col.items()}  )
 col = plt.cm.get_cmap('tab20').colors
 col = col+col+col+ ((0,0,0),)
 
-def umap(X,Y,
+def umap(X,Y= False,
         title="No title",
         acc : "y:str_description"={},
         black = None,
@@ -35,7 +35,10 @@ def umap(X,Y,
         size=None):
 
     plt.title(title, size=20)
-    Y=np.array(Y)
+    if isinstance(Y,bool):
+        Y= np.zeros(len(X), dtype=np.integer)
+    else:
+        Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
 
     if type(black) != type(None):
@@ -467,7 +470,7 @@ def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True):
                 ydiff = np.abs(ymax-ymin)
                 plt.xlim(xmin-0.1*xdiff, xmax+0.1*xdiff)
                 plt.ylim(ymin-0.1*ydiff, ymax+0.1*ydiff)
-            
+
 
         plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
 
@@ -521,5 +524,19 @@ def plot_noise(lines, title,show_std=False, saveas= False):
         plt.savefig(f"{saveas}.png")
         plt.savefig(f"{saveas}.pdf")
     plt.show()
+
+
+def scatter(merged, ids= [], labels = ''):
+    if not ids:
+        ids = range(len(merged.data))
+
+    for id in ids:
+        data= merged.d2[id]
+        if labels:
+            lab = merged.data[id].obs[labels]
+        else:
+            lab = [0]* len(data)
+        umap(data, lab)
+
 
 

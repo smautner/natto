@@ -123,9 +123,14 @@ class Data():
 
 
 
-def annotate_genescores(adata, selector='natto', donormalize=True, meanexp=(0.015, 4), bins=(.25, 1), plot=False):
+def annotate_genescores(adata, selector='natto',
+        donormalize=True,
+        nattoargs = {'mean':(0.015, 4),'bins':(.25, 1)},
+        mingenes = 200,
+        plot=False):
+
         incommingshape= adata.X.shape
-        sc.pp.filter_cells(adata, min_genes=200, inplace=True)
+        sc.pp.filter_cells(adata, min_genes=mingenes, inplace=True)
         okgenes = sc.pp.filter_genes(adata, min_counts=3, inplace=False)[0]
         if donormalize:
             sc.pp.normalize_total(adata, 1e4)
@@ -138,7 +143,7 @@ def annotate_genescores(adata, selector='natto', donormalize=True, meanexp=(0.01
 
         if selector == 'natto':
                 # "A" TODO
-                genes, scores = preprocess.getgenes_natto(adata, 1000, 'A', mean=meanexp, bins= bins, plot=plot)
+                genes, scores = preprocess.getgenes_natto(adata, 1000, 'A', plot=plot, **nattoargs)
 
         elif selector == 'preselected':
             genes = [True if gene in self.preselected_genes else False for gene in adata.var_names]
@@ -160,7 +165,7 @@ def annotate_genescores(adata, selector='natto', donormalize=True, meanexp=(0.01
         adata2.varm["scores"]=  fullscores
         adata2.varm['genes'] = okgenes
         #adata.varm["genes"] = genes ... lets decide later if we need this
-        print(f"{incommingshape=} aftershape={adata.X.shape}")
+        print(f"{incommingshape=}  => {adata.X.shape}")
         return adata2
 
 

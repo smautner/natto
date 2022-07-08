@@ -127,6 +127,7 @@ def annotate_genescores(adata, selector='natto',
         donormalize=True,
         nattoargs = {'mean':(0.015, 4),'bins':(.25, 1)},
         mingenes = 200,
+        quiet = False,
         plot=False):
 
         incommingshape= adata.X.shape
@@ -165,7 +166,8 @@ def annotate_genescores(adata, selector='natto',
         adata2.varm["scores"]=  fullscores
         adata2.varm['genes'] = okgenes
         #adata.varm["genes"] = genes ... lets decide later if we need this
-        print(f"{incommingshape=}  => {adata.X.shape}")
+        if not quiet:
+            print(f"{incommingshape=}  => {adata.X.shape}")
         return adata2
 
 

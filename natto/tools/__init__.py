@@ -1,5 +1,4 @@
-
-
+from lmz import Map,Zip,Filter,Grouper,Range,Transpose, grouper
 import numpy as np
 from ubergauss import tools as ut
 from sklearn.metrics.pairwise import cosine_similarity as cos
@@ -48,5 +47,48 @@ def apply_measures_mp(method, instances, repeats = 5):
                     res[j,i,x] = val
         print(".", end='')
 
+
+    return res
+
+
+
+def apply_measures_mp2(method, instances, repeats = 5):
+    l = len(instances)
+    res = np.zeros((l,l,repeats))
+
+    def func(stuff):
+        a,b,seeds,i,j = stuff
+        r = [ method(a,b,seed)  for seed in seeds ]
+        return r,i,j
+    tasks = [ (i,j) for i in range(l) for j in range(i,l)]
+    for ijlist in Grouper(tasks,30):
+        tmptasks =  [[instances[ij[0]],instances[ij[1]],list(range(repeats)), *ij]
+                for ij in ijlist if ij]
+        for r,i,j in ut.xmap(func,tmptasks):
+            for x,val in enumerate(r):
+                    res[i,j,x] = val
+                    res[j,i,x] = val
+        print(".", end='')
+    return res
+
+
+def apply_measures_mp3(method, instances, repeats = 5):
+    # pool.maxtasksperchild
+    l = len(instances)
+    res = np.zeros((l,l,repeats))
+
+
+    def func(stuff):
+        a,b,seeds,i,j = stuff
+        r = [ method(a,b,seed)  for seed in seeds ]
+        return r,i,j
+
+    tmptasks =([instances[i],instances[j],list(range(repeats)), i,j]
+                for i in range(l) for j in range(i,l))
+
+    for r,i,j in ut.xmap(func,tmptasks):
+        for x,val in enumerate(r):
+                res[i,j,x] = val
+                res[j,i,x] = val
 
     return res

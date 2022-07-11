@@ -213,10 +213,11 @@ def initialize(Data, intraSliceNeighbors, interSliceNeighbors, kFromSame, kFromN
         if len(Data) <= 2: assert("More data plz")
         if type(Data[0]) != np.ndarray:
                 Data = [data.to_df().to_numpy() for data in Data]
-        intraSliceNeighbors = eval(intraSliceNeighbors)
+        if type(intraSliceNeighbors)==str:
+                intraSliceNeighbors = eval(intraSliceNeighbors)
         if interSliceNeighbors is None:
                 interSliceNeighbors = intraSliceNeighbors
-        else:
+        elif type(interSliceNeighbors)==str:
                 interSliceNeighbors = eval(interSliceNeighbors)
 
         if interSliceNeighbors.__name__=='hungarianAll':

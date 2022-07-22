@@ -135,6 +135,7 @@ def getgenes_natto(adata, selectgenes, title,
 def basic_filter(data, min_counts=3, min_genes=200):
     # filter cells
     shapesL = [d.shape for d in data]
+
     [sc.pp.filter_cells(d, min_genes=min_genes, inplace=True) for d in data]
 
     # filter genes

@@ -18,7 +18,7 @@ import structout as so
 import pandas as pd
 import seaborn as sns
 import matplotlib
-matplotlib.use('module://matplotlib-sixel')
+#matplotlib.use('module://matplotlib-sixel')
 
 '''
 
@@ -167,9 +167,10 @@ def mkDfData(xnames, folder, cleanname):
 
 
 
-def plotsns(data):
+def plotsns(data, show = False,wg = True):
     df = pd.DataFrame(data)
-    sns.set_theme(style='whitegrid')
+    if wg:
+        sns.set_theme(style='whitegrid')
     df.columns = 'neighbors±σ method rep genes precision'.split()
     method = df['method'][0]
     title = f'Searching for similar datasets via {method}'
@@ -180,9 +181,10 @@ def plotsns(data):
     plt.ylim([.75,1])
     plt.ylabel('precision of neighbors (40 datasets)')
     plt.xlabel('number of genes')
-    plt.savefig(f"numgenes{method}.png")
-    plt.show()
-    plt.clf()
+    if show:
+        plt.savefig(f"numgenes{method}.png")
+        plt.show()
+        plt.clf()
 
 
 if __name__ == "__main__":

@@ -9,7 +9,6 @@ if int(argz[0]) < int(argz [1]):
     exit()
 
 import matplotlib
-matplotlib.use('module://matplotlib-sixel')
 #writeto = "res/"+sys.argv[1].replace(" ",'_')
 
 #if os.path.exists(writeto):
@@ -184,6 +183,7 @@ def countoverlap(a,b,num):
 
 
 if __name__ == "__main__":
+    matplotlib.use('module://matplotlib-sixel')
     print (argz)
     task,t2,rep = map(int, sys.argv[2:])
     #task,t2,rep = map(int, sys.argv[1].strip().split(' '))

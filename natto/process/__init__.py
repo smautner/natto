@@ -84,7 +84,7 @@ class Data():
 
     def preprocess(self, selector, selectgenes, selectorargs, savescores = False):
 
-        shapeofdataL = [x.shape for x in self.data]
+        # shapeofdataL = [x.shape for x in self.data]
 
         ### Normalize and filter the data
         self.data = preprocess.normfilter(self.data, self.donormalize)
@@ -117,9 +117,9 @@ class Data():
         if self.even:
             self.data = preprocess.make_even(self.data)
 
-        print("preprocess:")
-        for a,b in zip(shapeofdataL, self.data):
-            print(f"{a} -> {b.shape}")
+        # print("preprocess:")
+        # for a,b in zip(shapeofdataL, self.data):
+        #     print(f"{a} -> {b.shape}")
 
 
 
@@ -172,7 +172,8 @@ def annotate_genescores(adata, selector='natto',
 
 
 class merge():
-    def __init__(self, adatas, selectgenes = 800, make_even = True, pca = 20, umaps = [2], joint_space = False,
+    def __init__(self, adatas, selectgenes = 800, make_even = True, pca = 20, umaps = [2],
+            joint_space = False,
             sortfield = -1,
             titles = "ABCDEFGHIJKIJ"):
 

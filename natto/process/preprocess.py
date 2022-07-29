@@ -177,32 +177,25 @@ def normfilter(data, donormalize, normTogether=False):
 
 def normlog(data, normTogether=False):
     if normTogether:
-        print("Norming together!")
-        shapes = [d.shape[0] for d in data]
-        print(shapes)
-        dataStack = concat(data)
-        sc.pp.normalize_total(dataStack, 1e4)
-        sumToAdd = 0
-        for index in range(len(shapes)):
-            shapes[index] += sumToAdd
-            sumToAdd = shapes[index]
-        dataIndices = [0] + shapes
-        data = [dataStack[dataIndices[k]:dataIndices[k+1]] for k in range(0, len(dataIndices)-1)]
-        print("Put back together shapes = ")
-        print([d.shape[0] for d in data])
+        normSlicesTogether(data)
     else:
         [sc.pp.normalize_total(d, 1e4) for d  in data]
     [sc.pp.log1p(d) for d in data]
     return data
 
 
-'''
-def unioncut(gene_lists, data):
-    genes = np.any(np.array(gene_lists), axis=0)
-    print(genes)
-    print(genes.shape)
-    return [d[:, genes].copy() for d in data]
-'''
+def normSlicesTogether(data)
+    print("Norming together!")
+    shapes = [d.shape[0] for d in data]
+    dataStack = concat(data)
+    sc.pp.normalize_total(dataStack, 1e4)
+    sumToAdd = 0
+    for index in range(len(shapes)):
+        shapes[index] += sumToAdd
+        sumToAdd = shapes[index]
+    dataIndices = [0] + shapes
+    data = [dataStack[dataIndices[k]:dataIndices[k+1]] for k in range(0, len(dataIndices)-1)]
+
 
 def unioncut(scores, numGenes, data):
     indices = np.argpartition(scores, -numGenes)[:,-numGenes:]

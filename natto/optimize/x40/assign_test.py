@@ -1,10 +1,10 @@
 
 import matplotlib
-matplotlib.use('module://matplotlib-sixel')
+#matplotlib.use('module://matplotlib-sixel')
 import numpy as np
 from sklearn.datasets import make_circles
 import matplotlib.pyplot as plt
-from assign import *
+from natto.optimize.x40.assign import *
 from sklearn.semi_supervised import LabelSpreading
 '''
 circle example from sklearn.. lets see if we can also diffuse some labels
@@ -16,7 +16,7 @@ from structout.intlistV2 import binning
 
 
 from matplotlib.rcsetup import cycler
-def plotc(X,labels,fname=None):
+def plotc(X,labels,fname=None, show = False):
     plt.figure(figsize=(6,6))
     mycycle = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#000']
     for l in np.unique(labels):
@@ -32,10 +32,11 @@ def plotc(X,labels,fname=None):
         )
 
     plt.legend(scatterpoints=1, shadow=False, loc="upper right")
-    plt.show()
     if fname:
         plt.savefig(fname)
-    plt.close()
+    if show:
+        plt.show()
+        plt.close()
 
 
 def circles():
@@ -50,14 +51,15 @@ def circles():
     # the zeros are in the begining so we manyally overwrite a few more
     y[:30] = -1
     y[y==0] = binning(np.arange(sum(y==0)), 5, False)
-    plotc(X,y,'circle_1.png')
+    #plotc(X,y,'circle_1.png')
+    plotc(X,y,'zomg3.svg')
 
     '''
     diffuse and vizualize
     '''
     lp_model = LabelSpreading(kernel = lambda x,y: mykernel(100,2,x,y))
     lp_model.fit(X,y)
-    plotc(X, lp_model.transduction_,'circle_2.png')
+    plotc(X, lp_model.transduction_,'zomg4.svg')
 
 
 def testkernel():

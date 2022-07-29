@@ -16,8 +16,14 @@ def transform( means, var,plot, stepsize=.5, ran=3, minbin=0 ):
     items = Zip(means,var)
 
     boxes = [[i[1] for i in items if r < i[0] < r + (stepsize)] for r in x]
-    y = np.array([np.median(st) for st in boxes])
-    y_std = np.array([np.std(st) for st in boxes])
+
+
+    ystdx = [(np.median(box),np.std(box),xcoo) for box,xcoo in zip(boxes,x) if box]
+
+    #y = np.array([np.median(st) for st in boxes])
+    #y_std = np.array([np.std(st) for st in boxes])
+    y,y_std,x = map(np.array,Transpose(ystdx))
+
     x = x + (stepsize / 2)
     # draw regression points
     if plot:
@@ -129,6 +135,7 @@ def getgenes_natto(adata, selectgenes, title,
 def basic_filter(data, min_counts=3, min_genes=200):
     # filter cells
     shapesL = [d.shape for d in data]
+
     [sc.pp.filter_cells(d, min_genes=min_genes, inplace=True) for d in data]
 
     # filter genes
@@ -136,7 +143,7 @@ def basic_filter(data, min_counts=3, min_genes=200):
     geneab = np.all(np.array(genef), axis=0)
     for i, d in enumerate(data):
         data[i] = d[:, geneab]
-    
+
     for i,(a,b) in enumerate(zip(shapesL,[d.shape for d in data])):
         if b[1] < 4000 or b[0]/a[0] < .5 or b[0] < 200: # less than 4k genes active or many cells removed
             print(f"BASIC FILTER for dataset {i}: {a} -> {b}")

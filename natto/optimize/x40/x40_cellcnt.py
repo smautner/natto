@@ -16,10 +16,10 @@ from sklearn.cluster import SpectralClustering,KMeans, AgglomerativeClustering
 from sklearn.metrics import precision_score
 import structout as so
 import os
-from x40 import preprocess, calc_mp20, process_labels, precissionK
-import x40
+from natto.optimize.x40.x40 import preprocess, calc_mp20, process_labels, precissionK
+import natto.optimize.x40 as x40
 import matplotlib
-matplotlib.use('module://matplotlib-sixel')
+#matplotlib.use('module://matplotlib-sixel')
 import pandas as pd
 import seaborn as sns
 
@@ -62,22 +62,26 @@ def mkDfData(xnames, folder, cleanname):
                 df_data.append([k,cleanname,i,xnames[xid],y])
     return df_data
 
-def plotsns(data):
+def plotsns(data, show= False, wg= True):
     df = pd.DataFrame(data)
-    sns.set_theme(style='whitegrid')
+    if wg:
+        sns.set_theme(style='whitegrid')
     df.columns = 'neighbors±σ method rep genes precision'.split()
     method = df['method'][0]
     title = f'Searching for similar datasets via {method}'
     sns.lineplot(data = df,x='genes', y = 'precision',style= 'neighbors±σ',
             hue = 'neighbors±σ',palette="flare", ci=68)
-
-    plt.title(title, y=1.06, fontsize = 16)
-    plt.ylim([.82,1])
+    if wg:
+        plt.title(title, y=1.06, fontsize = 16)
+        plt.ylim([.82,1])
+    else:
+        plt.title(title)
     plt.ylabel('precision of neighbors (40 datasets)')
     plt.xlabel('number of cells')
-    plt.savefig(f"numcells{method}.png")
-    plt.show()
-    plt.clf()
+    if show:
+        plt.savefig(f"numcells{method}.png")
+        plt.show()
+        plt.clf()
 
 if __name__ == "__main__":
 

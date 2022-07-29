@@ -94,7 +94,7 @@ def betterclustermap(distances, labels, ncol = 5):
     return g
 
 
-def manualclustermap(similarity, labels):
+def manualclustermap(similarity, labels, distancecut = 1):
     '''
         0. look at cmp2 and do subplot
         1. raw heatmap
@@ -120,7 +120,7 @@ def manualclustermap(similarity, labels):
     #sns.set_theme(style = 'whitegrid') # dowsnt work
     Z = squareform(similarity)
     Z = hira.linkage(1-Z,'ward')
-    hira.dendrogram(Z, labels = labels, color_threshold=1, orientation='right')
+    hira.dendrogram(Z, labels = labels, color_threshold=distancecut, orientation='right')
     locs, labels = plt.xticks()
     plt.setp(labels, rotation=90,size = 8)
 

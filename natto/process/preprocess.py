@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from lmz import *
 import sklearn
 import seaborn as sns
-from anndata import AnnData
+from anndata import AnnData, concat
 
 ####
 # ft select
@@ -161,15 +161,30 @@ def make_even(data):
                                 copy=False)
         return data
 
-def normfilter(data, donormalize):
+def normfilter(data, donormalize, normTogether=False):
     data = basic_filter(data)  # min_counts min_genes
     if donormalize:
-        data = normlog(data)
+        data = normlog(data, normTogether=normTogether)
 
     return data
 
-def normlog(data):
-    [sc.pp.normalize_total(d, 1e4) for d  in data]
+def normlog(data, normTogether=False):
+    if normTogether:
+        print("Norming together!")
+        shapes = [d.shape[0] for d in data]
+        print(shapes)
+        dataStack = concat(data)
+        sc.pp.normalize_total(dataStack, 1e4)
+        sumToAdd = 0
+        for index in range(len(shapes)):
+            shapes[index] += sumToAdd
+            sumToAdd = shapes[index]
+        dataIndices = [0] + shapes
+        data = [dataStack[dataIndices[k]:dataIndices[k+1]] for k in range(0, len(dataIndices)-1)]
+        print("Put back together shapes = ")
+        print([d.shape[0] for d in data])
+    else:
+        [sc.pp.normalize_total(d, 1e4) for d  in data]
     [sc.pp.log1p(d) for d in data]
     return data
 

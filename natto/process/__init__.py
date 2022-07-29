@@ -11,14 +11,11 @@ class Data():
     def fit(self,adataList,
             selector='natto',
             donormalize=True,
+            normTogether=False,
             selectgenes=800,
             selectslice='all',
             meanexp = (0.015,4),
             bins = (.25,1),
-
-
-
-
 
             titles="ABCDEFGHIJK",
 
@@ -33,6 +30,7 @@ class Data():
         sortfield = 0  -> use adata -> TODO one should test if the cell reordering works when applied to anndata
         '''
         self.donormalize=donormalize
+        self.normTogether=normTogether
         self.data= adataList
         self.titles = titles
         self.even = make_even
@@ -87,7 +85,7 @@ class Data():
         shapeofdataL = [x.shape for x in self.data]
 
         ### Normalize and filter the data
-        self.data = preprocess.normfilter(self.data, self.donormalize)
+        self.data = preprocess.normfilter(self.data, self.donormalize, normTogether=self.normTogether)
 
         if selector == 'natto':
             if self.selectslice == 'last':
@@ -97,8 +95,10 @@ class Data():
                          for d,title in zip(self.data, self.titles)])
 
         elif selector == 'preselected':
-            genes = np.array([[True if gene in self.preselected_genes else False for gene in x.var_names] for x in self.data])
-            scores = genes.as_type(int)
+            selectgenes=len(self.preselected_genes)
+            genes = [np.array([True if gene in self.preselected_genes else False for gene in x.var_names]) for x in self.data]
+            scores = [x.astype(int) for x in genes]
+            #scores = list(genes.astype(int))
 
         else:
             hvg_df = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes, flavor=selector, inplace=False) for d in self.data]

@@ -168,8 +168,8 @@ def make_even(data):
                                 copy=False)
         return data
 
-def normfilter(data, donormalize, normTogether=False):
-    data = basic_filter(data)  # min_counts min_genes
+def normfilter(data, donormalize, normTogether=False, min_counts=3):
+    data = basic_filter(data, min_counts)  # min_counts min_genes
     if donormalize:
         data = normlog(data, normTogether=normTogether)
 
@@ -184,7 +184,7 @@ def normlog(data, normTogether=False):
     return data
 
 
-def normSlicesTogether(data)
+def normSlicesTogether(data):
     print("Norming together!")
     shapes = [d.shape[0] for d in data]
     dataStack = concat(data)

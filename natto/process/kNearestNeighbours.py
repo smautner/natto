@@ -15,7 +15,7 @@ def __init__():
 
 def timeSliceNearestNeighbor(Data, 
         kFromNeighbors=6, 
-        kFromSame=15, 
+        kFromSame=16, 
         sort=True,
         intraSliceNeighbors="sklearnNN",
         interSliceNeighbors=None,

@@ -6,9 +6,9 @@ import numpy as np
 from collections import  defaultdict
 #from lapsolver import solve_dense
 
-from natto.input.hungarian import hungarian
+from natto.process.util import hungarian
 from natto.out import draw
-import natto.process.copkmeans as CKM
+import natto.process.cluster.copkmeans as CKM
 from sklearn.neighbors import KNeighborsClassifier as KNC
 
 
@@ -16,7 +16,7 @@ from sklearn.neighbors import KNeighborsClassifier as KNC
 #####
 # first some utils
 ######
-from natto.process import gmm_1
+from natto.process.cluster import gmm_1
 from natto.process.util import spacemap
 
 

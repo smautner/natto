@@ -4,9 +4,10 @@ import umap
 import scanpy as sc
 import numpy as np
 from sklearn import decomposition
+from natto.out import draw
 
 
-def dimension_reduction(adatas, scale, zero_center, PCA, umaps, joint_space=True):
+def dimension_reduction(adatas, scale, zero_center, PCA, umaps, plotPCA=False, joint_space=True):
 
 
     # get a (scaled) dx
@@ -14,7 +15,7 @@ def dimension_reduction(adatas, scale, zero_center, PCA, umaps, joint_space=True
          adatas= [sc.pp.scale(adata, zero_center=False, copy=True,max_value=10) for adata in adatas]
     dx = [adata.to_df().to_numpy() for adata in adatas]
     if joint_space == False:
-        return disjoint_dimension_reduction(dx, PCA, umaps)
+        return disjoint_dimension_reduction(dx, PCA, umaps, plotPCA)
 
 
     res = []
@@ -23,6 +24,8 @@ def dimension_reduction(adatas, scale, zero_center, PCA, umaps, joint_space=True
     if PCA:
         pca = decomposition.PCA(n_components=PCA)
         pca.fit(np.vstack(dx))
+        if plotPCA:
+            draw.plotEVR(pca)
         #print('printing explained_variance\n',list(pca.explained_variance_ratio_))# rm this:)
         dx = [ pca.transform(e) for e in dx  ]
         res.append(dx)
@@ -41,12 +44,14 @@ def umapify(dx, dimensions):
     return [mymap.transform(a) for a in dx]
 
 
-def disjoint_dimension_reduction(dx, PCA, umaps):
+def disjoint_dimension_reduction(dx, PCA, umaps, plotPCA=False):
     res = []
     if PCA:
         pcaList = [decomposition.PCA(n_components=PCA) for x in dx]
         for pca, x in zip(pcaList, dx):
             pca.fit(np.vstack(x))
+            if plotPCA:
+                draw.plotEVR(pca)
         #print('printing explained_variance\n',list(pca.explained_variance_ratio_))# rm this:)
         dx = [ pca.transform(e) for pca, e in zip(pcaList,dx)  ]
         res.append(dx)
@@ -57,6 +62,4 @@ def disjoint_dimension_reduction(dx, PCA, umaps):
 
 
     return res
-
-
 

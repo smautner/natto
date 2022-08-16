@@ -11,14 +11,12 @@ class Data():
     def fit(self,adataList,
             selector='natto',
             donormalize=True,
+            min_counts=3,
+            normTogether=False,
             selectgenes=800,
             selectslice='all',
             meanexp = (0.015,4),
             bins = (.25,1),
-
-
-
-
 
             titles="ABCDEFGHIJK",
 
@@ -26,6 +24,7 @@ class Data():
             umaps=[10,2],
             scale=False,
             pca = 20,
+            plotPCA=False,
             joint_space = True,
             make_even=True,
             sortfield=-1):
@@ -33,6 +32,8 @@ class Data():
         sortfield = 0  -> use adata -> TODO one should test if the cell reordering works when applied to anndata
         '''
         self.donormalize=donormalize
+        self.min_counts=min_counts
+        self.normTogether=normTogether
         self.data= adataList
         self.titles = titles
         self.even = make_even
@@ -47,7 +48,7 @@ class Data():
 
 
         # do dimred
-        self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps, joint_space=joint_space)
+        self.projections = [[ d.X for d in self.data]]+dimensions.dimension_reduction(self.data,scale,False,PCA=pca,umaps=umaps, joint_space=joint_space, plotPCA=plotPCA)
 
         if pca:
             self.PCA = self.projections[1]
@@ -87,7 +88,7 @@ class Data():
         # shapeofdataL = [x.shape for x in self.data]
 
         ### Normalize and filter the data
-        self.data = preprocess.normfilter(self.data, self.donormalize)
+        self.data = preprocess.normfilter(self.data, self.donormalize, min_counts=self.min_counts, normTogether=self.normTogether)
 
         if selector == 'natto':
             if self.selectslice == 'last':
@@ -97,8 +98,10 @@ class Data():
                          for d,title in zip(self.data, self.titles)])
 
         elif selector == 'preselected':
-            genes = np.array([[True if gene in self.preselected_genes else False for gene in x.var_names] for x in self.data])
-            scores = genes.as_type(int)
+            selectgenes=len(self.preselected_genes)
+            genes = [np.array([True if gene in self.preselected_genes else False for gene in x.var_names]) for x in self.data]
+            scores = [x.astype(int) for x in genes]
+            #scores = list(genes.astype(int))
 
         else:
             hvg_df = [sc.pp.highly_variable_genes(d, n_top_genes=selectgenes, flavor=selector, inplace=False) for d in self.data]
@@ -112,8 +115,8 @@ class Data():
 
 
         self.data = preprocess.unioncut(scores, selectgenes, self.data)
-        self.genes = genes
-        self.genescores = scores
+        self.genes = preprocess.unioncut(scores, selectgenes, genes)
+        self.genescores = preprocess.unioncut(scores, selectgenes, scores)
         if self.even:
             self.data = preprocess.make_even(self.data)
 

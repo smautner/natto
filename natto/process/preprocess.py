@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from lmz import *
 import sklearn
 import seaborn as sns
-from anndata import AnnData
+from anndata import AnnData, concat
 
 ####
 # ft select
@@ -168,30 +168,41 @@ def make_even(data):
                                 copy=False)
         return data
 
-def normfilter(data, donormalize):
-    data = basic_filter(data)  # min_counts min_genes
+def normfilter(data, donormalize, normTogether=False, min_counts=3):
+    data = basic_filter(data, min_counts)  # min_counts min_genes
     if donormalize:
-        data = normlog(data)
+        data = normlog(data, normTogether=normTogether)
 
     return data
 
-def normlog(data):
-    [sc.pp.normalize_total(d, 1e4) for d  in data]
+def normlog(data, normTogether=False):
+    if normTogether:
+        normSlicesTogether(data)
+    else:
+        [sc.pp.normalize_total(d, 1e4) for d  in data]
     [sc.pp.log1p(d) for d in data]
     return data
 
 
-'''
-def unioncut(gene_lists, data):
-    genes = np.any(np.array(gene_lists), axis=0)
-    print(genes)
-    print(genes.shape)
-    return [d[:, genes].copy() for d in data]
-'''
+def normSlicesTogether(data):
+    print("Norming together!")
+    shapes = [d.shape[0] for d in data]
+    dataStack = concat(data)
+    sc.pp.normalize_total(dataStack, 1e4)
+    sumToAdd = 0
+    for index in range(len(shapes)):
+        shapes[index] += sumToAdd
+        sumToAdd = shapes[index]
+    dataIndices = [0] + shapes
+    data = [dataStack[dataIndices[k]:dataIndices[k+1]] for k in range(0, len(dataIndices)-1)]
+
 
 def unioncut(scores, numGenes, data):
     indices = np.argpartition(scores, -numGenes)[:,-numGenes:]
+    print(np.argpartition(scores, -numGenes))
     indices = np.unique(indices.flatten())
-    return [d[:,indices].copy() for d in data]
-
+    if type(data[0])==AnnData:
+        return [d[:,indices].copy() for d in data]
+    else:
+        return [d[indices] for d in data]
 

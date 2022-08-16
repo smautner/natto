@@ -199,7 +199,10 @@ def normSlicesTogether(data):
 
 def unioncut(scores, numGenes, data):
     indices = np.argpartition(scores, -numGenes)[:,-numGenes:]
+    print(np.argpartition(scores, -numGenes))
     indices = np.unique(indices.flatten())
-    return [d[:,indices].copy() for d in data]
-
+    if type(data[0])==AnnData:
+        return [d[:,indices].copy() for d in data]
+    else:
+        return [d[indices] for d in data]
 

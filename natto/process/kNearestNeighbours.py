@@ -131,7 +131,6 @@ def globalNN2(Data, index, kFromSame, kFromNeighbors, intraSliceNeighbors, inter
                         
         slices = adjustSparseDists(intraDists, intersectList, kFromNeighbors, distanceMetric, distCoeff, edgeCase)
         slices.insert(index, sameIntersect)
-        print(slices)
 
         sliceSparseMatrix = hstack(slices)
 

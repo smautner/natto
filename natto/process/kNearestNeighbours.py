@@ -1,10 +1,11 @@
 import numpy as np
-import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import pairwise_distances
 from scipy.optimize import linear_sum_assignment
-from scipy.sparse import csr_matrix, hstack, vstack
+import warnings
+from scipy.sparse import csr_matrix, lil_matrix, hstack, vstack
+#warnings.simplefilter("ignore", SparseEfficiencyWarning)
 
 
 def __init__():
@@ -18,7 +19,9 @@ def timeSliceNearestNeighbor(Data,
         interSliceNeighbors=None,
         distanceMetric='max', 
         distCoeff=1,
+        farPenalty=1,
         returnSparse=False,
+        returnSortedBySlice=False,
         silent=False):
 
         ### Initialize variables
@@ -27,7 +30,7 @@ def timeSliceNearestNeighbor(Data,
 
         for index, timeSlice in enumerate(Data):
                 ### Find indices and distances for all Neighbors at each 'timeSlice'
-                sparseSlice = globalNN2(Data,
+                sparseSlice = globalNN(Data,
                         index, 
                         kFromSame, 
                         kFromNeighbors, 
@@ -35,6 +38,7 @@ def timeSliceNearestNeighbor(Data,
                         interSliceNeighbors, 
                         distanceMetric,
                         distCoeff,
+                        farPenalty,
                         edgeCaseMultiplier)
                 sparseSlices = vstack((sparseSlices, sparseSlice))
 
@@ -59,7 +63,15 @@ def timeSliceNearestNeighbor(Data,
                         end = sparseMatrix.indptr[ip+1]
                         precomputedKNNIndices.append(sparseMatrix.indices[start:end])
                         precomputedKNNDistances.append(sparseMatrix.data[start:end])
-                return sortDistsAndInds(np.vstack(precomputedKNNIndices), np.vstack(precomputedKNNDistances))
+
+                numNeighbors = max(sparseMatrix.getnnz(axis=1))-kFromSame
+                if (min(sparseMatrix.getnnz(axis=1))-kFromSame != numNeighbors):
+                        precomputedKNNIndices, precomputedKNNDistances = adjustUnevenMatrices(precomputedKNNIndices, precomputedKNNDistances, numNeighbors, kFromSame)
+
+                if sort:
+                        return sortDistsAndInds(np.vstack(precomputedKNNIndices), np.vstack(precomputedKNNDistances))
+                else:
+                        return (np.vstack(precomputedKNNIndices), np.vstack(precomputedKNNDistances))
 
 
 def initialize(Data, intraSliceNeighbors, interSliceNeighbors):
@@ -71,7 +83,7 @@ def initialize(Data, intraSliceNeighbors, interSliceNeighbors):
                 interSliceNeighbors = intraSliceNeighbors
         elif type(interSliceNeighbors)==str:
                 interSliceNeighbors = eval(interSliceNeighbors)
-        sparseSlices = csr_matrix((0, Data[0].shape[0]*len(Data)))
+        sparseSlices = csr_matrix((0, sum([d.shape[0] for d in Data])))
 
         return (Data, intraSliceNeighbors, interSliceNeighbors, sparseSlices)
 
@@ -113,25 +125,41 @@ def findSliceNeighbors(data, distances, kNeighbors):
         return (np.column_stack(colInds), np.column_stack(colDists))
 
 
-def globalNN2(Data, index, kFromSame, kFromNeighbors, intraSliceNeighbors, interSliceNeighbors, distanceMetric, distCoeff, edgeCase):
+def globalNN(Data, index, kFromSame, kFromNeighbors, intraSliceNeighbors, interSliceNeighbors, distanceMetric, distCoeff, farPenalty, edgeCase):
         intersectList = []
         neighborSliceIndex = 0
         currentSlice = Data[index]
-        for index2, otherSlice in enumerate(Data):
-                intersect = csr_matrix((currentSlice.shape[0], otherSlice.shape[0]))
+        for index2, otherSlice in enumerate(Data):  
+
+                if currentSlice.shape[0]<=otherSlice.shape[0]: 
+                        slice1=currentSlice
+                        slice2=otherSlice
+                else:
+                        slice1=otherSlice
+                        slice2=currentSlice
+                intersect = csr_matrix((slice1.shape[0], slice2.shape[0]))
+
                 if index == index2:
                         indicesTemp, distancesTemp = intraSliceNeighbors(kFromSame, currentSlice, currentSlice, index, index2, 1)
                         intraDists = distancesTemp.copy()
                         sameIntersect = intersect
                 else:
-                        indicesTemp, distancesTemp = interSliceNeighbors(kFromNeighbors, currentSlice, otherSlice, index, index2, edgeCase)
+                        indicesTemp, distancesTemp = interSliceNeighbors(kFromNeighbors, slice1, slice2, index, index2, edgeCase)
                         intersectList.append(intersect)
 
                 for i in range(len(indicesTemp)): intersect[i, indicesTemp[i,:]] = distancesTemp[i,:]
-                        
+
+                if currentSlice.shape[0]>otherSlice.shape[0]:
+                        ### If slices were uneven shape
+                        intersectList[-1]=intersectList[-1].T
+
         slices = adjustSparseDists(intraDists, intersectList, kFromNeighbors, distanceMetric, distCoeff, edgeCase)
+        #slices = [s * (farPenalty**np.abs(index-i)) for i,s in enumerate(slices)] #Make further time-slices more distant
         slices.insert(index, sameIntersect)
 
+        for i in range(0,index): slices[i]=slices[i].multiply(farPenalty**np.abs(index-i-1))
+        for i in range(index+1,len(slices)): slices[i]=slices[i].multiply(farPenalty**np.abs(index-i+1))
+        
         sliceSparseMatrix = hstack(slices)
 
         return sliceSparseMatrix
@@ -142,9 +170,9 @@ def adjustSparseDists(intraDists, interDistances, kFromNeighbors, distMetric, di
                 ###  the other methods estimate inter-slice neighbor distances by using the intra-slice neighbor distances
 
         if distMetric == 'euclidean':
-                for d in interDistances: d.multiply(distCoeff)
+                for i,d in enumerate(interDistances): interDistances[i].multiply(distCoeff)
         elif distMetric == 'normMeans':
-                meanFactor=np.array([np.divide(np.mean(intraDists[:,1:], axis=1), (d.sum(axis=1).reshape(-1,1)[0]/d.getnnz(axis=1)) ) 
+                meanFactor=np.array( [np.divide( np.mean(intraDists[:,1:], axis=1), (d.sum(axis=1).getA1()/d.getnnz(axis=1) ) ) 
                         if d.nnz!=0 else np.ones(d.shape[0]) for d in interDistances])
                 for k,di in zip(meanFactor,range(len(interDistances))): interDistances[di] = interDistances[di].multiply(distCoeff*k.reshape(-1,1))
         elif distMetric == 'max':
@@ -155,23 +183,23 @@ def adjustSparseDists(intraDists, interDistances, kFromNeighbors, distMetric, di
                 for d in interDistances: d.data=np.array([distCoeff*np.percentile(intraDists, 75)]*len(d.data))
         elif 'KMeans' in distMetric:
                 if distMetric == 'firstKMeans':
-                        means = distCoeff*np.mean(intraDists, axis=0)[1:edgeCase*kFromNeighbors+1]
+                        means = distCoeff*np.mean(intraDists, axis=1)[1:edgeCase*kFromNeighbors+1]
                 elif distMetric == 'lastKMeans':
-                        means = distCoeff*np.mean(intraDists, axis=0)[-(edgeCase*kFromNeighbors):]
+                        means = distCoeff*np.mean(intraDists, axis=1)[-(edgeCase*kFromNeighbors):]
                 for i, d in enumerate(interDistances):
                         if d.nnz!=0:
                                 for ip in range(len(d.indptr)-1):
                                         start, end = d.indptr[ip:ip+2]
                                         sortData = sorted(d.data[start:end])
-                                        for i in range(end-start): 
-                                                d.data[start:end][np.where(d.data[start:end] == sortData[i])] = means[i]
+                                        for j in range((end-start)):
+                                                d.data[start:end][np.where(d.data[start:end] == sortData[j])] = means[j]
 
         return interDistances
 
 
 def sortDistsAndInds(indices, distances):
-        sortedDistances = []
         sortedIndices = []
+        sortedDistances = []
         for d, i in zip(distances, indices):
                 listd, listi = zip(*sorted(zip(d, i)))
                 sortedDistances.append(listd)
@@ -179,11 +207,136 @@ def sortDistsAndInds(indices, distances):
         return np.asarray(sortedIndices), np.asarray(sortedDistances)
 
 
+def adjustUnevenMatrices(indices, distances, numNeighbors, kFromSame):
+        evenIndices = []
+        evenDistances = []
+        for indRow, distRow in zip(indices, distances):
+                d, i = zip(*sorted(zip(distRow, indRow)))
+                for j in range(numNeighbors - len(indRow) + kFromSame):
+                        indRow = np.append(indRow, i[-1])
+                        distRow = np.append(distRow, d[-1])
+                evenIndices.append(indRow)
+                evenDistances.append(distRow)
+        return evenIndices, evenDistances
+
+
 ##########################################################################################################
 ########################################## OLD STUFF #####################################################
 ##########################################################################################################
 
-def globalNN(Data, index, kFromSame, kFromNeighbors, intraSliceNeighbors, interSliceNeighbors, distanceMetric, indexStart, distCoeff, edgeCase):
+
+def timeSliceNearestNeighborOG(Data, 
+        kFromNeighbors=6, 
+        kFromSame=16, 
+        sort=True,
+        intraSliceNeighbors="sklearnNN",
+        interSliceNeighbors=None,
+        distanceMetric='max', 
+        distCoeff=1,
+        silent=False):
+
+        ### Initialize variables
+        Data, intraSliceNeighbors, interSliceNeighbors, indices, distances = initializeOG(Data, intraSliceNeighbors, interSliceNeighbors, kFromSame, kFromNeighbors)
+        prevData = None
+        prevIndex = 0
+        nextData = Data[1]
+        nextIndex = len(Data[0])
+        indexStart = 0
+        edgeCaseMultiplier = 2 # Equals to 1 or 2 depending on whether we are dealing with an edge dataset.
+
+
+        for index, timeSlice in enumerate(Data):
+                ### Find indices and distances for all Neighbors at each 'timeSlice'
+                sliceIndices, sliceDistances = globalNNOG(Data, 
+                        index, 
+                        kFromSame, 
+                        kFromNeighbors, 
+                        intraSliceNeighbors, 
+                        interSliceNeighbors, 
+                        distanceMetric, 
+                        indexStart, 
+                        distCoeff,
+                        edgeCaseMultiplier)
+                indices = np.vstack((indices, sliceIndices))
+                distances = np.vstack((distances, sliceDistances))
+
+                ### Updates variables for next iteration
+                prevData = timeSlice
+                prevIndex = indexStart
+                indexStart = indexStart + len(timeSlice)
+                if index >= len(Data)-2:
+                        nextData = None
+                        edgeCaseMultiplier = 2
+
+                else:
+                        nextData = Data[index+2]
+                        nextIndex = indexStart + len(Data[index+1])
+                        edgeCaseMultiplier = 1
+
+                if not silent:
+                        print(f"Dataset {index} Complete")
+        if sort:
+                ### Sort neighbors from shortest to longest distance
+                indices, distances = sortDistsAndInds(indices, distances)          
+        return indices, distances
+
+
+def initializeOG(Data, intraSliceNeighbors, interSliceNeighbors, kFromSame, kFromNeighbors):
+        if type(Data[0]) != np.ndarray:
+                Data = [data.to_df().to_numpy() for data in Data]
+        if type(intraSliceNeighbors)==str:
+                intraSliceNeighbors = eval(intraSliceNeighbors)
+        if interSliceNeighbors is None:
+                interSliceNeighbors = intraSliceNeighbors
+        elif type(interSliceNeighbors)==str:
+                interSliceNeighbors = eval(interSliceNeighbors)
+        if interSliceNeighbors.__name__=='hungarianAll':
+                distances = np.empty((0, kFromSame+(len(Data)-1)*kFromNeighbors), int)
+                indices = np.empty((0, kFromSame+(len(Data)-1)*kFromNeighbors), int)
+        else:
+                distances = np.empty((0, kFromSame+(kFromNeighbors*2)), int)
+                indices = np.empty((0, kFromSame+(kFromNeighbors*2)), int)
+
+        return (Data, intraSliceNeighbors, interSliceNeighbors, indices, distances)
+
+def sklearnNNOG(kNeighbors, timeSlice1, timeSlice2, index1, index2, indexStart, edgeCase):
+        ### Make and fit nearest neighbor object and get k nearest neighbors for the\
+        ### current dataset. 
+        if np.abs(index1-index2)<=1:
+                knnDists, knnInd = NearestNeighbors(n_neighbors=kNeighbors*edgeCase).fit(timeSlice2).kneighbors(timeSlice1)
+                knnInd[:,:] = np.add(knnInd[:,:], np.full((knnInd.shape), indexStart)) #Adjust indices
+                return (knnInd, knnDists)
+        else:
+                return ([], [])
+
+def hungarianOG(kNeighbors, timeSlice1, timeSlice2, index1, index2, indexStart, edgeCase):
+        ### Use hungarian algorithm to find k nearest neighbors
+        if np.abs(index1-index2)<=1:
+                hungDistances = pairwise_distances(timeSlice1, timeSlice2)
+                knnInd, knnDists = findSliceNeighborsOG(timeSlice1, hungDistances, kNeighbors*edgeCase, indexStart)                
+        else:
+                knnInd, knnDists = ([], [])
+        return (knnInd, knnDists)
+
+def hungarianAllOG(kNeighbors, timeSlice1, timeSlice2, index1, index2, indexStart, adjacentData):
+        ### Use hungarian algorithm to find k nearest neighbors between ALL time slices      
+        hungDistances = pairwise_distances(timeSlice1, timeSlice2)
+        knnInd, knnDists = findSliceNeighborsOG(timeSlice1, hungDistances, kNeighbors, indexStart)
+        return (knnInd, knnDists)
+
+
+def findSliceNeighborsOG(data, distances, kNeighbors, indexStart):
+        def hungarianLoop(distances):
+                rowInd, colInd  = linear_sum_assignment(distances)
+                colDist = distances[rowInd, colInd]
+                distances[rowInd, colInd] = np.inf
+                return colInd, colDist
+
+        colInds, colDists = zip(*[hungarianLoop(distances) for i in range(kNeighbors)])
+        return (np.column_stack(colInds)+indexStart, np.column_stack(colDists))
+
+
+def globalNNOG(Data, index, kFromSame, kFromNeighbors, intraSliceNeighbors, interSliceNeighbors, distanceMetric, indexStart, distCoeff, edgeCase):
         indList = []
         distList = []
         neighborSliceIndex = 0
@@ -202,6 +355,7 @@ def globalNN(Data, index, kFromSame, kFromNeighbors, intraSliceNeighbors, interS
         sliceDistances = adjustInterDists(currentSlice, index, knnDists, distList, kFromNeighbors, distanceMetric, len(Data), distCoeff, edgeCase)
 
         return (sliceIndices, sliceDistances)
+
 
 def adjustInterDists(timeSlice, sliceIndex, knnDists, interDistances, kFromNeighbors, distMetric, dataLen, distCoeff, edgeCase):
         ### Calculate Distances for the metrics which are in relation to intra-distances

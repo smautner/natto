@@ -225,7 +225,17 @@ def venn(one,two: 'boolean array', labels :"string tupple"):
     v = vvv.venn2(subsets = {'10': sum(one)-comb, '01': sum(two)-comb, '11': comb}, set_labels = labels)
     plt.show()
 
-
+def plotEVR(PCA):
+    # Graph the explained_variance_ratio_ (EVR) of PCA projection
+    explVar = PCA.explained_variance_ratio_
+    eigenvalueSums = np.cumsum(explVar)
+    plt.bar(range(0,len(explVar)), explVar, alpha=0.5, align='center', label='Individual explained variance')
+    plt.step(range(0,len(eigenvalueSums)), eigenvalueSums, where='mid',label='Cumulative explained variance')
+    plt.ylabel('Explained variance ratio')
+    plt.xlabel('Principal component index')
+    plt.legend(loc='best')
+    plt.tight_layout()
+    plt.show()
 
 def simpleheatmap(canvas):
         df = DataFrame(canvas)
@@ -447,7 +457,7 @@ class tinyUmap():
 
 
 
-def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True):
+def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True, legend=True, save=False, save_name=None):
 
     # how should we wrap:
     if wrap == 'auto':
@@ -471,14 +481,16 @@ def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True):
                 plt.xlim(xmin-0.1*xdiff, xmax+0.1*xdiff)
                 plt.ylim(ymin-0.1*ydiff, ymax+0.1*ydiff)
 
-
-        plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
+        if legend:
+            plt.legend(markerscale=1.5,fontsize='small',ncol=int(len(X)*2.5),bbox_to_anchor=(1, -.12) )
 
     if grad:
         for x,y in zip(X,Y):
             d.next()
             plt.scatter(x[:,0], x[:,1], c=y, s=1)
 
+    if save:
+        plt.savefig(save_name)
     plt.show()
 
 

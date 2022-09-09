@@ -4,7 +4,7 @@ import tabulate
 from collections import Counter
 import numpy as np
 from collections import  defaultdict
-#from lapsolver import solve_dense
+from lapsolver import solve_dense
 
 from natto.process.util import hungarian
 from natto.out import draw
@@ -86,14 +86,14 @@ def finalrename(Y1, Y2, y1map, y2map, row_ind, col_ind, rn1, rn2):
     return rename(tuplemap, Y1, Y2, rn1, rn2)
 
 
-def clean_matrix(canvas):
+def clean_matrix(canvas, threshold=0.3):
     canvasbackup = np.array(canvas)
     aa, bb = np.nonzero(canvas)
     for a, b in zip(aa, bb):
         if canvas[a, b] > min(canvas[a, :]) and canvas[a, b] > min(canvas[:, b]):
             canvas[a, b] = 0
             continue
-        if canvas[a, b] / np.sum(canvasbackup[a, :]) < .3 and canvas[a, b] / np.sum(canvasbackup[:, b]) < .3:
+        if canvas[a, b] / np.sum(canvasbackup[a, :]) < threshold and canvas[a, b] / np.sum(canvasbackup[:, b]) < threshold:
             canvas[a, b] = 0
     return canvas, canvasbackup
 
@@ -211,7 +211,7 @@ def split_and_mors(Y1, Y2, hungmatch, data1, data2,
                    maxerror=.15,
                    rn=None,
                    saveheatmap=None,
-                   showset=None, 
+                   showset=[], 
                    distmatrix=None,do_splits=True):
     '''
     rn is for the renaming log
@@ -413,8 +413,8 @@ def bit_by_bit(mata, matb, claa, clab,
                debug=True, normalize=True, maxerror=.13,
              saveheatmap=None, showset={},do_splits=True):
     t = time.time()
-    a, b, dist = hungarian(mata, matb, debug=debug)
-    hungmatch = (a, b)
+    hungmatch, dist = hungarian(mata, matb, debug=debug)
+    #hungmatch = (a, b)
     if "time" in showset: print(f'hungmatch took {time.time() - t}')
     # return find_clustermap_one_to_one_and_split(claa,clab,hungmatch,mata,matb,debug=debug,normalize=normalize,maxerror=maxerror)
     # claa,clab =  make_even(claa, clab,hungmatch,mata,matb,normalize)

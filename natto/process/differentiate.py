@@ -7,36 +7,42 @@ import matplotlib.pyplot as plt
 import copy
 
 
-def cellDifferentiationPipeline(data, method='minBIC', plotOpt=False, plot=True):
+def cellDifferentiationPipeline(data, max_components=35, optMethod='minBIC', gmmMethod = 'full', plotOpt=False, plot=True):
 	### Pass in time-series data and this function will return labels for each time series as well as
 	### a dictionary for which cells split into different cell types at each time point.
-	labels = optimalClusters(data, method=method, plot=plotOpt)
+	labels = optimalClusters(data, max_components=max_components, optMethod=optMethod, gmmMethod=gmmMethod, plot=plotOpt)
 	labels = prelimAlign(labels, data)
-	labelsMatchList, simMatrices, xyLabs = basicMatch(labels, data)
+
+	labelsMatchList, simMatrices, xyLabs = clusterMatch(labels, data)
 	labels, labelPairs = adjustLabels(labels, labelsMatchList, simMatrices, xyLabs)
+	labels, labelPairs = reduceLabels(labels, labelPairs)
 
 	if plot:
 		clusterCentres = getClusterCentres(labels, data)
 		individualPlots(clusterCentres, labelPairs)
 		togetherPlot(clusterCentres, labelPairs)
 		draw.auto_tiny(data, labels, wrap='test', dim=(1,len(data)), same_limit=True)
+
+
 	return labels, labelPairs
 
-def optimalClusters(data, max_components=35, method='minBIC', plot=False):
+
+
+def optimalClusters(data, max_components=35, optMethod='minBIC', gmmMethod='full', plot=False):
 	### Returns the number optimal number of clusters for each time-slice
 	### in single-cell time-series data
 
 	dataStacked = np.vstack(data)
-	nComponents = range(1, max_components+1)
-	clusterMax = max_components
+	#nComponents = range(1, max_components+1)
 	labels = [None]*len(data)
 
 	for i in range(len(data)-1, -1, -1):
 		d = data[i]
-		models = [GaussianMixture(n_components=n, covariance_type='full', random_state=1337).fit(dataStacked) 
+		nComponents = range(1, max_components+1)
+		models = [GaussianMixture(n_components=n, covariance_type=gmmMethod, random_state=1337).fit(dataStacked) 
 			for n in nComponents]
 		bic = [ m.bic(d) for m in models ]
-		bestBICIndex, clusterMax = bestBIC(data, method, nComponents, clusterMax, bic, plot)
+		bestBICIndex, max_components = bestBIC(data, optMethod, nComponents, max_components, bic, plot)
 
 		print(f"Best Number of Clusters for slice {i} is {nComponents[bestBICIndex]}")
 		labels[i] = models[bestBICIndex].predict(d)
@@ -44,28 +50,25 @@ def optimalClusters(data, max_components=35, method='minBIC', plot=False):
 
 	return labels
 
-def bestBIC(data, method, nComponents, clusterMax, bic, plot):
-	if method == 'kneed':
+def bestBIC(data, optMethod, nComponents, maxClusters, bic, plot):
+	if optMethod == 'kneed':
 		from kneed import KneeLocator
-		kn = KneeLocator(range(1, clusterMax+1), bic ,curve='convex', direction='decreasing')
+		kn = KneeLocator(nComponents, bic ,curve='convex', direction='decreasing')
 		bestBICIndex = kn.knee-1
 		if plot: kn.plot_knee_normalized()
-	elif method == 'uber':
+	elif optMethod == 'uber':
 		import ubergauss as ug
 		bestBICIndex = ug.diag_maxdist(bic)
-		if plot:
-			plt.scatter(range(1, clusterMax+1), bic)
-			plt.show()
-	elif method == 'minBIC':
-		bic=bic[:clusterMax]
+	elif optMethod == 'minBIC':
 		bestBICIndex = np.argmin(bic)
-		clusterMax=bestBICIndex
-	elif method == 'minAdjBIC':
-		bic=bic[:clusterMax]
-		bestBICIndex = np.argmin([b + (np.log(i+1)*(len(data))) for i,b in enumerate(bic)])
-		clusterMax=bestBICIndex
+	elif optMethod == 'minAdjBIC':
+		bestBICIndex = np.argmin([b + (np.log(len(data))*((i+1)**2)) for i,b in enumerate(bic)])
+	if plot:
+			plt.plot(nComponents, bic, '-o')
+			plt.show()
+	maxClusters=bestBICIndex+1
 
-	return bestBICIndex, clusterMax
+	return bestBICIndex, maxClusters
 
 def makeUnique(labels):
 	### Makes all labels from different time-slices unique
@@ -118,7 +121,7 @@ def getHung(d1,d2):
 
 
 
-def basicMatch(labels, data, threshold = 0.4):
+def clusterMatch(labels, data, threshold = 0.5):
 	### This prevents some clusters from not being assigned
 	### to any clusters in the next time-slice
 	labelsMatchList=[]
@@ -127,12 +130,14 @@ def basicMatch(labels, data, threshold = 0.4):
 	for i in range(len(data)-1):
 		hungmatch, distances = util.hungarian(data[i], data[i+1])
 		nonZeros=[0]
+		y1map, y2map, initialCanvas = hungutil.make_canvas_and_spacemaps(labels[i], labels[i+1], hungmatch, normalize=True, dist = False)
 		while 0 in nonZeros and threshold>0:
-			y1map, y2map, canvas = hungutil.make_canvas_and_spacemaps(labels[i], labels[i+1], hungmatch, normalize=True, dist = False)
-			row_ind, col_ind = hungutil.solve_dense(canvas)
-			canvas, canvasbackup = hungutil.clean_matrix(canvas, threshold=threshold)
+			#y1map, y2map, canvas = hungutil.make_canvas_and_spacemaps(labels[i], labels[i+1], hungmatch, normalize=True, dist = False)
+			#row_ind, col_ind = hungutil.solve_dense(canvas)
+			canvas, canvasbackup = hungutil.clean_matrix(initialCanvas, threshold=threshold)
 			nonZeros=np.count_nonzero(canvas, axis=1)
 			threshold-=0.01
+		row_ind, col_ind = hungutil.solve_dense(canvas)
 		draw.doubleheatmap(canvasbackup, canvas, y1map, y2map, row_ind, col_ind)
 	    
 		### Get corresponding labels
@@ -162,13 +167,11 @@ def basicMatch(labels, data, threshold = 0.4):
 def adjustLabels(lll, labelPairs, simMatrices, xyLabs):
 	numTS = len(labelPairs)
 	newDict =  [copy.deepcopy(d) for d in labelPairs]
-    
 	xs = [e[0] for e in xyLabs]
 	ys=[e[1] for e in xyLabs]
 
 	### Now iterate
 	for i in range(numTS): #for maching between slice t and t+1
-		#print(f"On Slice {i} working on slice {i+1}")
 		canvas=simMatrices[i]
 		x = xs[i]
 		y = ys[i]
@@ -179,30 +182,29 @@ def adjustLabels(lll, labelPairs, simMatrices, xyLabs):
 					simScores = canvas[y.index(key),:]
 					valToReplace = x[np.argmin(simScores)]
 					if isInValues(newDict[i], valToReplace)<2:
-						#print(f"replace valToReplace: {valToReplace} w key:{key}")
 						newDict[i][key][val.index(valToReplace)]=key
 						x = [key if el==valToReplace else el for el in x]
 						if i!=numTS-1:
-							ys[i+1] = [key if el==valToReplace else el for el in ys[i+1]]
-							newDict[i+1] = replace(key, valToReplace, newDict[i+1])
-							labelsPairs[i+1] = replace(key, valToReplace, labelPairs[i+1])
+							ys[i+1], newDict[i+1], labelPairs[i+1] = updateNextSlice(key, valToReplace, ys[i+1], newDict[i+1], labelPairs[i+1])
+							#ys[i+1] = [key if el==valToReplace else el for el in ys[i+1]]
+							#newDict[i+1] = replace(key, valToReplace, newDict[i+1])
+							#labelPairs[i+1] = replace(key, valToReplace, labelPairs[i+1])
 						lll[i+1] = [key if j==valToReplace else j for j in lll[i+1]]
                     
 			elif len(val)==1 and key!=val[0]:
 				### Want to deal with circumstances where cluster goes to one cluster
 				### But they have different labels
 				if isInValues(newDict[i], key)==0 and isInValues(newDict[i], val[0])==1:
-					#print(f"replace val[0]: {val[0]} w key:{key}")
 					newDict[i][key]=[key]
 					x = [key if el==val[0] else el for el in x]
 					lll[i+1] = [key if v==val[0] else v for v in lll[i+1]]
 					if i!=numTS-1: #Update next slice labels
-						ys[i+1] = [key if el==val[0] else el for el in ys[i+1]]
-						newDict[i+1] = replace(key, val[0], newDict[i+1])
-						labelsPairs = replace(key, val[0], labelPairs[i+1])
+						ys[i+1], newDict[i+1], labelPairs[i+1] = updateNextSlice(key, val[0], ys[i+1], newDict[i+1], labelPairs[i+1])
+						#ys[i+1] = [key if el==val[0] else el for el in ys[i+1]]
+						#newDict[i+1] = replace(key, val[0], newDict[i+1])
+						#labelPairs[i+1] = replace(key, val[0], labelPairs[i+1])
 
 				elif isInValues(newDict[i], key)>0 and isInValues(newDict[i], val[0])==1:
-					#print(f"replace key: {key} w val[0]:{val[0]}")
 					lll[i] = [val[0] if v==key else v for v in lll[i]]
 					y = [val[0] if el==key else el for el in y]
 					newDict[i][val[0]] = val
@@ -210,8 +212,15 @@ def adjustLabels(lll, labelPairs, simMatrices, xyLabs):
 
 	return lll, newDict
 
+
+def updateNextSlice(k, v, y, dictCopy, dictObj):
+	y = [k if el==v else el for el in y]
+	dictCopy = replace(k, v, dictCopy)
+	dictObj = replace(k, v, dictObj)
+	return y, dictCopy, dictObj
+
 def replace(key, toChange, dictObject):
-	dictObject[key] = toChange
+	dictObject[key] = dictObject[toChange]
 	del dictObject[toChange]
 	return dictObject
 
@@ -263,5 +272,27 @@ def scatterPoints(clusterCentres):
 	    toShow=np.vstack((toShow,v))
 	    scatter = plt.scatter(toShow[:,0], toShow[:,1], c=col, s=60, cmap='spring')
 	return scatter
+
+
+
+def reduceLabels(labels, labelPairs):
+	### Labels can be very large and non-sequential so this function
+	### just reduces label values from [0 to # of labels]
+	labelsStacked = np.hstack(labels)
+	uniqueLabels = np.unique(labelsStacked)
+	print(uniqueLabels)
+	for i,(new,old) in enumerate(zip(range(max(uniqueLabels)), uniqueLabels)):
+		if new!=old and new<len(uniqueLabels):
+			### Replace old with new
+			for index, label in enumerate(labels):
+				labels[index] = [new if l==old else l for l in labels[index]]
+				if index!=len(labelPairs):
+					labelPairs[index] = {(new if key==old else key):val for key,val in labelPairs[index].items()}
+					for key, val in labelPairs[index].items():
+						if old in val:
+							labelPairs[index][key] = [new if v==old else v for v in val]
+
+	            
+	return labels, labelPairs
 
 

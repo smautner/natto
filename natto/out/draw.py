@@ -23,7 +23,9 @@ col.update( {a+100:b for a,b in col.items()}  )
 '''
 
 col = plt.cm.get_cmap('tab20').colors
-col = col+col+col+ ((0,0,0),)
+col2 = plt.cm.get_cmap('tab20b').colors
+col3 = plt.cm.get_cmap('tab20c').colors
+col = col+col2+col3+col+col2+col3+ ((0,0,0,0,0,0),)
 
 def umap(X,Y= False,
         title="No title",
@@ -246,6 +248,21 @@ def simpleheatmap(canvas):
         #sns.heatmap(df,annot=True,yticklabels=y1map.itemlist,xticklabels=y2map.itemlist, square=True)
         plt.show()
 
+def niceheatmap(canvas, xlabels, ylabels, row_ind, col_ind, index=None, title=None, save=None):
+
+        df = DataFrame(-canvas)
+        sns.heatmap(df,xticklabels=xlabels,yticklabels=ylabels, annot=False ,linewidths=.5,cmap="YlGnBu" , square=True)
+        plt.title(title)
+        plt.ylabel(f'Time {index}')
+        plt.xlabel(f'Time {index+1}')
+        #plt.xlabel(xlabel)
+        #plt.ylabel(ylabel)
+        plt.tight_layout()
+        if save:
+            plt.savefig(save+str(index)+'.png')
+        plt.show()
+
+
 def doubleheatmap(canvas, cleaned, y1map, y2map, rows, cols, save=None):
 
     sns.set(font_scale=1.2,style='white')
@@ -408,6 +425,7 @@ def get_centers_1d(li,cnt = 3):
 def tinyumap(X,Y,
         title="No title",
         title_size=10,
+        ytitle=None,
         acc : "y:str_description"={},
         markerscale=4,
         getmarker = lambda cla: {"marker":'o'},
@@ -416,9 +434,9 @@ def tinyumap(X,Y,
         alpha = None,
         legend = False,
         size=None):
-#    print(X)
-#    print(Y)
     plt.title(title, size=title_size)
+    if ytitle is not None:
+        plt.ylabel(ytitle, rotation='horizontal',labelpad=20)
     Y=np.array(Y)
     size=  max( int(4000/Y.shape[0]), 1) if not size else size
     embed = X
@@ -457,11 +475,22 @@ class tinyUmap():
 
 
 
-def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True, legend=True, save=False, save_name=None):
+def auto_tiny(X,Y, 
+    wrap = 'auto', 
+    grad= False, 
+    dim = (2,5), 
+    same_limit=True, 
+    legend=True, 
+    save=False, 
+    save_name=None, 
+    xtitles=None, 
+    ytitles=None, 
+    titleAll=False):
 
     # how should we wrap:
     if wrap == 'auto':
-        d = tinyUmap(dim = (1,len(X)))  # default is a row
+        dim=(1,len(X))
+        d = tinyUmap(dim=dim)  # default is a row
     elif wrap == 'test':
         d = tinyUmap(dim=dim)
     else:
@@ -473,8 +502,9 @@ def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True, leg
             concatX  = np.vstack(X)
             xmin,ymin = concatX.min(axis = 0)
             xmax,ymax = concatX.max(axis = 0)
-        for x,y in zip(X,Y):
-            d.draw(x,y, title=None)
+        for i,(x,y) in enumerate(zip(X,Y)):
+            t = getTitles(xtitles, ytitles, i, dim, titleAll=titleAll) #t=(xtitle, ytitle)
+            d.draw(x,y, title=t[0], ytitle=t[1])
             if same_limit:
                 xdiff = np.abs(xmax-xmin)
                 ydiff = np.abs(ymax-ymin)
@@ -493,6 +523,16 @@ def auto_tiny(X,Y, wrap = 'auto', grad= False, dim = (2,5), same_limit=True, leg
         plt.savefig(save_name)
     plt.show()
 
+def getTitles(xtitles, ytitles, i, dim, titleAll=False):
+    xtitle, ytitle = None, None
+    if xtitles is not None:
+        if i//dim[1]==0 and titleAll==False:
+            xtitle = xtitles[i]
+        elif titleAll==True:
+            xtitle= xtitles[i]
+    if ytitles is not None and i%dim[1]==0:
+        ytitle = ytitles[i//dim[1]]
+    return(xtitle, ytitle)
 
 import natto.process.util as util
 def distance_debug(m):

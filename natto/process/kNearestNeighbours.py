@@ -5,7 +5,6 @@ from sklearn.metrics import pairwise_distances
 from scipy.optimize import linear_sum_assignment
 import warnings
 from scipy.sparse import csr_matrix, lil_matrix, hstack, vstack
-#warnings.simplefilter("ignore", SparseEfficiencyWarning)
 
 
 def __init__():
@@ -174,7 +173,8 @@ def adjustSparseDists(intraDists, interDistances, kFromNeighbors, distMetric, di
         elif distMetric == 'normMeans':
                 meanFactor=np.array( [np.divide( np.mean(intraDists[:,1:], axis=1), (d.sum(axis=1).getA1()/d.getnnz(axis=1) ) ) 
                         if d.nnz!=0 else np.ones(d.shape[0]) for d in interDistances])
-                for k,di in zip(meanFactor,range(len(interDistances))): interDistances[di] = interDistances[di].multiply(distCoeff*k.reshape(-1,1))
+                for k,di in zip(meanFactor,range(len(interDistances))): 
+                        interDistances[di] = interDistances[di].multiply(distCoeff*k.reshape(-1,1))
         elif distMetric == 'max':
                 for d in interDistances: d.data=np.array([distCoeff*np.amax(intraDists)]*len(d.data))
         elif distMetric == 'median':

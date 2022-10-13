@@ -61,6 +61,7 @@ def getgenes_natto(adata, selectgenes, title,
     with np.errstate(divide='ignore', invalid='ignore'):
         # error will happen but we catch it later..
         disp = var / meanex
+        #disp = [d if d not ]
 
     Y = np.log(disp)
     X = np.log1p(meanex)
@@ -199,7 +200,6 @@ def normSlicesTogether(data):
 
 def unioncut(scores, numGenes, data):
     indices = np.argpartition(scores, -numGenes)[:,-numGenes:]
-    print(np.argpartition(scores, -numGenes))
     indices = np.unique(indices.flatten())
     if type(data[0])==AnnData:
         return [d[:,indices].copy() for d in data]

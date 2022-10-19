@@ -89,6 +89,24 @@ def loadimmune(subsample=False, pathprefix='..',seed=None):
     return loadpbmc('%s/data/immune_stim/8'% pathprefix,subsample,seed=seed),\
            loadpbmc('%s/data/immune_stim/9'%pathprefix,subsample,seed=seed)
 
+def loadCortex(subsample=False, pathprefix='..', batch=None):
+    data = ad.read_csv(pathprefix + '.csv').T
+    label = pd.read_csv(pathprefix + 'Labels.csv', usecols=["cluster"])['cluster'].to_numpy()
+    data.obs['labels'] = label
+    if batch==1:
+        data=data[:1000,:]
+    elif batch==2:
+        data=data[-1000:,:]
+    return do_subsample(data, subsample)
+
+def loadCerebellum(subsample=False, pathprefix='..'):
+    data = sc.read(pathprefix + '.csv', cache=True).T
+    label = pd.read_csv(pathprefix+ 'Labels.csv', usecols=["label"])['label'].to_numpy()
+    data.obs['labels'] = label
+    data = data[data.obs['labels'].to_numpy() != -1]
+    return do_subsample(data, subsample)
+
+
 
 ###
 # grunreader

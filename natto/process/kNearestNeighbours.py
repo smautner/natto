@@ -5,12 +5,13 @@ from sklearn.metrics import pairwise_distances
 from scipy.optimize import linear_sum_assignment
 import warnings
 from scipy.sparse import csr_matrix, lil_matrix, hstack, vstack
+from umap.umap_ import UMAP
 
 
 def __init__():
         pass
 
-def timeSliceNearestNeighbor(Data, 
+def timeSliceNearestNeighbor(Data, #list of numpy arrays
         kFromNeighbors=6, 
         kFromSame=16, 
         sort=True,
@@ -19,7 +20,7 @@ def timeSliceNearestNeighbor(Data,
         distanceMetric='max', 
         distCoeff=1,
         farPenalty=1,
-        returnSparse=False,
+        returnSparse=False, # False returns UMAP compatible indicess and distances
         returnSortedBySlice=False,
         silent=False):
 
@@ -218,6 +219,40 @@ def adjustUnevenMatrices(indices, distances, numNeighbors, kFromSame):
                 evenIndices.append(indRow)
                 evenDistances.append(distRow)
         return evenIndices, evenDistances
+
+
+def KNNFormater(Data, precomputedKNNIndices, precomputedKNNDistances):
+        from pynndescent import NNDescent
+
+        print("Computing NNDescent Object")
+        pyNNDobject = NNDescent(np.vstack(Data), metric='euclidean', random_state=1337)
+        pyNNDobject._neighbor_graph = (precomputedKNNIndices.copy(), precomputedKNNDistances.copy())
+        precomputedKNN = (precomputedKNNIndices, precomputedKNNDistances, pyNNDobject)
+
+        return precomputedKNN
+
+def transformer(Data, precomputedKNNIndices=None, precomputedKNNDistances=None, usePrecomputed=False):
+        if usePrecomputed==False:
+                precomputedKNN = (None, None, None)
+                n_neighbors = 15
+        else:
+                precomputedKNN = KNNFormater(Data, precomputedKNNIndices, precomputedKNNDistances)
+                n_neighbors = precomputedKNN[0].shape[1]
+
+        print("Beginning UMAP Projection")
+        mymap = UMAP(n_components=2, #Dimensions to reduce to
+                n_neighbors=n_neighbors,
+                random_state=1337,
+                metric='euclidean',
+                precomputed_knn=precomputedKNN,
+                force_approximation_algorithm=True)
+        mymap.fit(np.vstack(Data))
+
+        print("Transforming Data")
+        transformedData = [mymap.transform(x) for x in Data]
+
+        return transformedData
+
 
 
 ##########################################################################################################

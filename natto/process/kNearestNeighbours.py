@@ -1,23 +1,28 @@
+
 import numpy as np
+from natto.out import draw
 from sklearn.neighbors import NearestNeighbors
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import pairwise_distances
 from scipy.optimize import linear_sum_assignment
 import warnings
-from scipy.sparse import csr_matrix, lil_matrix, hstack, vstack
-from umap.umap_ import UMAP
+from scipy.sparse import csr_matrix, lil_matrix, hstack, vstack, SparseEfficiencyWarning
 
+import warnings
+warnings.filterwarnings("ignore", category=SparseEfficiencyWarning)
 
 def __init__():
         pass
 
+
 def timeSliceNearestNeighbor(Data, #list of numpy arrays
-        kFromNeighbors=6, 
-        kFromSame=16, 
+        kFromNeighbors=2, 
+        kFromSame=10, 
         sort=True,
         intraSliceNeighbors="sklearnNN",
-        interSliceNeighbors=None,
-        distanceMetric='max', 
+        interSliceNeighbors=None, #Suggest using 'hungarian'
+        distanceMetric='normMeans', 
+        dijkstra=False,
         distCoeff=1,
         farPenalty=1,
         returnSparse=False, # False returns UMAP compatible indicess and distances
@@ -50,9 +55,17 @@ def timeSliceNearestNeighbor(Data, #list of numpy arrays
 
                 if not silent:
                         print(f"Dataset {index} Complete")
+        #print(sparseSlices)
 
         ### Prepare for Return
-        sparseMatrix = sparseSlices.tocsr()
+        if dijkstra==True:
+                from scipy.sparse.csgraph import dijkstra
+                sparseSlices = dijkstra(sparseSlices, directed=False)
+
+        #sparseMatrix = sparseSlices.tocsr()
+        sparseMatrix = csr_matrix(sparseSlices)
+        #print(sparseMatrix)
+
         if returnSparse:
                 return sparseMatrix
         else:
@@ -176,6 +189,7 @@ def adjustSparseDists(intraDists, interDistances, kFromNeighbors, distMetric, di
                         if d.nnz!=0 else np.ones(d.shape[0]) for d in interDistances])
                 for k,di in zip(meanFactor,range(len(interDistances))): 
                         interDistances[di] = interDistances[di].multiply(distCoeff*k.reshape(-1,1))
+                        #print(interDistances[di])
         elif distMetric == 'max':
                 for d in interDistances: d.data=np.array([distCoeff*np.amax(intraDists)]*len(d.data))
         elif distMetric == 'median':
@@ -194,6 +208,9 @@ def adjustSparseDists(intraDists, interDistances, kFromNeighbors, distMetric, di
                                         sortData = sorted(d.data[start:end])
                                         for j in range((end-start)):
                                                 d.data[start:end][np.where(d.data[start:end] == sortData[j])] = means[j]
+        elif distMetric == 'dijkstra':
+                for i,d in enumerate(interDistances):
+                        interDistances[i].multiply(distCoeff)
 
         return interDistances
 
@@ -221,38 +238,119 @@ def adjustUnevenMatrices(indices, distances, numNeighbors, kFromSame):
         return evenIndices, evenDistances
 
 
-def KNNFormater(Data, precomputedKNNIndices, precomputedKNNDistances):
+def KNNFormater(Data, precomputedKNNIndices, precomputedKNNDistances, silent=False):
         from pynndescent import NNDescent
 
-        print("Computing NNDescent Object")
+        if not silent: print("Computing NNDescent Object")
         pyNNDobject = NNDescent(np.vstack(Data), metric='euclidean', random_state=1337)
         pyNNDobject._neighbor_graph = (precomputedKNNIndices.copy(), precomputedKNNDistances.copy())
         precomputedKNN = (precomputedKNNIndices, precomputedKNNDistances, pyNNDobject)
 
         return precomputedKNN
 
-def transformer(Data, precomputedKNNIndices=None, precomputedKNNDistances=None, usePrecomputed=False):
+def transformer(Data, precomputedKNNIndices=None, precomputedKNNDistances=None, usePrecomputed=False, proj='UMAP', n_components=2, silent=False):
         if usePrecomputed==False:
                 precomputedKNN = (None, None, None)
                 n_neighbors = 15
         else:
-                precomputedKNN = KNNFormater(Data, precomputedKNNIndices, precomputedKNNDistances)
+                precomputedKNN = KNNFormater(Data, precomputedKNNIndices, precomputedKNNDistances, silent)
                 n_neighbors = precomputedKNN[0].shape[1]
 
-        print("Beginning UMAP Projection")
-        mymap = UMAP(n_components=2, #Dimensions to reduce to
-                n_neighbors=n_neighbors,
-                random_state=1337,
-                metric='euclidean',
-                precomputed_knn=precomputedKNN,
-                force_approximation_algorithm=True)
-        mymap.fit(np.vstack(Data))
+        if not silent: print('Beginning Projection')
+        if proj=='UMAP':
+                from umap.umap_ import UMAP
+                mymap = UMAP(n_components=n_components, #Dimensions to reduce to
+                        n_neighbors=n_neighbors,
+                        random_state=1337,
+                        metric='euclidean',
+                        precomputed_knn=precomputedKNN,
+                        force_approximation_algorithm=True)
+                mymap.fit(np.vstack(Data))
 
-        print("Transforming Data")
-        transformedData = [mymap.transform(x) for x in Data]
-
+                if not silent: print("Transforming Data")
+                transformedData = [mymap.transform(x) for x in Data]
+        elif proj=='TSNE':
+                from sklearn.manifold import TSNE
+                mymap = TSNE(n_components=n_components,
+                        random_state=1337,
+                        metric='euclidean',
+                        )
+                transformedDataStack = mymap.fit_transform(np.vstack(Data)) #TSNE has no transform function
+                transformedData = unstack(transformedDataStack, Data)
+        elif proj=='LLE':
+                from sklearn.manifold import LocallyLinearEmbedding as LLE
+                mymap = LLE(n_components=n_components,
+                        n_neighbors=8,
+                        random_state=1337,
+                        method='hessian',
+                        eigen_solver='dense'
+                        )
+                mymap.fit(np.vstack(Data))
+                if not silent: print("Transforming Data")
+                transformedData = [mymap.transform(x) for x in Data]
+        
         return transformedData
 
+
+def unstack(stackedData, listOfData):
+        shapes = [d.shape[0] for d in listOfData]
+        for i in range(len(shapes)-1): shapes[i+1] = shapes[i+1] + shapes[i]
+        return np.split(stackedData, shapes)[:-1]
+
+
+def evalProjection(Data, Labels, method='KNeighbors', heatmaps=False, n_neighbors=1):
+        if method=='KNeighbors':
+                results = kNeighborEval(Data, Labels, n_neighbors, heatmaps)
+        elif method=='tripleScore':
+                results = tripleScoreEval(Data, Labels)
+        return np.mean(results)
+
+def tripleScoreEval(Data, Labels):
+        from sklearn.metrics import adjusted_rand_score, silhouette_score, normalized_mutual_info_score
+        from sklearn.cluster import KMeans
+        results = []
+        for d,l in zip(Data, Labels):
+                kClusters  = len(np.unique(l))
+                kmeans = KMeans(n_clusters=kClusters, n_init=50).fit(d)
+                pred_l = kmeans.predict(d)
+
+                ari = adjusted_rand_score(l, pred_l)
+                nmi = normalized_mutual_info_score(l, pred_l)
+                sil = silhouette_score(d, pred_l)
+                results.append( (ari + nmi + sil)/3 )
+
+        return results
+
+
+def kNeighborEval(Data, Labels, n_neighbors=1, heatmaps=False):
+        from sklearn.neighbors import KNeighborsClassifier
+
+        results = []
+        for i in range(len(Data)-1):
+                model = KNeighborsClassifier(n_neighbors=n_neighbors).fit(Data[i], Labels[i])
+                result = model.predict(Data[i+1])
+                simMatrix = measureClusterSimilarity(result, Labels[i+1])
+                diagonals = [simMatrix[j,j] for j in range(len(simMatrix)-1)]
+                if heatmaps:
+                        draw.simpleheatmap(simMatrix)
+                results.append(np.mean(diagonals))
+        return results
+
+
+def measureClusterSimilarity(predLabels, trueLabels):
+        matrix = np.empty((0,len(np.unique(trueLabels))))
+        for v1 in np.unique(predLabels):
+                row = []
+                for v2 in np.unique(trueLabels):
+                        v1Indices = np.where(predLabels==v1)[0]
+                        v2Indices = np.where(trueLabels==v2)[0]
+                        instances = len([1 for item in v1Indices if item in v2Indices])
+                        success = instances / len(v2Indices)
+                        row.append(success)
+
+                matrix = np.vstack((matrix, row))
+
+        return matrix
 
 
 ##########################################################################################################

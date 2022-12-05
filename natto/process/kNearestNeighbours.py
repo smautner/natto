@@ -1,6 +1,7 @@
 
 import numpy as np
 from natto.out import draw
+from lmz import Map, Zip
 from sklearn.neighbors import NearestNeighbors
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import pairwise_distances
@@ -303,7 +304,10 @@ def evalProjection(Data, Labels, method='KNeighbors', heatmaps=False, n_neighbor
                 results = kNeighborEval(Data, Labels, n_neighbors, heatmaps)
         elif method=='tripleScore':
                 results = tripleScoreEval(Data, Labels)
+        elif method=='spearman':
+                results = spearman(Data, Labels)
         return np.mean(results)
+
 
 def tripleScoreEval(Data, Labels):
         from sklearn.metrics import adjusted_rand_score, silhouette_score, normalized_mutual_info_score
@@ -330,7 +334,7 @@ def kNeighborEval(Data, Labels, n_neighbors=1, heatmaps=False):
                 model = KNeighborsClassifier(n_neighbors=n_neighbors).fit(Data[i], Labels[i])
                 result = model.predict(Data[i+1])
                 simMatrix = measureClusterSimilarity(result, Labels[i+1])
-                diagonals = [simMatrix[j,j] for j in range(len(simMatrix)-1)]
+                diagonals = [simMatrix[j,j] for j in range(min(simMatrix.shape))]
                 if heatmaps:
                         draw.simpleheatmap(simMatrix)
                 results.append(np.mean(diagonals))
@@ -348,10 +352,36 @@ def measureClusterSimilarity(predLabels, trueLabels):
                         success = instances / len(v2Indices)
                         row.append(success)
 
-                matrix = np.vstack((matrix, row))
+                matrix = np.vstack((matrix, row)) 
+
+        #if matrix.shape[0]!=matrix.shape[1]:
+                #print("Uneven Matrix?")
+                #print(matrix.shape)
 
         return matrix
 
+def spearman(Data, Labels):
+        from scipy.stats import spearmanr
+        from sklearn.metrics.pairwise import euclidean_distances as ed
+        results = []
+        for i in range(len(Data)-1):
+                centres1 = getcenters(Data[i], Labels[i])
+                centres2 = getcenters(Data[i+1], Labels[i+1])
+                matrix = ed(centres1, centres2)
+                spear = spearmanr(matrix)
+                results.append(np.mean(spear))
+        return results
+
+def centers(arg):
+    X,y = arg
+    cents = []
+    for i in np.unique(y):
+        m = X[y==i].mean(axis=0)
+        cents.append(np.hstack([i,m]))
+    return np.array(cents)
+
+def getcenters(xx,yy):
+    return np.vstack(Map(centers,Zip(xx,yy)))
 
 ##########################################################################################################
 ########################################## OLD STUFF #####################################################
